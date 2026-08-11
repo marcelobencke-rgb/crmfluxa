@@ -21,9 +21,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   images: {
     // O app não usa next/image de fato (só <img> raw); desligar o otimizador
     // evita exigir o binário `sharp` no runtime do container.
