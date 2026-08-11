@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamMembersClient } from "./_components/TeamMembersClient";
 import { AttendantsClient } from "./_components/AttendantsClient";
 
-export const dynamic = "force-dynamic";
 
 export default async function TeamPage() {
   const user = await requireAuth();

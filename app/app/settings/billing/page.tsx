@@ -4,7 +4,6 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { Card } from "@/components/ui/card";
 
-export const dynamic = "force-dynamic";
 
 export default async function BillingPage() {
   // spec 13 §4: billing é admin-only (viewer/agent/manager = none).

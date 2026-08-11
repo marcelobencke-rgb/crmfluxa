@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/server";
 import type { CredentialRow } from "@/hooks/ai/useCredentials";
 import { CredentialsList } from "./_components/CredentialsList";
 
-export const dynamic = "force-dynamic";
 
 const SAFE_COLUMNS =
   "id, organization_id, provider, label, api_key_last4, validated_at, validation_error, models_available, is_active, created_by, created_at, updated_at";

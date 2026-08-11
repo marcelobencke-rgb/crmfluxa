@@ -3,7 +3,6 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { WebhooksClient } from "./_components/WebhooksClient";
 
-export const dynamic = "force-dynamic";
 
 export default async function WebhooksPage() {
   const user = await requireAuth();

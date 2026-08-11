@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/server";
 import type { OrgMemoryState } from "@/hooks/ai/useOrgMemory";
 import { OrgMemoryClient } from "./_client";
 
-export const dynamic = "force-dynamic";
 
 export default async function OrgMemoryPage() {
   const user = await requireAuth();

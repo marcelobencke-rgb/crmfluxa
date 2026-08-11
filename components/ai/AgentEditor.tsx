@@ -88,7 +88,10 @@ function diffPatch(initial: FormState, current: FormState): AgentPatch {
   return patch;
 }
 
+import { useRouter } from "next/navigation";
+
 export function AgentEditor({ agentId, initialData, readOnly = false }: Props) {
+  const router = useRouter();
   const query = useAgent(agentId, { initialData });
   const update = useUpdateAgent(agentId);
 
@@ -177,7 +180,10 @@ export function AgentEditor({ agentId, initialData, readOnly = false }: Props) {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleReset} disabled={!dirty || disabled}>
+          <Button variant="outline" onClick={() => {
+            if (dirty) handleReset();
+            else router.push("/app/ai/agents");
+          }} disabled={disabled}>
             Descartar
           </Button>
           <Button onClick={handleSave} disabled={!dirty || disabled}>

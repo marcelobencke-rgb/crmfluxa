@@ -4,7 +4,6 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { EvolutionClient } from "./_client";
 
-export const dynamic = "force-dynamic";
 
 /**
  * O intervalo padrão nasce AQUI, no servidor, e desce como prop. Calculá-lo no

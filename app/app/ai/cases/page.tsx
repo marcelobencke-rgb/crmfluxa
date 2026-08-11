@@ -4,7 +4,6 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { CaseList } from "./_components/CaseList";
 
-export const dynamic = "force-dynamic";
 
 export default async function CasesPage() {
   const user = await requireAuth();

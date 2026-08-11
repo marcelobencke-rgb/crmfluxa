@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FlowsList } from "./_components/FlowsList";
 import { QueueTab } from "./_components/QueueTab";
 
-export const dynamic = "force-dynamic";
 
 const FLOW_COLUMNS = "id, name, status, active_version_id, handoff_policy, updated_at";
 

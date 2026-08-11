@@ -5,7 +5,6 @@ import { ROLE_RANK } from "@/lib/auth/types";
 
 import { ExecucoesDeIa } from "./_components/ExecucoesDeIa";
 
-export const dynamic = "force-dynamic";
 
 /**
  * O que a IA fez — e por que falhou quando falhou.

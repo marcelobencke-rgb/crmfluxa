@@ -6,7 +6,6 @@ import {
   NOTIFICATION_CHANNELS,
 } from "@/lib/schemas/settings";
 
-export const dynamic = "force-dynamic";
 
 const CATEGORY_LABELS: Record<(typeof NOTIFICATION_CATEGORIES)[number], string> = {
   lead_assigned: "Lead atribuído a você",

@@ -24,7 +24,6 @@ import { routingConfigSchema } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
 import { AtendimentoForm } from "./_form";
 
-export const dynamic = "force-dynamic";
 
 export default async function AtendimentoSettingsPage() {
   const user = await requireAuth();

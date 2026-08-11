@@ -4,7 +4,6 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { InviteForm } from "./_components/InviteForm";
 
-export const dynamic = "force-dynamic";
 
 export default async function TeamInvitePage() {
   const user = await requireAuth();

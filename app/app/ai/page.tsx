@@ -1,7 +1,6 @@
 import { NavHub } from "@/components/shell/NavHub";
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 
-export const dynamic = "force-dynamic";
 
 /**
  * Hub da área de IA.

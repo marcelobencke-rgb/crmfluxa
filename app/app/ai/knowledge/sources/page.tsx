@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import type { SourceRow } from "@/hooks/ai/useKnowledgeSources";
 import { KnowledgeSourcesClient } from "./_client";
 
-export const dynamic = "force-dynamic";
 
 export default async function KnowledgeSourcesPage() {
   const user = await requireAuth();

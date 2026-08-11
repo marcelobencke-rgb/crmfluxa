@@ -4,7 +4,6 @@ import { loadAuthUser } from "@/lib/auth/server";
 import { UpdatePanel } from "./_components/UpdatePanel";
 
 export const metadata = { title: "Atualização do sistema" };
-export const dynamic = "force-dynamic";
 
 /**
  * Só o dono do servidor. Um `notFound()` em vez de uma tela de "sem permissão"

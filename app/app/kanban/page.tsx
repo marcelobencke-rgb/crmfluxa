@@ -6,7 +6,6 @@ import { ROLE_RANK } from "@/lib/auth/types";
 import { createClient } from "@/lib/supabase/server";
 import { FunisClient, type FunilDaLista } from "./_client";
 
-export const dynamic = "force-dynamic";
 
 /**
  * A lista de funis — e o lugar onde eles se gerenciam.

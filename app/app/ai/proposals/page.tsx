@@ -4,7 +4,6 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { ProposalsList } from "./_components/ProposalsList";
 
-export const dynamic = "force-dynamic";
 
 /**
  * Propostas — as próximas ações que o assistente sugeriu, em lista.

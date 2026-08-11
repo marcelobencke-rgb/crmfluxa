@@ -6,7 +6,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { SkillsState } from "@/hooks/ai/useSkills";
 import { SkillsClient } from "./_client";
 
-export const dynamic = "force-dynamic";
 
 export default async function SkillsPage() {
   const user = await requireAuth();

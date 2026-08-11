@@ -55,7 +55,7 @@ export interface UseRealtimeChannelOpts {
  * erro?" — é **o resultado memoizado é o resultado DESEJADO?**. Sucesso parcial
  * memoizado é pior que erro memoizado, porque erro alguém repete.
  */
-const AUTH_TIMEOUT_MS = 1_500;
+const AUTH_TIMEOUT_MS = 10_000;
 
 let realtimeAuth: Promise<void> | null = null;
 

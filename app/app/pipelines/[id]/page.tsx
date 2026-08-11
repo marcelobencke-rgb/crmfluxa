@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PipelinePageClient } from "./_client";
 
-export const dynamic = "force-dynamic";
 
 export default async function PipelinePage({
   params,

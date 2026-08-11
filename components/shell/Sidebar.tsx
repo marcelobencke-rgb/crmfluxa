@@ -87,6 +87,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
                     <li key={item.href}>
                       <Link
                         href={item.href}
+                        prefetch={true}
                         title={collapsed ? item.label : undefined}
                         aria-current={isActive ? "page" : undefined}
                         className={cn(
@@ -112,6 +113,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
                   <li>
                     <Link
                       href={group.hub.href}
+                      prefetch={true}
                       title={collapsed ? group.hub.label : undefined}
                       aria-current={pathname === group.hub.href ? "page" : undefined}
                       className={cn(
@@ -136,6 +138,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
         {rodape && (
           <Link
             href={rodape.href}
+            prefetch={true}
             title={collapsed ? rodape.label : undefined}
             aria-current={pathname.startsWith(rodape.href) ? "page" : undefined}
             className={cn(

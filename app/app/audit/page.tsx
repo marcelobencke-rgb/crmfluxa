@@ -4,7 +4,6 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { AuditClient } from "./_client";
 
-export const dynamic = "force-dynamic";
 
 export default async function AuditPage() {
   const user = await requireAuth();

@@ -3,7 +3,6 @@ import { ROLE_RANK } from "@/lib/auth/types";
 
 import { MetricsClient } from "./_components/MetricsClient";
 
-export const dynamic = "force-dynamic";
 
 export default async function MetricsPage() {
   const user = await requireAuth();

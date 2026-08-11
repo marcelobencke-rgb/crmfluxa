@@ -3,7 +3,6 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { TemplatesClient } from "./_components/TemplatesClient";
 
-export const dynamic = "force-dynamic";
 
 export default async function TemplatesPage() {
   const user = await requireAuth();

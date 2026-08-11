@@ -5,7 +5,6 @@ import { ROLE_RANK } from "@/lib/auth/types";
 import { createClient } from "@/lib/supabase/server";
 import { PipelinesClient, type PipelineRow } from "./_client";
 
-export const dynamic = "force-dynamic";
 
 /**
  * ⚠️ A PÁGINA É manager+, O EDITOR DE VOCABULÁRIO CONTINUA admin.

@@ -7,7 +7,6 @@ import { createClient } from "@/lib/supabase/server";
 import type { RouterListItem } from "@/hooks/ai/useRouters";
 import { RoutersClient } from "./_client";
 
-export const dynamic = "force-dynamic";
 
 export default async function RoutersPage() {
   const user = await requireAuth();

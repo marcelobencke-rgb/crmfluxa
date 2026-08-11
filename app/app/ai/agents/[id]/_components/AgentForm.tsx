@@ -416,12 +416,23 @@ export function AgentForm(props: Props) {
           {isEdit ? (
             <Button
               variant="outline"
-              onClick={handleReset}
-              disabled={!dirty || disabled}
+              onClick={() => {
+                if (dirty) handleReset();
+                else router.push("/app/ai/agents");
+              }}
+              disabled={disabled}
             >
-              Descartar alterações
+              {dirty ? "Descartar alterações" : "Voltar"}
             </Button>
-          ) : null}
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => router.push("/app/ai/agents")}
+              disabled={disabled}
+            >
+              Cancelar
+            </Button>
+          )}
           <Button onClick={handleSave} disabled={(!dirty && isEdit) || disabled || !isValid}>
             {saving ? "Salvando…" : isEdit ? "Salvar rascunho" : "Criar agente"}
           </Button>

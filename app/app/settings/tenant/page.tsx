@@ -5,7 +5,6 @@ import { ROLE_RANK } from "@/lib/auth/types";
 import { createClient } from "@/lib/supabase/server";
 import { TenantForm } from "./_form";
 
-export const dynamic = "force-dynamic";
 
 interface OrgRow {
   display_name: string;

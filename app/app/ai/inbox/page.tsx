@@ -4,7 +4,6 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { AgentInboxList } from "./_components/AgentInboxList";
 
-export const dynamic = "force-dynamic";
 
 export default async function AgentInboxPage() {
   const user = await requireAuth();

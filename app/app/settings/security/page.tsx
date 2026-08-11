@@ -2,7 +2,6 @@ import { requireAuth, isMfaEnrolled } from "@/lib/auth/server";
 import { Card } from "@/components/ui/card";
 import { SecurityClient } from "./_client";
 
-export const dynamic = "force-dynamic";
 
 export default async function SecurityPage() {
   await requireAuth();

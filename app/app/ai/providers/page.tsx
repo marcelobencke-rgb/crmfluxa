@@ -5,7 +5,6 @@ import { ROLE_RANK } from "@/lib/auth/types";
 
 import { PainelDeProvedores } from "./_components/PainelDeProvedores";
 
-export const dynamic = "force-dynamic";
 
 /**
  * Onde o dono do negócio vê e escolhe qual IA atende cada parte do sistema.

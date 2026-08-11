@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { InboxLayout } from "@/components/inbox/InboxLayout";
 
-export const dynamic = "force-dynamic";
 
 export default async function InboxPage({
   searchParams,

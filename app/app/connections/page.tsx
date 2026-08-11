@@ -4,7 +4,6 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { ConexoesShell } from "@/components/connections/ConexoesShell";
 
-export const dynamic = "force-dynamic";
 
 export default async function ConnectionsPage() {
   const user = await requireAuth();

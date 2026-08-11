@@ -148,7 +148,6 @@ export function ConnectWhatsappClient({ wahaConfigured, sessionName }: Props) {
             <div className="mt-4 flex flex-col items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                key={qrTick}
                 src={`/api/v1/onboarding/whatsapp/qr?t=${qrTick}`}
                 alt="QR Code para conectar WhatsApp"
                 className="h-64 w-64 rounded-md border bg-white p-2"

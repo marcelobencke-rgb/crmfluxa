@@ -130,7 +130,25 @@ export function CredentialCard({ credential, canWrite, usageCount }: Props) {
       <dl className="grid grid-cols-2 gap-2 text-xs">
         <div>
           <dt className="text-muted-foreground">Modelos</dt>
-          <dd className="font-mono">{credential.models_available ?? "—"}</dd>
+          <dd className="font-mono">
+            {Array.isArray(credential.models_available) && credential.models_available.length > 0 ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger className="cursor-help underline decoration-dotted underline-offset-2">
+                    {credential.models_available.length} modelos
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="font-mono text-xs leading-tight">
+                      {credential.models_available.slice(0, 10).join(", ")}
+                      {credential.models_available.length > 10 ? ` (+${credential.models_available.length - 10} ocultos)` : ""}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              "—"
+            )}
+          </dd>
         </div>
         <div>
           <dt className="text-muted-foreground">Em uso por</dt>

@@ -4,7 +4,6 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { RequestsTable } from "./RequestsTable";
 
-export const dynamic = "force-dynamic";
 
 export default async function LgpdRequestsPage() {
   const user = await requireAuth();
