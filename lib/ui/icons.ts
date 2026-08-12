@@ -112,4 +112,8 @@ export {
   Key,
   UserCircle,
   ClockCounterClockwise,
+  SquaresFour,
+  EnvelopeSimple,
+  WarningCircle,
+  User,
 } from "@phosphor-icons/react/dist/ssr";

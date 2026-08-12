@@ -2,6 +2,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/auth/AuthProvider";
+import { cn } from "@/lib/utils";
 import { useClaimConversation } from "@/hooks/inbox/useClaimConversation";
 import { useCloseConversation } from "@/hooks/inbox/useCloseConversation";
 import {
@@ -11,7 +12,8 @@ import {
 } from "@/hooks/inbox/useConversationsRealtime";
 import { useConversation, isNotFound } from "@/hooks/inbox/useConversation";
 import { ConversationList } from "./ConversationList";
-import { InboxFilters, type InboxFiltersValue, type InboxTab } from "./InboxFilters";
+import { InboxSidebar, type InboxSidebarState, type InboxStatusFilter, type InboxAssigneeFilter } from "./InboxSidebar";
+import { InboxFilters } from "./InboxFilters";
 import { ChatThread } from "./ChatThread";
 import { Composer, type ComposerHandle } from "./Composer";
 import { ConversationHeader } from "./ConversationHeader";
@@ -20,39 +22,7 @@ import { CRMSidePanel } from "./CRMSidePanel";
 import { InboxKeyboardShortcuts } from "./InboxKeyboardShortcuts";
 import { ShortcutsHelpDialog } from "./ShortcutsHelpDialog";
 
-/**
- * O QUE CADA ABA SIGNIFICA. Exportada porque é a definição em si — o defeito
- * que este mapa já teve (Minhas mostrando tudo que o atendente fechou) não
- * aparece em nenhuma tela até alguém reclamar, então vale prender por teste.
- */
-export function tabToFilter(tab: InboxFiltersValue["tab"]): Partial<ConversationsFilters> {
-  switch (tab) {
-    case "unassigned":
-      return { assigned_to: "unassigned", status: "open" };
-    case "mine":
-      // Sem `exclude_finished` a aba mostra tudo que o atendente JÁ atendeu —
-      // `Fechar` muda o status mas não solta o dono (de propósito: quem atendeu
-      // é histórico). O lugar de "minhas fechadas" é a aba Fechadas.
-      return { assigned_to: "me", exclude_finished: true };
-    case "closed":
-      return { status: "closed" };
-    case "ai":
-      return { status: "ai_handling" };
-    case "all":
-    default:
-      return {};
-  }
-}
-
-const FILTER_TABS: InboxTab[] = ["unassigned", "mine", "all", "closed", "ai"];
-
-/**
- * Lê ?filter= (G4-02, deep-link). ?filter=all é HONRADO mesmo para agent — a
- * lista volta RLS-scoped (a tab só some cosmeticamente); default: fila.
- */
-function parseFilterParam(v: string | null): InboxTab {
-  return v && FILTER_TABS.includes(v as InboxTab) ? (v as InboxTab) : "unassigned";
-}
+// Removed tabToFilter and visibleInboxTabs logic as it's now handled directly
 
 interface InboxLayoutProps {
   initialSelectedId?: string | null;
@@ -64,42 +34,44 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
 
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const tab = parseFilterParam(searchParams.get("filter"));
-
-  // tab vive na URL (?filter=); os demais filtros são estado local de sessão.
-  const [aux, setAux] = useState<Omit<InboxFiltersValue, "tab">>({
+  
+  const [filterValue, setFilterValue] = useState<InboxSidebarState>({
+    status: "open",
+    assignee: "unassigned",
     search: "",
     onlyUnread: false,
   });
-  const filterValue: InboxFiltersValue = { tab, ...aux };
-  const setFilterValue = useCallback(
-    (next: InboxFiltersValue) => {
-      if (next.tab !== tab) {
-        const params = new URLSearchParams(searchParams);
-        params.set("filter", next.tab);
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-      }
-      const { tab: _t, ...rest } = next;
-      setAux(rest);
-    },
-    [tab, searchParams, router, pathname],
-  );
+  
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId);
   const [visibleIds, setVisibleIds] = useState<string[]>([]);
   const [helpOpen, setHelpOpen] = useState(false);
   const composerRef = useRef<ComposerHandle | null>(null);
 
-  const filters: ConversationsFilters = useMemo(
-    () => ({
-      ...tabToFilter(filterValue.tab),
-      search: filterValue.search || undefined,
-      channel_session_id: filterValue.channel_session_id,
-      tag: filterValue.tag,
-    }),
-    [filterValue.tab, filterValue.search, filterValue.channel_session_id, filterValue.tag],
-  );
+  const filters: ConversationsFilters = useMemo(() => {
+    let f: ConversationsFilters = { search: filterValue.search || undefined };
+
+    // 1. Status
+    if (filterValue.status === "open") {
+      f.exclude_finished = true;
+      f.is_snoozed = false; // "Abertas" esconde as pausadas
+    } else if (filterValue.status === "closed") {
+      f.status = "closed";
+    } else if (filterValue.status === "snoozed") {
+      f.exclude_finished = true;
+      f.is_snoozed = true; // "Pausadas" mostra APENAS as pausadas
+    } else if (filterValue.status === "all") {
+      // "Todas" não filtra is_snoozed, então mostra as pausadas e abertas juntas
+    }
+
+    // 2. Assignee
+    if (filterValue.assignee === "mine") f.assigned_to = "me";
+    else if (filterValue.assignee === "unassigned") f.assigned_to = "unassigned";
+    else if (filterValue.assignee === "ai") f.status = "ai_handling";
+
+    return f;
+  }, [filterValue.status, filterValue.assignee, filterValue.search]);
 
   const clientFilter = useMemo(
     () =>
@@ -188,9 +160,28 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
   // piso do composer (370px), em vez dos 2px que a versão de uma faixa só
   // deixava. Margem de 2px não é margem, é sorte.
   return (
-    <div className="grid h-[calc(100dvh-3.5rem-2*var(--space-6))] w-full grid-cols-1 md:grid-cols-[300px_1fr] xl:grid-cols-[272px_1fr_296px] 2xl:grid-cols-[300px_1fr_320px]">
+    <div 
+      className={cn(
+        "grid h-[calc(100dvh-3.5rem-2*var(--space-6))] w-full transition-all duration-300",
+        sidebarCollapsed
+          ? "grid-cols-1 md:grid-cols-[300px_1fr] xl:grid-cols-[272px_1fr_296px] 2xl:grid-cols-[300px_1fr_320px]"
+          : "grid-cols-[192px_1fr] md:grid-cols-[192px_300px_1fr] xl:grid-cols-[192px_272px_1fr_296px] 2xl:grid-cols-[192px_300px_1fr_320px]"
+      )}
+    >
+      <InboxSidebar
+        value={filterValue}
+        onChange={setFilterValue}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+      />
+
       <div className="flex h-full min-h-0 flex-col border-r border-border">
-        <InboxFilters value={filterValue} onChange={setFilterValue} />
+        <InboxFilters 
+          value={filterValue} 
+          onChange={setFilterValue} 
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+        />
         <div className="min-h-0 flex-1 overflow-hidden">
           <ConversationList
             filters={filters}

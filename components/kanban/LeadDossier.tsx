@@ -9,6 +9,7 @@ import { ScoreSlot } from "./ScoreSlot";
 import { LeadTimeline } from "./LeadTimeline";
 import { OwnerBadge } from "./OwnerBadge";
 import { resolveLeadOwner } from "@/lib/kanban/owner";
+import { NextActionBanner } from "./NextActionSlot";
 
 interface Props {
   open: boolean;
@@ -109,6 +110,15 @@ export function LeadDossier({
             Editar campos
           </button>
         </div>
+
+        {lead.next_action && (
+          <NextActionBanner
+            label={lead.next_action.label}
+            leadId={lead.id}
+            approvedSeq={lead.next_action.seq}
+            pipelineId={pipelineId}
+          />
+        )}
 
         {/* O score NÃO aparece na timeline: recálculo é telemetria e não emite
             atividade (silêncio para telemetria, pulso para mudança de estado).

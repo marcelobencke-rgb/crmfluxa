@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MagnifyingGlass } from "@/lib/ui/icons";
+import { MagnifyingGlass, Funnel } from "@/lib/ui/icons";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -17,41 +18,30 @@ import { useAuth } from "@/hooks/auth/AuthProvider";
 import { useConversationTagVocabulary } from "@/hooks/inbox/useConversationTags";
 import { useConversationCounts } from "@/hooks/inbox/useConversationCounts";
 import type { Role, VisibilityMode } from "@/lib/auth/types";
+import { type InboxSidebarState } from "./InboxSidebar";
 
-export type InboxTab = "unassigned" | "mine" | "all" | "closed" | "ai";
+export type InboxAssigneeFilter = "all" | "mine" | "unassigned" | "ai";
 
-const INBOX_TABS: { value: InboxTab; label: string }[] = [
+const ASSIGNEE_TABS: { value: InboxAssigneeFilter; label: string }[] = [
   { value: "unassigned", label: "Fila" },
   { value: "mine", label: "Minhas" },
-  { value: "all", label: "Todas" },
-  { value: "closed", label: "Fechadas" },
+  { value: "all", label: "Todos" },
   { value: "ai", label: "IA" },
 ];
 
-/**
- * Visões visíveis por papel + escopo (G4-02, acceptance 1). 'Todas' fica oculta
- * para `agent` quando visibility_mode ≠ 'all'; viewer/manager/admin sempre veem.
- * É apenas cosmético — a RLS (G4-01) é quem garante o escopo mesmo via ?filter=all.
- */
-export function visibleInboxTabs(role: Role, mode: VisibilityMode | undefined): InboxTab[] {
+export function visibleAssigneeTabs(role: Role, mode: VisibilityMode | undefined): InboxAssigneeFilter[] {
   const hideAll = role === "agent" && mode !== "all";
-  return INBOX_TABS.filter((t) => !(t.value === "all" && hideAll)).map((t) => t.value);
-}
-
-export interface InboxFiltersValue {
-  tab: InboxTab;
-  search: string;
-  onlyUnread: boolean;
-  channel_session_id?: string;
-  tag?: string;
+  return ASSIGNEE_TABS.filter((t) => !(t.value === "all" && hideAll)).map((t) => t.value);
 }
 
 interface Props {
-  value: InboxFiltersValue;
-  onChange: (next: InboxFiltersValue) => void;
+  value: InboxSidebarState;
+  onChange: (next: InboxSidebarState) => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
-export function InboxFilters({ value, onChange }: Props) {
+export function InboxFilters({ value, onChange, collapsed, onToggleCollapse }: Props) {
   const [searchInput, setSearchInput] = useState(value.search);
   const { data: channels } = useChannelSessions({ refetchInterval: 30_000 });
   const { activeOrg } = useAuth();
@@ -59,25 +49,21 @@ export function InboxFilters({ value, onChange }: Props) {
   const { data: counts } = useConversationCounts(activeOrg?.orgId ?? null);
 
   const tabs = activeOrg
-    ? visibleInboxTabs(activeOrg.role, activeOrg.visibility_mode)
-    : INBOX_TABS.map((t) => t.value);
-  const countFor: Partial<Record<InboxTab, number>> = {
+    ? visibleAssigneeTabs(activeOrg.role, activeOrg.visibility_mode)
+    : ASSIGNEE_TABS.map((t) => t.value);
+    
+  const countFor: Partial<Record<InboxAssigneeFilter, number>> = {
     unassigned: counts?.unassigned,
     mine: counts?.mine,
     all: counts?.all,
   };
-  // Filtrar por um número que saiu da lista (o operador acabou de excluir o
-  // canal) deixa o inbox mostrando um subconjunto — às vezes vazio — sem nada na
-  // tela dizendo que há filtro. O número some do dropdown junto com o canal, e o
-  // alternador inteiro sumiria com ele se sobrasse menos de dois.
+
   const filtroForaDaLista =
     value.channel_session_id != null &&
     channels != null &&
     !channels.some((c) => c.id === value.channel_session_id);
-  // Alternador só aparece com 2+ números — com um só não há o que alternar.
   const showChannelSwitch = (channels?.length ?? 0) >= 2 || filtroForaDaLista;
 
-  // Debounce search input → propagate to parent.
   useEffect(() => {
     const t = setTimeout(() => {
       if (searchInput !== value.search) {
@@ -85,25 +71,31 @@ export function InboxFilters({ value, onChange }: Props) {
       }
     }, 250);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchInput]);
+  }, [searchInput, onChange, value]);
 
   return (
     <div className="space-y-3 border-b border-border bg-background px-3 py-3">
-      <div className="relative">
-        <MagnifyingGlass
-          size={14}
-          weight="regular"
-          className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-          aria-hidden
-        />
-        <Input
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Buscar mensagens…"
-          className="h-8 pl-8 text-sm"
-          aria-label="Buscar conversas"
-        />
+      <div className="flex gap-2">
+        {collapsed && (
+          <Button variant="outline" size="icon" onClick={onToggleCollapse} className="h-8 w-8 shrink-0">
+            <Funnel className="h-4 w-4" />
+          </Button>
+        )}
+        <div className="relative flex-1">
+          <MagnifyingGlass
+            size={14}
+            weight="regular"
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Buscar mensagens…"
+            className="h-8 pl-8 text-sm w-full"
+            aria-label="Buscar conversas"
+          />
+        </div>
       </div>
 
       {showChannelSwitch && (
@@ -150,15 +142,15 @@ export function InboxFilters({ value, onChange }: Props) {
       )}
 
       <Tabs
-        value={value.tab}
-        onValueChange={(v) => onChange({ ...value, tab: v as InboxTab })}
+        value={value.assignee}
+        onValueChange={(v) => onChange({ ...value, assignee: v as InboxAssigneeFilter })}
       >
         <TabsList
           className="grid h-8 w-full"
           style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
         >
           {tabs.map((tab) => {
-            const meta = INBOX_TABS.find((t) => t.value === tab)!;
+            const meta = ASSIGNEE_TABS.find((t) => t.value === tab)!;
             const count = countFor[tab];
             return (
               <TabsTrigger key={tab} value={tab} className="gap-1 text-[11px]">

@@ -17,8 +17,8 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   experimental: {
     optimizePackageImports: ["@phosphor-icons/react", "lucide-react", "date-fns"],
-    cpus: 1,
     memoryBasedWorkersCount: true,
+    ...(process.env.NODE_ENV === "production" ? { cpus: 1 } : {}),
   },
   typescript: {
     ignoreBuildErrors: true,

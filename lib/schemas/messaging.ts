@@ -136,6 +136,7 @@ export const listConversationsQuerySchema = z.object({
    */
   exclude_finished: z.boolean().optional(),
   assigned_to: z.union([z.string().uuid(), z.literal("me"), z.literal("unassigned")]).optional(),
+  is_snoozed: z.boolean().optional(),
   channel_session_id: z.string().uuid().optional(),
   tag: conversationTagSchema.optional(),
   search: z.string().optional(),

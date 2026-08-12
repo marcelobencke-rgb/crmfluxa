@@ -106,6 +106,13 @@ export async function listConversationsHandler(
   if (q.exclude_finished) {
     query = query.not("status", "in", `(${CONVERSATION_TERMINAL_STATUSES.join(",")})`);
   }
+  
+  if (q.is_snoozed === true) {
+    query = query.not("snooze_until", "is", null);
+  } else if (q.is_snoozed === false) {
+    query = query.is("snooze_until", null);
+  }
+
   if (q.channel_session_id) query = query.eq("channel_session_id", q.channel_session_id);
   if (q.tag) query = query.contains("tags", [q.tag]); // tags @> array[tag] (GIN)
 

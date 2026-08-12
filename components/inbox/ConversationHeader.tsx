@@ -11,6 +11,17 @@ import { useCloseConversation } from "@/hooks/inbox/useCloseConversation";
 import { useResumeAiAttendance } from "@/hooks/inbox/useResumeAiAttendance";
 import { ReassignDialog } from "@/components/inbox/ReassignDialog";
 import { SnoozeButton } from "@/components/inbox/SnoozeButton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { ConversationWithContact } from "@/hooks/inbox/useConversationsRealtime";
 import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 
@@ -148,18 +159,27 @@ export function ConversationHeader({ conversation }: Props) {
           />
         )}
         {status !== "closed" && status !== "archived" && (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={close.isPending}
-            onClick={() => {
-              if (confirm("Fechar esta conversa?")) {
-                close.mutate({ conversation_id: conversation.id });
-              }
-            }}
-          >
-            Fechar
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="outline" disabled={close.isPending}>
+                Fechar
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Encerrar conversa?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja fechar este atendimento? A conversa será marcada como resolvida e sairá da fila.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => close.mutate({ conversation_id: conversation.id })}>
+                  Fechar conversa
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
         {/* `xl:hidden` porque a partir de 1280px o painel lateral de CRM entra
             na tela — e ele já tem um "Ver contato", para o MESMO contato, a um

@@ -23,6 +23,7 @@ import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { FilterBar } from "@/components/kanban/FilterBar";
 import { BulkActionBar } from "@/components/kanban/BulkActionBar";
 import { NewLeadDialog } from "@/components/kanban/NewLeadDialog";
+import { PipelineSelector, type PipelineItem } from "@/components/kanban/PipelineSelector";
 import { Button } from "@/components/ui/button";
 import { Plus } from "@/lib/ui/icons";
 import type { LeadFilters } from "@/lib/kanban/filters";
@@ -31,9 +32,13 @@ import { applyFilters, filtersFromParams, filtersToParams } from "@/lib/kanban/f
 export function PipelinePageClient({
   pipelineId,
   initialName,
+  pipelines,
+  podeGerenciar,
 }: {
   pipelineId: string;
   initialName: string;
+  pipelines: PipelineItem[];
+  podeGerenciar: boolean;
 }) {
   const { data, isLoading, error, pulses, realtimeStatus, seguranca } = useBoard(pipelineId);
   const router = useRouter();
@@ -75,9 +80,12 @@ export function PipelinePageClient({
       data-refetch-em={seguranca.ultimaVerificacao ?? ""}
     >
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {data?.pipeline.name ?? initialName}
-        </h1>
+        <PipelineSelector 
+          currentPipelineId={pipelineId}
+          currentPipelineName={data?.pipeline.name ?? initialName}
+          pipelines={pipelines}
+          podeGerenciar={podeGerenciar}
+        />
         <Button onClick={() => setNewOpen(true)} disabled={!data}>
           <Plus size={16} className="mr-2" /> Novo Lead
         </Button>

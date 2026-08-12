@@ -35,6 +35,7 @@ import {
   Users,
   UsersThree,
   WebhooksLogo,
+  SquaresFour,
 } from "@/lib/ui/icons";
 
 /**
@@ -52,7 +53,7 @@ import {
  * Doutrina: docs/doctrine/sistema-vivo.md — "por qual porta se chega até mim?"
  */
 
-export type NavGroupId = "atendimento" | "crm" | "ia" | "canais" | "analise" | "organizacao";
+export type NavGroupId = "visao_geral" | "atendimento" | "crm" | "ia" | "canais" | "analise" | "organizacao";
 
 export interface NavGroup {
   id: NavGroupId;
@@ -96,6 +97,7 @@ export interface NavDestination {
  * dava para chegar.
  */
 export const NAV_GROUPS: NavGroup[] = [
+  { id: "visao_geral", label: "Visão Geral" },
   { id: "atendimento", label: "Atendimento" },
   { id: "crm", label: "CRM" },
   { id: "ia", label: "Agente de IA", hub: { href: "/app/ai", label: "Ver tudo em IA" } },
@@ -133,6 +135,16 @@ export const GRUPO_NO_RODAPE: NavGroupId = "organizacao";
  * fechada e por isso não vira `minRole`.
  */
 export const NAV_DESTINATIONS: NavDestination[] = [
+  // ---- Visão Geral ----
+  {
+    href: "/app/dashboard",
+    label: "Painel",
+    description: "Métricas e visão geral da sua operação.",
+    icon: SquaresFour,
+    group: "visao_geral",
+    sidebar: true,
+  },
+
   // ---- Atendimento — onde o operador passa o dia ----
   {
     href: "/app/inbox",
@@ -158,13 +170,13 @@ export const NAV_DESTINATIONS: NavDestination[] = [
     label: "Respostas rápidas",
     description: "Scripts salvos para responder mais rápido, seus ou da equipe.",
     icon: FileText,
-    group: "atendimento",
-    sidebar: true,
+    group: "organizacao",
+    section: "Sua conta",
   },
 
   // ---- CRM — o funil ----
   {
-    href: "/app/kanban",
+    href: "/app/pipelines",
     label: "Kanban",
     description: "O quadro de cards: onde cada negócio está no funil.",
     icon: Kanban,
@@ -389,9 +401,9 @@ export const NAV_DESTINATIONS: NavDestination[] = [
     label: "Audit Log",
     description: "Quem fez o quê, quando — o histórico que não se apaga.",
     icon: ClockCounterClockwise,
-    group: "analise",
+    group: "organizacao",
+    section: "Dados e acesso",
     minRole: "manager",
-    sidebar: true,
   },
 
   // ---- Organização — conta, empresa, acesso ----
