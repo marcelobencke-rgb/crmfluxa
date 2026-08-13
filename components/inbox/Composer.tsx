@@ -57,7 +57,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
   }));
 
   const isDisabled =
-    disabled || !!blockedReason || send.isPending || upload.isPending || createNote.isPending;
+    disabled || !!blockedReason || upload.isPending;
 
   function autoresize() {
     const ta = taRef.current;
