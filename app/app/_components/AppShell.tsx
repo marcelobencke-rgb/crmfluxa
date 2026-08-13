@@ -27,7 +27,7 @@ export function AppShell({ sidebarCollapsed, children }: AppShellProps) {
       */}
       <div className={cn("flex h-full min-w-0 flex-1 flex-col transition-[margin] duration-200", sidebarCollapsed ? "ml-16" : "ml-60")}>
         <TopBar />
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex flex-1 flex-col min-h-0 overflow-auto p-6">{children}</main>
       </div>
     </div>
   );
