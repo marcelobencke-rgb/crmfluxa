@@ -11,7 +11,7 @@ interface AppShellProps {
 
 export function AppShell({ sidebarCollapsed, children }: AppShellProps) {
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex h-screen w-full overflow-hidden bg-background">
       <Sidebar collapsed={sidebarCollapsed} />
       {/*
         `min-w-0` é o que permite a coluna de conteúdo ENCOLHER. Um flex item
@@ -25,7 +25,7 @@ export function AppShell({ sidebarCollapsed, children }: AppShellProps) {
         cabeçalho, presente também em telas que não têm abas (a lista de agentes
         estoura 236px). Isolado ancestral por ancestral: é este o que decide.
       */}
-      <div className={cn("flex min-h-screen min-w-0 flex-1 flex-col transition-[margin] duration-200", sidebarCollapsed ? "ml-16" : "ml-60")}>
+      <div className={cn("flex h-full min-w-0 flex-1 flex-col transition-[margin] duration-200", sidebarCollapsed ? "ml-16" : "ml-60")}>
         <TopBar />
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>

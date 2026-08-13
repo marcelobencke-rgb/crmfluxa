@@ -134,6 +134,7 @@ async function request<T>(
         headers,
         body: serializedBody,
         credentials: "same-origin",
+        cache: "no-store",
         signal,
       });
 

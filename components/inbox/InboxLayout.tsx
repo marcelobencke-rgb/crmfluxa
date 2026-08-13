@@ -163,7 +163,7 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
   return (
     <div 
       className={cn(
-        "grid h-[calc(100dvh-3.5rem-2*var(--space-6))] w-full transition-all duration-300",
+        "grid h-full w-full transition-all duration-300",
         sidebarCollapsed
           ? (crmPanelCollapsed 
               ? "grid-cols-1 md:grid-cols-[300px_1fr]" 
