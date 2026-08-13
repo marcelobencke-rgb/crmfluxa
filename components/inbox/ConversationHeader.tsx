@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, ArrowRight } from "@/lib/ui/icons";
+import { Phone, ArrowRight, SidebarSimple } from "@/lib/ui/icons";
 import { useAuth } from "@/hooks/auth/AuthProvider";
 import { useClaimConversation } from "@/hooks/inbox/useClaimConversation";
 import { useReleaseConversation } from "@/hooks/inbox/useReleaseConversation";
@@ -27,6 +27,8 @@ import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 
 interface Props {
   conversation: ConversationWithContact;
+  crmPanelCollapsed?: boolean;
+  onToggleCrmPanel?: () => void;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -43,7 +45,7 @@ const STATUS_LABEL: Record<string, string> = {
   archived: "Arquivada",
 };
 
-export function ConversationHeader({ conversation }: Props) {
+export function ConversationHeader({ conversation, crmPanelCollapsed, onToggleCrmPanel }: Props) {
   const { user } = useAuth();
   const claim = useClaimConversation();
   const release = useReleaseConversation();
@@ -198,6 +200,17 @@ export function ConversationHeader({ conversation }: Props) {
               Ver contato
               <ArrowRight size={12} weight="regular" aria-hidden />
             </Link>
+          </Button>
+        )}
+        {onToggleCrmPanel && (
+          <Button
+            size="icon"
+            variant={crmPanelCollapsed ? "default" : "ghost"}
+            className="hidden h-8 w-8 xl:flex"
+            onClick={onToggleCrmPanel}
+            title={crmPanelCollapsed ? "Mostrar painel do contato" : "Ocultar painel do contato"}
+          >
+            <SidebarSimple size={16} weight={crmPanelCollapsed ? "bold" : "regular"} aria-hidden />
           </Button>
         )}
       </div>

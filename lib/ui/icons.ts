@@ -107,6 +107,7 @@ export {
   // atualização de versão
   ArrowCircleUp,
   // navegação agrupada (registro em lib/navigation/registry.ts)
+  SidebarSimple,
   Funnel,
   BookOpen,
   Key,

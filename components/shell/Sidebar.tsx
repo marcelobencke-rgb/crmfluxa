@@ -33,7 +33,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
   
   const isAnyItemActive = grupos.some((g) =>
     g.items.some((item) => pathname === item.href || pathname.startsWith(item.href + "/"))
-  ) || grupos.some((g) => g.hub && pathname === g.hub.href);
+  ) || grupos.some((g) => g.group.hub && pathname === g.group.hub.href);
 
   return (
     <aside

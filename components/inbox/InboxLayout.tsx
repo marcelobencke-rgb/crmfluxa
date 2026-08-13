@@ -43,6 +43,7 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
   });
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [crmPanelCollapsed, setCrmPanelCollapsed] = useState(false);
 
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId);
   const [visibleIds, setVisibleIds] = useState<string[]>([]);
@@ -164,8 +165,12 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
       className={cn(
         "grid h-[calc(100dvh-3.5rem-2*var(--space-6))] w-full transition-all duration-300",
         sidebarCollapsed
-          ? "grid-cols-1 md:grid-cols-[300px_1fr] xl:grid-cols-[272px_1fr_296px] 2xl:grid-cols-[300px_1fr_320px]"
-          : "grid-cols-[192px_1fr] md:grid-cols-[192px_300px_1fr] xl:grid-cols-[192px_272px_1fr_296px] 2xl:grid-cols-[192px_300px_1fr_320px]"
+          ? (crmPanelCollapsed 
+              ? "grid-cols-1 md:grid-cols-[300px_1fr]" 
+              : "grid-cols-1 md:grid-cols-[300px_1fr] xl:grid-cols-[272px_1fr_296px] 2xl:grid-cols-[300px_1fr_320px]")
+          : (crmPanelCollapsed
+              ? "grid-cols-[192px_1fr] md:grid-cols-[192px_300px_1fr]"
+              : "grid-cols-[192px_1fr] md:grid-cols-[192px_300px_1fr] xl:grid-cols-[192px_272px_1fr_296px] 2xl:grid-cols-[192px_300px_1fr_320px]")
       )}
     >
       <InboxSidebar
@@ -197,7 +202,11 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
       <div className="flex h-full min-h-0 flex-col">
         {selectedConversation ? (
           <>
-            <ConversationHeader conversation={selectedConversation} />
+            <ConversationHeader 
+              conversation={selectedConversation}
+              crmPanelCollapsed={crmPanelCollapsed}
+              onToggleCrmPanel={() => setCrmPanelCollapsed(v => !v)}
+            />
             <div className="min-h-0 flex-1 overflow-hidden">
               <ChatThread conversationId={selectedConversation.id} />
             </div>
@@ -221,9 +230,11 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
         )}
       </div>
 
-      <div className="hidden h-full min-h-0 xl:block">
-        <CRMSidePanel conversation={selectedConversation} />
-      </div>
+      {!crmPanelCollapsed && (
+        <div className="hidden h-full min-h-0 xl:block">
+          <CRMSidePanel conversation={selectedConversation} />
+        </div>
+      )}
 
       <InboxKeyboardShortcuts
         visibleIds={visibleIds}
