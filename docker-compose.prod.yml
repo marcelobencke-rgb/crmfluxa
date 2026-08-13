@@ -20,6 +20,8 @@ services:
     pull_policy: ${APP_PULL_POLICY:-always}
     restart: unless-stopped
     env_file: .env
+    environment:
+      WAHA_API_BASE_URL: http://waha:3000
     depends_on:
       srh:
         condition: service_started
