@@ -43,7 +43,7 @@ export function InboxSidebar({ value, onChange, collapsed, onToggleCollapse }: P
   const setStatus = (status: InboxStatusFilter) => onChange({ ...value, status });
 
   return (
-    <div className="flex w-48 flex-col bg-background h-full">
+    <div className="flex w-48 flex-col bg-background flex-1 min-h-0">
       <div className="flex items-center justify-between p-3">
         <span className="font-semibold text-sm">Status</span>
         <Button variant="ghost" size="icon" onClick={onToggleCollapse} className="h-8 w-8">

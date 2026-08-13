@@ -326,14 +326,14 @@ export function CRMSidePanel({ conversation }: Props) {
 
   if (!conversation) {
     return (
-      <aside className="flex h-full items-center justify-center border-l border-border p-4 text-center text-xs text-muted-foreground">
+      <aside className="flex flex-1 min-h-0 items-center justify-center border-l border-border p-4 text-center text-xs text-muted-foreground">
         Selecione uma conversa para ver detalhes do contato.
       </aside>
     );
   }
 
   return (
-    <aside className="flex h-full flex-col gap-4 overflow-y-auto border-l border-border bg-background p-4">
+    <aside className="flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto border-l border-border bg-background p-4">
       <section>
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Contato

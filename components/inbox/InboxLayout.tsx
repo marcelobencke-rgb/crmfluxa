@@ -180,7 +180,7 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
         onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
       />
 
-      <div className="flex h-full min-h-0 flex-col border-r border-border">
+      <div className="flex min-h-0 flex-col border-r border-border">
         <InboxFilters 
           value={filterValue} 
           onChange={setFilterValue} 
@@ -199,7 +199,7 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
         </div>
       </div>
 
-      <div className="flex h-full min-h-0 flex-col">
+      <div className="flex min-h-0 flex-col">
         {selectedConversation ? (
           <>
             <ConversationHeader 
@@ -207,7 +207,7 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
               crmPanelCollapsed={crmPanelCollapsed}
               onToggleCrmPanel={() => setCrmPanelCollapsed(v => !v)}
             />
-            <div className="min-h-0 flex-1 overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-hidden flex flex-col">
               <ChatThread conversationId={selectedConversation.id} />
             </div>
             <RetentionNotice conversationId={selectedConversation.id} />
@@ -231,7 +231,7 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
       </div>
 
       {!crmPanelCollapsed && (
-        <div className="hidden h-full min-h-0 xl:block">
+        <div className="hidden min-h-0 xl:flex xl:flex-col">
           <CRMSidePanel conversation={selectedConversation} />
         </div>
       )}
