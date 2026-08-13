@@ -15,7 +15,7 @@ import {
   type FetchedMedia,
 } from "@/lib/messaging/media/types";
 
-const FETCH_TIMEOUT_MS = 30_000;
+const FETCH_TIMEOUT_MS = 5_000;
 
 export async function fetchWahaMedia(
   mediaUrl: string,

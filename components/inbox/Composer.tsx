@@ -70,25 +70,17 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
     const body = text.trim();
     if (!body || isDisabled) return;
     if (mode === "note") {
+      setText("");
+      requestAnimationFrame(() => autoresize());
       createNote.mutate(
         { conversation_id: conversationId, body },
-        {
-          onSuccess: () => {
-            setText("");
-            requestAnimationFrame(() => autoresize());
-          },
-        },
       );
       return;
     }
+    setText("");
+    requestAnimationFrame(() => autoresize());
     send.mutate(
       { conversation_id: conversationId, body, type: "text" },
-      {
-        onSuccess: () => {
-          setText("");
-          requestAnimationFrame(() => autoresize());
-        },
-      },
     );
   }
 
