@@ -26,6 +26,7 @@ import type { Stage } from "@/lib/kanban/types";
 import { createLeadSchema, type CreateLeadInput } from "@/lib/schemas/leads";
 import { parseReaisToCents } from "@/lib/money";
 import { EcoDoValor } from "./EcoDoValor";
+import { ContactSelector } from "@/components/contacts/ContactSelector";
 
 interface FormShape {
   title: string;
@@ -34,6 +35,7 @@ interface FormShape {
   valueReais: string;
   tagsRaw: string;
   expected_close_date: string;
+  contact_id: string | null;
 }
 
 interface Props {
@@ -62,6 +64,7 @@ export function NewLeadDialog({ open, onOpenChange, pipelineId, stages, contactI
       valueReais: "",
       tagsRaw: "",
       expected_close_date: "",
+      contact_id: contactId ?? null,
     },
   });
 
@@ -96,7 +99,7 @@ export function NewLeadDialog({ open, onOpenChange, pipelineId, stages, contactI
       source: "manual",
       tags,
     };
-    if (contactId) payload.contact_id = contactId;
+    if (values.contact_id) payload.contact_id = values.contact_id;
     if (values.description.trim()) payload.description = values.description.trim();
     if (valueCents !== null) payload.value_cents = valueCents;
     if (values.expected_close_date) payload.expected_close_date = values.expected_close_date;
@@ -118,6 +121,7 @@ export function NewLeadDialog({ open, onOpenChange, pipelineId, stages, contactI
         valueReais: "",
         tagsRaw: "",
         expected_close_date: "",
+        contact_id: contactId ?? null,
       });
       onOpenChange(false);
     } catch {
@@ -129,7 +133,7 @@ export function NewLeadDialog({ open, onOpenChange, pipelineId, stages, contactI
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto scrollbar-hide">
         <DialogHeader>
           <DialogTitle>Novo Lead</DialogTitle>
           <DialogDescription>
@@ -143,6 +147,14 @@ export function NewLeadDialog({ open, onOpenChange, pipelineId, stages, contactI
               id="title"
               placeholder="Ex: Pedido Maria — combo presente"
               {...form.register("title", { required: true, minLength: 2 })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Contato (Opcional)</Label>
+            <ContactSelector
+              value={form.watch("contact_id")}
+              onChange={(v) => form.setValue("contact_id", v)}
             />
           </div>
 

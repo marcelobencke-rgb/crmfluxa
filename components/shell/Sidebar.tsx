@@ -30,6 +30,10 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
   const rodape = NAV_GROUPS.find((g) => g.id === GRUPO_NO_RODAPE)?.hub;
 
   const brand = branding();
+  
+  const isAnyItemActive = grupos.some((g) =>
+    g.items.some((item) => pathname === item.href || pathname.startsWith(item.href + "/"))
+  ) || grupos.some((g) => g.hub && pathname === g.hub.href);
 
   return (
     <aside
@@ -140,16 +144,16 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
             href={rodape.href}
             prefetch={true}
             title={collapsed ? rodape.label : undefined}
-            aria-current={pathname.startsWith(rodape.href) ? "page" : undefined}
+            aria-current={pathname.startsWith(rodape.href) && !isAnyItemActive ? "page" : undefined}
             className={cn(
               "mb-1 flex items-center gap-3 rounded-md px-3 py-1.5 text-sm transition-colors",
-              pathname.startsWith(rodape.href)
+              pathname.startsWith(rodape.href) && !isAnyItemActive
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
               collapsed && "justify-center px-2",
             )}
           >
-            <Gear size={18} aria-hidden />
+            <Gear size={18} weight={pathname.startsWith(rodape.href) && !isAnyItemActive ? "fill" : "regular"} aria-hidden />
             {!collapsed && <span className="truncate">{rodape.label}</span>}
           </Link>
         )}

@@ -19,6 +19,7 @@ import type { Lead } from "@/lib/types/leads";
 import { updateLeadSchema, type UpdateLeadInput } from "@/lib/schemas/leads";
 import { parseReaisToCents } from "@/lib/money";
 import { EcoDoValor } from "./EcoDoValor";
+import { ContactSelector } from "@/components/contacts/ContactSelector";
 
 interface FormShape {
   title: string;
@@ -26,6 +27,7 @@ interface FormShape {
   valueReais: string;
   tagsRaw: string;
   expected_close_date: string;
+  contact_id: string | null;
 }
 
 interface Props {
@@ -50,6 +52,7 @@ export function EditLeadDialog({ open, onOpenChange, lead, pipelineId }: Props) 
       valueReais: centsToReais(lead.value_cents),
       tagsRaw: (lead.tags ?? []).join(", "),
       expected_close_date: lead.expected_close_date ?? "",
+      contact_id: lead.contact_id ?? null,
     },
   });
 
@@ -61,6 +64,7 @@ export function EditLeadDialog({ open, onOpenChange, lead, pipelineId }: Props) 
         valueReais: centsToReais(lead.value_cents),
         tagsRaw: (lead.tags ?? []).join(", "),
         expected_close_date: lead.expected_close_date ?? "",
+        contact_id: lead.contact_id ?? null,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -88,6 +92,7 @@ export function EditLeadDialog({ open, onOpenChange, lead, pipelineId }: Props) 
       value_cents: valueCents,
       tags,
       expected_close_date: values.expected_close_date || null,
+      contact_id: values.contact_id,
     };
 
     const parsed = updateLeadSchema.safeParse(patch);
@@ -111,7 +116,7 @@ export function EditLeadDialog({ open, onOpenChange, lead, pipelineId }: Props) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto scrollbar-hide">
         <DialogHeader>
           <DialogTitle>Editar lead</DialogTitle>
           <DialogDescription>
@@ -125,6 +130,14 @@ export function EditLeadDialog({ open, onOpenChange, lead, pipelineId }: Props) 
             <Input
               id="title"
               {...form.register("title", { required: true, minLength: 2 })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Contato (Opcional)</Label>
+            <ContactSelector
+              value={form.watch("contact_id")}
+              onChange={(v) => form.setValue("contact_id", v)}
             />
           </div>
 

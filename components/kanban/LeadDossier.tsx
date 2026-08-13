@@ -8,7 +8,10 @@ import { LeadFieldsForm } from "./LeadFieldsForm";
 import { ScoreSlot } from "./ScoreSlot";
 import { LeadTimeline } from "./LeadTimeline";
 import { OwnerBadge } from "./OwnerBadge";
+import { OwnerSelector } from "./OwnerSelector";
 import { resolveLeadOwner } from "@/lib/kanban/owner";
+import { useEditLead } from "@/hooks/kanban/useUpdateLead";
+import { toast } from "sonner";
 import { NextActionBanner } from "./NextActionSlot";
 
 interface Props {
@@ -58,97 +61,112 @@ export function LeadDossier({
   const timeline = useLeadTimeline(open ? lead.id : null, lead.contact_id);
   const owner = resolveLeadOwner(lead, ownerNames);
   const score = lead.score ?? null;
+  const edit = useEditLead(pipelineId);
+
+  async function handleOwnerChange(kind: "user" | "ai" | null, id: string | null) {
+    let owner_user_id = null;
+    let owner_agent_id = null;
+
+    if (kind === "user") owner_user_id = id;
+    if (kind === "ai") owner_agent_id = id;
+
+    try {
+      await edit.mutateAsync({
+        leadId: lead.id,
+        patch: { owner_user_id, owner_agent_id },
+      });
+      toast.success("Responsável atualizado");
+    } catch {
+      // toast de erro vem do hook ou client
+    }
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-md"
-        // Observável pelo mesmo motivo do board: "a assinatura morreu" e "nada
-        // aconteceu" têm a mesma aparência, que é silêncio.
+        className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-4xl"
         data-realtime-status={timeline.realtimeStatus.toLowerCase()}
-        // Observável como no board: "a entrega morreu" e "nada aconteceu"
-        // têm a mesma aparência, e no dossiê a segunda é ainda mais crível —
-        // negócio sem novidade é um estado normal.
         data-refetch-divergencias={timeline.seguranca.divergencias}
       >
-        <SheetHeader className="pb-3">
-          <SheetTitle className="text-base leading-6">{lead.title}</SheetTitle>
-        </SheetHeader>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_350px] gap-6 flex-1">
+          {/* COLUNA ESQUERDA: Dados Principais */}
+          <div className="flex flex-col gap-0">
+            <SheetHeader className="pb-3">
+              <SheetTitle className="text-base leading-6">{lead.title}</SheetTitle>
+            </SheetHeader>
 
-        {/* ① cabeçalho vivo */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border pb-3 text-xs">
-          <span className="font-medium tabular-nums text-text">
-            {formatBRL(lead.value_cents, lead.currency)}
-          </span>
-          <span className="text-text-muted">{stageName}</span>
-          <OwnerBadge
-            ownerKind={owner.kind}
-            ownerName={owner.name}
-            agentVersion={owner.agentVersion}
-          />
-          {score && (
-            // O MESMO componente do card, não uma cópia do medidor.
-            // "Superfície nova herda as decisões da antiga" só vale como
-            // mecanismo: herdar por cópia é como as duas listas do evidence —
-            // funciona hoje e diverge no mês em que alguém mudar um dos dois.
-            // De brinde, o rótulo honesto da âncora ("registro que sustenta",
-            // nunca "momento da conversa") vem junto, sem eu reescrever nada.
-            <ScoreSlot
-              probability={score.probability}
-              band={score.band}
-              reason={score.reason}
-              factors={score.factors.slice(0, 3)}
-            />
-          )}
+            {/* ① cabeçalho vivo */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border pb-3 text-xs">
+              <span className="font-medium tabular-nums text-text">
+                {formatBRL(lead.value_cents, lead.currency)}
+              </span>
+              <span className="text-text-muted">{stageName}</span>
+              <OwnerSelector
+                currentKind={owner.kind}
+                currentName={owner.name}
+                agentVersion={owner.agentVersion}
+                onChange={handleOwnerChange}
+                disabled={edit.isPending}
+              />
+              {score && (
+                <ScoreSlot
+                  probability={score.probability}
+                  band={score.band}
+                  reason={score.reason}
+                  factors={score.factors.slice(0, 3)}
+                />
+              )}
 
-          <button
-            type="button"
-            onClick={() => campos.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-            className="ml-auto text-text-muted underline-offset-2 hover:text-text hover:underline"
-          >
-            Editar campos
-          </button>
-        </div>
+              <button
+                type="button"
+                onClick={() => campos.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className="ml-auto text-text-muted underline-offset-2 hover:text-text hover:underline"
+              >
+                Editar campos
+              </button>
+            </div>
 
-        {lead.next_action && (
-          <NextActionBanner
-            label={lead.next_action.label}
-            leadId={lead.id}
-            approvedSeq={lead.next_action.seq}
-            pipelineId={pipelineId}
-          />
-        )}
+            {lead.next_action && (
+              <div className="pt-3">
+                <NextActionBanner
+                  label={lead.next_action.label}
+                  leadId={lead.id}
+                  approvedSeq={lead.next_action.seq}
+                  pipelineId={pipelineId}
+                />
+              </div>
+            )}
 
-        {/* O score NÃO aparece na timeline: recálculo é telemetria e não emite
-            atividade (silêncio para telemetria, pulso para mudança de estado).
-            Sem esta linha, quem visse o número mudando no cabeçalho e nunca na
-            timeline concluiria que a timeline está incompleta. */}
-        {score?.at && (
-          <p className="pt-2 text-[11px] text-text-muted">
-            Probabilidade recalculada automaticamente · {new Date(score.at).toLocaleString("pt-BR")}
-          </p>
-        )}
+            {score?.at && (
+              <p className="pt-2 text-[11px] text-text-muted">
+                Probabilidade recalculada automaticamente · {new Date(score.at).toLocaleString("pt-BR")}
+              </p>
+            )}
 
-        {/* ② timeline */}
-        <section className="flex-1 py-3">
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
-            Linha do tempo
-          </h3>
-          <LeadTimeline
-            itens={timeline.itens}
-            chegouAoVivo={timeline.chegouAoVivo}
-            isLoading={timeline.isLoading}
-            isError={timeline.isError}
-          />
-        </section>
+            {/* ③ campos, por último */}
+            <div ref={campos} className="pt-6">
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
+                Dados do negócio
+              </h3>
+              <LeadFieldsForm lead={lead} pipelineId={pipelineId} />
+            </div>
+          </div>
 
-        {/* ③ campos, por último */}
-        <div ref={campos} className="border-t border-border pt-3">
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
-            Dados do negócio
-          </h3>
-          <LeadFieldsForm lead={lead} pipelineId={pipelineId} />
+          {/* COLUNA DIREITA: Timeline */}
+          <div className="flex flex-col border-border md:border-l md:pl-6 pt-6 md:pt-0">
+            <section className="flex-1">
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
+                Linha do tempo
+              </h3>
+              <LeadTimeline
+                itens={timeline.itens}
+                chegouAoVivo={timeline.chegouAoVivo}
+                isLoading={timeline.isLoading}
+                isError={timeline.isError}
+              />
+            </section>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

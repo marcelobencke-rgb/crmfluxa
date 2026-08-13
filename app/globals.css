@@ -362,3 +362,14 @@
     border-color: var(--color-accent);
   }
 }
+
+/* Esconde barra de rolagem mantendo a funcionalidade */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+}
