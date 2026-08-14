@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
@@ -17,6 +18,13 @@ export default async function AutomationsPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Automações</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Crie regras para automatizar seu funil, aplicar tags e disparar mensagens de forma automática.
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Procurando o rodízio automático entre atendentes?{" "}
+          <Link href="/app/settings/atendimento" className="underline underline-offset-2 hover:text-foreground">
+            Veja Distribuição de atendimento
+          </Link>
+          .
         </p>
       </header>
       <AutomationsClient />

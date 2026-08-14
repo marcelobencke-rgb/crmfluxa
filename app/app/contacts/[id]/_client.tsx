@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ShieldCheck, PencilSimple } from "@/lib/ui/icons";
@@ -16,6 +17,7 @@ import { EditContactDialog } from "@/components/contacts/EditContactDialog";
 import { AnonymizeDialog } from "@/components/contacts/AnonymizeDialog";
 import { PropostasDeDado } from "@/components/contacts/PropostasDeDado";
 import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
+import { origemAmigavel } from "@/lib/contacts/origem-amigavel";
 
 interface Props {
   contactId: string;
@@ -26,6 +28,14 @@ export function ContactDetailClient({ contactId }: Props) {
   const { user, activeOrg } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const [anonOpen, setAnonOpen] = useState(false);
+  // Atalho pro dossiê do lead (LeadDossier) linkar direto na aba certa em vez
+  // de largar o admin na Visão geral e esperar que ele ache a aba sozinho.
+  // Só honra ?tab=lgpd pra quem PODE ver a aba — ela é isAdmin-only mais
+  // abaixo, e um link velho de quem perdeu o papel não pode abrir aba oculta.
+  const podeVerLgpd =
+    user.is_platform_admin || (!!activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.admin);
+  const searchParams = useSearchParams();
+  const tabInicial = podeVerLgpd && searchParams.get("tab") === "lgpd" ? "lgpd" : "overview";
 
   if (q.isLoading) {
     return (
@@ -47,14 +57,13 @@ export function ContactDetailClient({ contactId }: Props) {
   }
 
   const contact = q.data.data;
-  const isAdmin =
-    user.is_platform_admin ||
-    (activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.admin);
+  const isAdmin = podeVerLgpd;
 
   // Uma decisão, um lugar (lib/contacts/rotulo-do-contato.ts). Esta tela era
   // uma das DUAS que ignoravam o telefone: contato com número e sem nome
   // aparecia como "Sem nome" aqui e com o número no inbox.
   const displayName = rotuloDoContato(contact);
+  const origem = origemAmigavel(contact.source_metadata);
 
   return (
     <div className="space-y-4 p-6">
@@ -109,7 +118,7 @@ export function ContactDetailClient({ contactId }: Props) {
         />
       )}
 
-      <Tabs defaultValue="overview">
+      <Tabs defaultValue={tabInicial}>
         <TabsList>
           <TabsTrigger value="overview">Visão geral</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
@@ -137,7 +146,10 @@ export function ContactDetailClient({ contactId }: Props) {
               </div>
               <div>
                 <dt className="text-xs uppercase text-muted-foreground">Origem</dt>
-                <dd className="mt-1">{contact.source}</dd>
+                <dd className="mt-1">
+                  {contact.source}
+                  {origem && <span className="text-muted-foreground"> · {origem}</span>}
+                </dd>
               </div>
               <div>
                 <dt className="text-xs uppercase text-muted-foreground">Última atividade</dt>

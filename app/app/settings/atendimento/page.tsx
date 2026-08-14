@@ -16,6 +16,7 @@
  * Gate = manager+, que é o que a matriz da spec 13 §4 dá para
  * "atendimento/routing" — a mesma linha cobre as duas chaves.
  */
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
@@ -56,6 +57,13 @@ export default async function AtendimentoSettingsPage() {
           Quem recebe cada cliente novo, e o que cada atendente enxerga. As duas decisões
           andam juntas: distribuir sem restringir deixa todo mundo vendo a carteira do
           colega; restringir sem distribuir deixa o funil de cada um vazio.
+        </p>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          Procurando regras automáticas de funil, tags ou mensagens?{" "}
+          <Link href="/app/automations" className="underline underline-offset-2 hover:text-foreground">
+            Veja Automações
+          </Link>
+          .
         </p>
       </header>
 

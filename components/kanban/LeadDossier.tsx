@@ -12,7 +12,9 @@ import { OwnerSelector } from "./OwnerSelector";
 import { resolveLeadOwner } from "@/lib/kanban/owner";
 import { useEditLead } from "@/hooks/kanban/useUpdateLead";
 import { useActiveConversation } from "@/hooks/contacts/useActiveConversation";
-import { ChatCircle } from "@/lib/ui/icons";
+import { useAuth } from "@/hooks/auth/AuthProvider";
+import { ROLE_RANK } from "@/lib/auth/types";
+import { ChatCircle, ScalesSimple } from "@/lib/ui/icons";
 import Link from "next/link";
 import { toast } from "sonner";
 import { NextActionBanner } from "./NextActionSlot";
@@ -66,6 +68,11 @@ export function LeadDossier({
   const owner = resolveLeadOwner(lead, ownerNames);
   const score = lead.score ?? null;
   const edit = useEditLead(pipelineId);
+  const { user, activeOrg } = useAuth();
+  // Mesmo gate da aba LGPD em app/app/contacts/[id]/_client.tsx — o link só
+  // aparece pra quem consegue efetivamente abrir a aba do outro lado.
+  const podeVerLgpd =
+    user.is_platform_admin || (!!activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.admin);
 
   async function handleOwnerChange(kind: "user" | "ai" | null, id: string | null) {
     let owner_user_id = null;
@@ -130,6 +137,15 @@ export function LeadDossier({
                   >
                     <ChatCircle size={14} />
                     Ver conversa
+                  </Link>
+                )}
+                {podeVerLgpd && lead.contact_id && (
+                  <Link
+                    href={`/app/contacts/${lead.contact_id}?tab=lgpd`}
+                    className="flex items-center gap-1.5 text-text-muted underline-offset-2 hover:text-text hover:underline"
+                  >
+                    <ScalesSimple size={14} />
+                    LGPD
                   </Link>
                 )}
                 <button
