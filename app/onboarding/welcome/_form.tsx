@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { NICHE_TEMPLATES, type NicheOrGeneric } from "@/lib/pipelines/niche-templates";
 
 const TIMEZONES = [
   "America/Sao_Paulo",
@@ -35,6 +36,7 @@ const TIMEZONES = [
 export function WelcomeForm({ defaultOrgName }: { defaultOrgName: string }) {
   const [displayName, setDisplayName] = useState(defaultOrgName);
   const [timezone, setTimezone] = useState("America/Sao_Paulo");
+  const [niche, setNiche] = useState<NicheOrGeneric>("generic");
   const [accepted, setAccepted] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -85,6 +87,28 @@ export function WelcomeForm({ defaultOrgName }: { defaultOrgName: string }) {
           </SelectContent>
         </Select>
         <input type="hidden" name="timezone" value={timezone} />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="niche">Qual é o seu negócio?</Label>
+        <Select value={niche} onValueChange={(v) => setNiche(v as NicheOrGeneric)}>
+          <SelectTrigger id="niche">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="generic">Prefiro configurar depois</SelectItem>
+            {NICHE_TEMPLATES.map((n) => (
+              <SelectItem key={n.id} value={n.id}>
+                {n.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <input type="hidden" name="niche" value={niche} />
+        <p className="text-xs text-muted-foreground">
+          Ajusta as etapas do seu funil pra combinar com o seu negócio. Só funciona agora, antes
+          de você mexer no funil — depois disso é só pela tela de Funis.
+        </p>
       </div>
 
       <label className="flex items-start gap-2 text-sm">

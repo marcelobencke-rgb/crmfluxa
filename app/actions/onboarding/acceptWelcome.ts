@@ -8,7 +8,10 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
+import { logger } from "@/lib/logger";
 import { welcomeSchema } from "@/lib/schemas/onboarding";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { aplicarTemplateDeNicho } from "@/lib/pipelines/apply-niche-template";
 import { requireOnboardingCtx, patchOnboardingState, OnboardingError } from "./_shared";
 
 export type AcceptWelcomeResult =
@@ -28,6 +31,7 @@ export async function acceptWelcome(formData: FormData): Promise<AcceptWelcomeRe
     display_name: String(formData.get("display_name") ?? "").trim(),
     timezone: String(formData.get("timezone") ?? "America/Sao_Paulo"),
     accepted_terms_at: new Date().toISOString(),
+    niche: String(formData.get("niche") ?? "generic"),
   };
 
   let input;
@@ -48,6 +52,7 @@ export async function acceptWelcome(formData: FormData): Promise<AcceptWelcomeRe
           accepted_at: input.accepted_terms_at ?? new Date().toISOString(),
           timezone: input.timezone,
           display_name: input.display_name,
+          niche: input.niche,
         },
       },
       { display_name: input.display_name, timezone: input.timezone },
@@ -57,13 +62,48 @@ export async function acceptWelcome(formData: FormData): Promise<AcceptWelcomeRe
     throw err;
   }
 
+  // Nicho fica gravado em `settings.niche` (config atual, consultável sem
+  // interpretar o histórico do wizard) E tenta reconfigurar o funil — a
+  // guarda de `aplicarTemplateDeNicho` decide sozinha se é seguro. Erro aqui
+  // NUNCA derruba o onboarding: a pior consequência é o funil continuar
+  // genérico, o que já era o estado antes desta feature existir.
+  let templateApplied = false;
+  try {
+    const admin = createAdminClient();
+    const { data: orgRow } = await admin
+      .from("organizations")
+      .select("settings")
+      .eq("id", ctx.orgId)
+      .maybeSingle();
+    const currentSettings = (orgRow?.settings as Record<string, unknown> | null) ?? {};
+    await admin
+      .from("organizations")
+      .update({ settings: { ...currentSettings, niche: input.niche } })
+      .eq("id", ctx.orgId);
+
+    if (input.niche !== "generic") {
+      const resultado = await aplicarTemplateDeNicho(admin, ctx.orgId, input.niche);
+      templateApplied = resultado.applied;
+    }
+  } catch (err) {
+    logger.error("[acceptWelcome] aplicar template de nicho falhou (não bloqueante)", {
+      organization_id: ctx.orgId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
   await audit({
     action: "onboarding.welcome_completed",
     actorUserId: ctx.userId,
     organizationId: ctx.orgId,
     resourceType: "organization",
     resourceId: ctx.orgId,
-    metadata: { display_name: input.display_name, timezone: input.timezone },
+    metadata: {
+      display_name: input.display_name,
+      timezone: input.timezone,
+      niche: input.niche,
+      niche_template_applied: templateApplied,
+    },
   });
 
   redirect("/onboarding/connect-whatsapp");

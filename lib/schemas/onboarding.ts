@@ -4,10 +4,18 @@
  */
 import { z } from "zod";
 
+import { NICHE_IDS } from "@/lib/pipelines/niche-templates";
+
 export const welcomeSchema = z.object({
   display_name: z.string().min(2).max(120),
   timezone: z.string().min(1).default("America/Sao_Paulo"),
   accepted_terms_at: z.string().datetime().optional(),
+  /**
+   * "generic" (padrão) = não mexe no funil — "prefiro configurar depois" é
+   * escolha válida, não ausência de dado. Só reconfigura o funil quando a
+   * guarda de `lib/pipelines/apply-niche-template.ts` deixar.
+   */
+  niche: z.enum(NICHE_IDS).default("generic"),
 });
 export type WelcomeInput = z.infer<typeof welcomeSchema>;
 
@@ -40,6 +48,7 @@ export const onboardingStateSchema = z.object({
       accepted_at: z.string(),
       timezone: z.string(),
       display_name: z.string(),
+      niche: z.string().optional(),
     })
     .optional(),
   whatsapp: z
