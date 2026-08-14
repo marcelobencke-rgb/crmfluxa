@@ -1,5 +1,4 @@
 "use client";
-import { useRef } from "react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useLeadTimeline } from "@/hooks/leads/useLeadTimeline";
@@ -46,8 +45,7 @@ function formatBRL(cents: number | null, currency: string | null): string {
  *
  * A ORDEM É a mudança em relação ao diálogo de edição: quem abre um lead quer
  * primeiro saber O QUE ACONTECEU, e só depois mexer. O formulário íntegro fica
- * por último, e o cabeçalho tem um atalho para ele — ordem preservada, custo de
- * rolagem resolvido.
+ * por último.
  *
  * SALVAR NÃO FECHA. Quem edita precisa ver a atividade que acabou de gerar
  * entrar na timeline; fechar esconderia o registro justamente de quem o
@@ -62,7 +60,6 @@ export function LeadDossier({
   stageName,
   ownerNames,
 }: Props) {
-  const campos = useRef<HTMLDivElement | null>(null);
   const timeline = useLeadTimeline(open ? lead.id : null, lead.contact_id);
   const activeConversation = useActiveConversation(open ? lead.contact_id : null);
   const owner = resolveLeadOwner(lead, ownerNames);
@@ -148,13 +145,6 @@ export function LeadDossier({
                     LGPD
                   </Link>
                 )}
-                <button
-                  type="button"
-                  onClick={() => campos.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                  className="text-text-muted underline-offset-2 hover:text-text hover:underline"
-                >
-                  Editar campos
-                </button>
               </div>
             </div>
 
@@ -176,7 +166,7 @@ export function LeadDossier({
             )}
 
             {/* ③ campos, por último */}
-            <div ref={campos} className="pt-6">
+            <div className="pt-6">
               <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
                 Dados do negócio
               </h3>
