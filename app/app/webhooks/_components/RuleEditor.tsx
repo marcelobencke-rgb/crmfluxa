@@ -30,18 +30,27 @@ import { usePipelines, usePipelineStages } from "@/hooks/webhooks/useWebhookSour
 import { TRIGGER_LABELS, ACTION_LABELS, type TriggerEvent, type ActionType } from "./labels";
 import { ActionConfigForm, defaultActionConfig, type ActionItem } from "./ActionConfigForm";
 
+export type Op = "eq" | "neq" | "contains";
+
+export interface ConditionRow {
+  field: string;
+  op: Op;
+  value: string;
+}
+
+/** Pré-preenche uma automação NOVA (nunca edição) — usado pelos modelos prontos. */
+export interface RuleTemplate {
+  name: string;
+  trigger_event: TriggerEvent;
+  conditions: ConditionRow[];
+  actions: ActionItem[];
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   rule: AutomationRuleRow | null;
-}
-
-type Op = "eq" | "neq" | "contains";
-
-interface ConditionRow {
-  field: string;
-  op: Op;
-  value: string;
+  template?: RuleTemplate | null;
 }
 
 interface CuratedField {
@@ -91,7 +100,7 @@ function emptyCondition(): ConditionRow {
   return { field: "", op: "eq", value: "" };
 }
 
-export function RuleEditor({ open, onOpenChange, rule }: Props) {
+export function RuleEditor({ open, onOpenChange, rule, template }: Props) {
   const isEdit = !!rule;
   const [name, setName] = React.useState("");
   const [triggerEvent, setTriggerEvent] = React.useState<TriggerEvent | "">("");
@@ -112,15 +121,17 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
 
   React.useEffect(() => {
     if (!open) return;
-    setName(rule?.name ?? "");
-    setTriggerEvent((rule?.trigger_event as TriggerEvent) ?? "");
-    setConditions(
-      rule?.conditions.map((c) => ({ field: c.field, op: c.op, value: c.value })) ?? [],
-    );
+    // `template` só se aplica quando NÃO há `rule` — editar uma automação
+    // existente nunca é sobrescrito por um modelo (o `rule` já venceu antes
+    // de chegar aqui, mas o `??` deixa a prioridade explícita no código).
+    const base = rule ?? template ?? null;
+    setName(base?.name ?? "");
+    setTriggerEvent((base?.trigger_event as TriggerEvent) ?? "");
+    setConditions(base?.conditions.map((c) => ({ field: c.field, op: c.op, value: c.value })) ?? []);
     setAdvancedRows({});
-    setActions((rule?.actions as ActionItem[] | undefined) ?? []);
+    setActions((base?.actions as ActionItem[] | undefined) ?? []);
     setErrors({});
-  }, [open, rule]);
+  }, [open, rule, template]);
 
   const curatedFields = triggerEvent ? CURATED_FIELDS[triggerEvent] : [];
 

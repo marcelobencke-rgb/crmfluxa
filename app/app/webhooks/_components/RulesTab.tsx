@@ -27,7 +27,8 @@ import {
   type AutomationRuleRow,
 } from "@/hooks/webhooks/useAutomationRules";
 import { TRIGGER_LABELS, type TriggerEvent } from "./labels";
-import { RuleEditor } from "./RuleEditor";
+import { RuleEditor, type RuleTemplate } from "./RuleEditor";
+import { TemplatePicker } from "./TemplatePicker";
 
 const RULES_QUERY_KEY = ["automation-rules"];
 
@@ -44,6 +45,8 @@ export function RulesTab() {
   const [editorOpen, setEditorOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<AutomationRuleRow | null>(null);
   const [deleting, setDeleting] = React.useState<AutomationRuleRow | null>(null);
+  const [pickerOpen, setPickerOpen] = React.useState(false);
+  const [template, setTemplate] = React.useState<RuleTemplate | null>(null);
 
   const rules = data?.data ?? [];
 
@@ -62,11 +65,20 @@ export function RulesTab() {
 
   const openCreate = () => {
     setEditing(null);
+    setTemplate(null);
     setEditorOpen(true);
   };
 
   const openEdit = (rule: AutomationRuleRow) => {
     setEditing(rule);
+    setTemplate(null);
+    setEditorOpen(true);
+  };
+
+  const openFromTemplate = (t: RuleTemplate) => {
+    setEditing(null);
+    setTemplate(t);
+    setPickerOpen(false);
     setEditorOpen(true);
   };
 
@@ -91,19 +103,28 @@ export function RulesTab() {
             <p className="text-sm text-muted-foreground">
               Ex.: quando entrar um contato novo, enviar uma mensagem de boas-vindas.
             </p>
-            <Button onClick={openCreate}>
-              <Plus /> Nova automação
-            </Button>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button variant="outline" onClick={() => setPickerOpen(true)}>
+                Começar de um modelo
+              </Button>
+              <Button onClick={openCreate}>
+                <Plus /> Nova automação
+              </Button>
+            </div>
           </CardContent>
         </Card>
-        <RuleEditor open={editorOpen} onOpenChange={setEditorOpen} rule={editing} />
+        <RuleEditor open={editorOpen} onOpenChange={setEditorOpen} rule={editing} template={template} />
+        <TemplatePicker open={pickerOpen} onOpenChange={setPickerOpen} onSelect={openFromTemplate} />
       </div>
     );
   }
 
   return (
     <div className="space-y-4 pt-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={() => setPickerOpen(true)}>
+          Começar de um modelo
+        </Button>
         <Button onClick={openCreate}>
           <Plus /> Nova automação
         </Button>
@@ -158,7 +179,8 @@ export function RulesTab() {
         ))}
       </div>
 
-      <RuleEditor open={editorOpen} onOpenChange={setEditorOpen} rule={editing} />
+      <RuleEditor open={editorOpen} onOpenChange={setEditorOpen} rule={editing} template={template} />
+      <TemplatePicker open={pickerOpen} onOpenChange={setPickerOpen} onSelect={openFromTemplate} />
 
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent>
