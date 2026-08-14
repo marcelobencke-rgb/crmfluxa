@@ -7,10 +7,10 @@ export function useActiveConversation(contactId: string | null) {
     queryKey: ["activeConversation", contactId],
     queryFn: async () => {
       if (!contactId) return null;
-      const res = await apiClient.get<{ conversationId: string | null }>(
+      const res = await apiClient.get<{ data: { conversationId: string | null } }>(
         `/api/v1/contacts/${contactId}/active-conversation`
       );
-      return res.conversationId;
+      return res.data.conversationId;
     },
     enabled: !!contactId,
   });
