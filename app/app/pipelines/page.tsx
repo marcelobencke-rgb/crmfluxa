@@ -23,7 +23,7 @@ export default async function PipelinesIndexPage() {
   const podeGerenciar = ROLE_RANK[activeOrg.role] >= ROLE_RANK.manager;
 
   if (funis.length > 0) {
-    const padrao = funis.find((f) => f.is_default) || funis[0];
+    const padrao = funis.find((f) => f.is_default) ?? funis[0]!;
     
     // Instead of redirecting, render the board directly to avoid the round-trip latency
     return (

@@ -38,6 +38,25 @@ function statusBadgeLabel(status: AutomationRuleRunRow["status"]): string {
   return "Parcial";
 }
 
+function getContextSummary(run: AutomationRuleRunRow): string | null {
+  if (!run.event_log?.payload) return null;
+  const { entity_kind, payload } = run.event_log;
+
+  if (entity_kind === "crm_lead" || entity_kind === "lead") {
+    const leadName = payload.title || payload.name || "Lead sem nome";
+    return `Lead: ${leadName}`;
+  }
+  if (entity_kind === "contact") {
+    const contactName = payload.name || payload.full_name || "Contato sem nome";
+    return `Contato: ${contactName}`;
+  }
+  if (entity_kind === "message") {
+    return `Mensagem recebida`;
+  }
+  
+  return null;
+}
+
 function ActionLine({ action, run }: { action: AutomationRuleRunActionResult; run: AutomationRuleRunRow }) {
   const resend = useResendAutomationRun();
 
@@ -124,7 +143,14 @@ export function ActivityTab() {
                   </CardTitle>
                   <Badge variant={statusBadgeVariant(run.status)}>{statusBadgeLabel(run.status)}</Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">{relativeCreatedAt(run.created_at)}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">{relativeCreatedAt(run.created_at)}</p>
+                  {getContextSummary(run) && (
+                    <span className="truncate max-w-[200px] text-[11px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-sm">
+                      {getContextSummary(run)}
+                    </span>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-2">
                 {run.actions_result.map((action, idx) => (

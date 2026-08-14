@@ -3,7 +3,7 @@ import * as React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SourcesTab } from "./SourcesTab";
-import { RulesTab } from "./RulesTab";
+import { OutboundTab } from "./OutboundTab";
 import { ActivityTab } from "./ActivityTab";
 
 export function WebhooksClient() {
@@ -21,7 +21,7 @@ export function WebhooksClient() {
     // Mesma altura do TabsList (h-9) e largura medida da tablist — zero layout shift.
     return (
       <div className="flex-1">
-        <Skeleton className="h-9 w-[306px]" />
+        <Skeleton className="h-9 w-[300px]" />
       </div>
     );
   }
@@ -30,11 +30,11 @@ export function WebhooksClient() {
     <Tabs defaultValue="sources" className="flex-1">
       <TabsList>
         <TabsTrigger value="sources">Receber dados</TabsTrigger>
-        <TabsTrigger value="rules">Automações</TabsTrigger>
+        <TabsTrigger value="outbound">Enviar dados</TabsTrigger>
         <TabsTrigger value="activity">Atividade</TabsTrigger>
       </TabsList>
       <TabsContent value="sources"><SourcesTab /></TabsContent>
-      <TabsContent value="rules"><RulesTab /></TabsContent>
+      <TabsContent value="outbound"><OutboundTab /></TabsContent>
       <TabsContent value="activity"><ActivityTab /></TabsContent>
     </Tabs>
   );

@@ -98,6 +98,7 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
   const [conditions, setConditions] = React.useState<ConditionRow[]>([]);
   const [advancedRows, setAdvancedRows] = React.useState<Record<number, boolean>>({});
   const [actions, setActions] = React.useState<ActionItem[]>([]);
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
 
   const create = useCreateAutomationRule();
   const update = useUpdateAutomationRule();
@@ -118,6 +119,7 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
     );
     setAdvancedRows({});
     setActions((rule?.actions as ActionItem[] | undefined) ?? []);
+    setErrors({});
   }, [open, rule]);
 
   const curatedFields = triggerEvent ? CURATED_FIELDS[triggerEvent] : [];
@@ -167,9 +169,19 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
     };
     const parsed = createAutomationRuleSchema.safeParse(payload);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Revise os campos da automação.");
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const path = issue.path.join(".");
+        if (!fieldErrors[path]) {
+          fieldErrors[path] = issue.message;
+        }
+      }
+      setErrors(fieldErrors);
+      // Foca no erro mais crítico caso haja, e avisa o usuário
+      toast.error(fieldErrors["name"] ?? "Revise os campos em destaque.");
       return;
     }
+    setErrors({});
     try {
       if (rule) {
         await update.mutateAsync({ id: rule.id, ...parsed.data });
@@ -197,14 +209,21 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
 
         <div className="mt-6 space-y-8">
           <div className="space-y-2">
-            <Label htmlFor="rule-name">Nome da automação</Label>
+            <Label htmlFor="rule-name">
+              Nome da automação <span className="text-error">*</span>
+            </Label>
             <Input
               id="rule-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
+              }}
               placeholder="Boas-vindas a contato novo"
               maxLength={120}
+              aria-invalid={!!errors.name}
             />
+            {errors.name && <p className="text-sm font-medium text-error">{errors.name}</p>}
           </div>
 
           <section className="space-y-2">

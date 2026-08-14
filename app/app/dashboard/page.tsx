@@ -30,7 +30,7 @@ export default async function DashboardPage() {
   if (!activeOrg) redirect("/app/settings/profile");
 
   const supabase = await createClient();
-  const orgId = activeOrg.id;
+  const orgId = activeOrg.orgId;
 
   // 1. Conversas em aberto
   const { count: openConversations } = await supabase
@@ -87,7 +87,7 @@ export default async function DashboardPage() {
     .eq("organization_id", orgId)
     .eq("status", "connected");
 
-  const userName = user.user_metadata?.full_name?.split(" ")[0] || "usuário";
+  const userName = (user as any).user_metadata?.full_name?.split(" ")[0] || "usuário";
 
   return (
     <div className="flex h-full flex-col gap-6 p-6">

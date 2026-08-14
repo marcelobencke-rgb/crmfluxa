@@ -11,6 +11,9 @@ import { OwnerBadge } from "./OwnerBadge";
 import { OwnerSelector } from "./OwnerSelector";
 import { resolveLeadOwner } from "@/lib/kanban/owner";
 import { useEditLead } from "@/hooks/kanban/useUpdateLead";
+import { useActiveConversation } from "@/hooks/contacts/useActiveConversation";
+import { ChatCircle } from "@/lib/ui/icons";
+import Link from "next/link";
 import { toast } from "sonner";
 import { NextActionBanner } from "./NextActionSlot";
 
@@ -59,6 +62,7 @@ export function LeadDossier({
 }: Props) {
   const campos = useRef<HTMLDivElement | null>(null);
   const timeline = useLeadTimeline(open ? lead.id : null, lead.contact_id);
+  const activeConversation = useActiveConversation(open ? lead.contact_id : null);
   const owner = resolveLeadOwner(lead, ownerNames);
   const score = lead.score ?? null;
   const edit = useEditLead(pipelineId);
@@ -118,13 +122,24 @@ export function LeadDossier({
                 />
               )}
 
-              <button
-                type="button"
-                onClick={() => campos.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                className="ml-auto text-text-muted underline-offset-2 hover:text-text hover:underline"
-              >
-                Editar campos
-              </button>
+              <div className="ml-auto flex items-center gap-4">
+                {activeConversation.data && (
+                  <Link
+                    href={`/app/inbox?id=${activeConversation.data}`}
+                    className="flex items-center gap-1.5 text-text-muted underline-offset-2 hover:text-text hover:underline"
+                  >
+                    <ChatCircle size={14} />
+                    Ver conversa
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => campos.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  className="text-text-muted underline-offset-2 hover:text-text hover:underline"
+                >
+                  Editar campos
+                </button>
+              </div>
             </div>
 
             {lead.next_action && (

@@ -102,6 +102,7 @@ export {
   SignOut,
   WebhooksLogo,
   PuzzlePiece,
+  Lightning,
   UploadSimple,
   Signpost,
   // atualização de versão

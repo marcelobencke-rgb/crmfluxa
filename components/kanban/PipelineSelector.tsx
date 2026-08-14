@@ -90,7 +90,7 @@ export function PipelineSelector({
         setCreateOpen(false);
         setCreateName("");
         // A mutation já invalida a página e redireciona (ou a gente poderia fazer router.push para o novo)
-        const novoId = r.data.pipelines[r.data.pipelines.length - 1].id;
+        const novoId = r.data.pipelines[r.data.pipelines.length - 1]!.id;
         router.push(`/app/pipelines/${novoId}`);
       },
       onError: () => toast.error("Erro ao criar funil"),

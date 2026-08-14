@@ -20,17 +20,15 @@ export const conditionSchema = z.object({
 });
 
 export const actionSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("create_or_move_lead"), config: z.object({ pipeline_id: z.string().uuid(), stage_id: z.string().uuid() }) }),
-  z.object({ type: z.literal("send_whatsapp_message"), config: z.object({ channel_session_id: z.string().uuid(), template: z.string().min(1).max(2000) }) }),
-  z.object({ type: z.literal("add_tag"), config: z.object({ tags: z.array(z.string().min(1).max(60)).min(1).max(10) }) }),
-  z.object({ type: z.literal("assign_owner"), config: z.object({ user_id: z.string().uuid() }) }),
+  z.object({ type: z.literal("create_or_move_lead"), config: z.object({ pipeline_id: z.string().uuid("Escolha o funil"), stage_id: z.string().uuid("Escolha a etapa") }) }),
+  z.object({ type: z.literal("send_whatsapp_message"), config: z.object({ channel_session_id: z.string().uuid("Escolha um número de WhatsApp"), template: z.string().min(1, "A mensagem do WhatsApp não pode ser vazia").max(2000) }) }),
+  z.object({ type: z.literal("add_tag"), config: z.object({ tags: z.array(z.string().min(1)).min(1, "Adicione pelo menos uma tag").max(10) }) }),
+  z.object({ type: z.literal("assign_owner"), config: z.object({ user_id: z.string().uuid("Escolha um atendente") }) }),
   z.object({
     type: z.literal("call_webhook"),
     config: z.object({
-      url: z.string().url().max(2000),
-      // Input do usuário (plaintext, write-only) — a rota troca por secret_enc.
+      url: z.string().url("A URL do webhook é inválida").max(2000),
       secret: z.string().max(200).optional(),
-      // Ciphertext hex (round-trip do editor: GET devolve, PATCH preserva).
       secret_enc: z.string().max(4000).optional(),
     }),
   }),
@@ -55,10 +53,10 @@ export const updateWebhookSourceSchema = createWebhookSourceSchema.partial().ext
 });
 
 export const createAutomationRuleSchema = z.object({
-  name: z.string().min(1).max(120),
-  trigger_event: z.enum(TRIGGER_EVENTS),
+  name: z.string().min(1, "O nome da automação é obrigatório").max(120),
+  trigger_event: z.enum(TRIGGER_EVENTS, { errorMap: () => ({ message: "Escolha um gatilho" }) }),
   conditions: z.array(conditionSchema).max(10).default([]),
-  actions: z.array(actionSchema).min(1).max(10),
+  actions: z.array(actionSchema).min(1, "Adicione pelo menos uma ação").max(10),
 });
 export const updateAutomationRuleSchema = createAutomationRuleSchema.partial().extend({
   is_active: z.boolean().optional(),
