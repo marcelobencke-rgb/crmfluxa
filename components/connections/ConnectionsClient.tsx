@@ -191,6 +191,11 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
   }, [invalidate]);
 
   const list = sessions ?? [];
+  // "Conectado" é quem responde AGORA, não quem tem linha na tabela: a frase
+  // contava sessões e dizia "1 número conectado" com o número caído — bem na
+  // hora em que a tela precisa avisar que não está entrando mensagem.
+  const online = list.filter((c) => c.status === "WORKING").length;
+  const fora = list.length - online;
 
   return (
     <div className="flex flex-col gap-4">
@@ -200,7 +205,11 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
             ? "Não foi possível carregar seus números."
             : list.length === 0
               ? "Nenhum número conectado ainda."
-              : `${list.length} ${list.length === 1 ? "número conectado" : "números conectados"}.`}
+              : online === 0
+                ? `Nenhum número conectado — ${fora === 1 ? "1 número está fora do ar" : `${fora} números estão fora do ar`}.`
+                : fora === 0
+                  ? `${online} ${online === 1 ? "número conectado" : "números conectados"}.`
+                  : `${online} de ${list.length} números conectados — ${fora === 1 ? "1 está fora do ar" : `${fora} estão fora do ar`}.`}
         </p>
         <div className="flex gap-2">
           {list.length > 0 && (

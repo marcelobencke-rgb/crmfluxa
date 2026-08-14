@@ -1,5 +1,6 @@
 "use client";
 import { useMutation, useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { apiClient } from "@/lib/api/client";
 import { showApiError } from "@/components/feedback/ApiErrorToast";
 import type { Message } from "@/lib/types/messaging";
@@ -78,6 +79,15 @@ export function useSendMessage() {
     onError: (err, args) => {
       qc.invalidateQueries({ queryKey: ["messages", args.conversation_id] });
       showApiError(err);
+    },
+    onSuccess: (res) => {
+      // O handler NUNCA derruba um envio com o canal fora — ele segura a
+      // mensagem como "queued" e reagenda. Sem este aviso o atendente via a
+      // bolha "enviando" e só descobria que o WhatsApp caiu quando o cliente
+      // reclamasse.
+      if (res.data.status === "queued") {
+        toast.warning("O WhatsApp deste número está desconectado — a mensagem vai sair quando ele reconectar.");
+      }
     },
     onSettled: (_data, _err, args) => {
       qc.invalidateQueries({ queryKey: ["messages", args.conversation_id] });

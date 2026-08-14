@@ -1,7 +1,7 @@
 "use client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Check, Checks, Robot, WarningOctagon } from "@/lib/ui/icons";
+import { Check, Checks, Clock, Robot, WarningOctagon } from "@/lib/ui/icons";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Message } from "@/lib/types/messaging";
@@ -34,6 +34,11 @@ export function MessageBubble({ message, debugCitations }: Props) {
   const isOutbound = message.direction === "outbound";
   const time = format(new Date(message.sent_at), "HH:mm", { locale: ptBR });
   const isFailed = message.status === "failed";
+  // Sessão do canal fora do ar: o handler segura a mensagem e reagenda (nunca
+  // derruba). Sem este indicador a bolha ficava com o mesmo relógio silencioso
+  // de qualquer envio em andamento, e quem manda não descobre que precisa
+  // reconectar o WhatsApp.
+  const isQueued = message.status === "queued";
   const hasMedia = Boolean(message.media_url || message.media_storage_path);
   // Figurinha sem caption: sem moldura de bolha (padrão WhatsApp).
   const isBareSticker = hasMedia && message.type === "sticker" && !message.body;
@@ -92,7 +97,22 @@ export function MessageBubble({ message, debugCitations }: Props) {
           {showCitationButton && (
             <CitationButton citations={citations} messageId={message.id} />
           )}
-          {isOutbound && !isFailed && <AckIndicator status={message.status} />}
+          {isOutbound && !isFailed && !isQueued && <AckIndicator status={message.status} />}
+          {isQueued && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-0.5 font-semibold text-warning-fg">
+                    <Clock size={10} weight="fill" aria-hidden /> Aguardando canal
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  O WhatsApp deste número está desconectado. A mensagem será enviada assim que ele
+                  reconectar.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {isFailed && (
             // Provider local: o painel do inbox não tem TooltipProvider ancestral e
             // este Tooltip só monta em mensagem failed — sem o provider, abrir uma

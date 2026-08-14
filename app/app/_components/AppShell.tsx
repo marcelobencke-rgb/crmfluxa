@@ -25,7 +25,16 @@ export function AppShell({ sidebarCollapsed, children }: AppShellProps) {
         cabeçalho, presente também em telas que não têm abas (a lista de agentes
         estoura 236px). Isolado ancestral por ancestral: é este o que decide.
       */}
-      <div className={cn("flex h-full min-w-0 flex-1 flex-col transition-[margin] duration-200", sidebarCollapsed ? "ml-16" : "ml-60")}>
+      <div
+        className={cn(
+          "flex h-full min-w-0 flex-1 flex-col transition-[margin] duration-200",
+          // Sem margem em mobile: o Sidebar fixo fica `hidden` ali (MobileNav
+          // assume a navegação numa drawer), então reservar 240px de margem
+          // pra um elemento que não está desenhado era o que sobrava só 150px
+          // de conteúdo numa tela de 390px.
+          sidebarCollapsed ? "md:ml-16" : "md:ml-60",
+        )}
+      >
         <TopBar />
         <main className="flex flex-1 flex-col min-h-0 overflow-auto p-6">{children}</main>
       </div>

@@ -10,7 +10,9 @@
 export {
   // navigation (inbox icon = Tray in Phosphor)
   Tray as Inbox,
+  List,
   ListChecks,
+  Target,
   Plugs,
   PlugsConnected,
   QrCode,
