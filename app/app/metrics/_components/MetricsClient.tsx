@@ -20,8 +20,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { DownloadSimple } from "@/lib/ui/icons";
+import { metricsToCsv } from "@/lib/metrics/csv-export";
 
 const ALL = "__all__";
+
+/** Sem chamada nova ao servidor: usa o que a tela já carregou. */
+function baixarCsv(csv: string) {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `desempenho-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 
 function formatDuration(seconds: number | null): string {
   if (seconds == null) return "—";
@@ -55,29 +71,41 @@ export function MetricsClient({ canCompare, currentUserId }: Props) {
   const funnelTotal = metrics.funnel.reduce((acc, s) => acc + s.count, 0);
   const maxCount = Math.max(1, ...metrics.funnel.map((s) => s.count));
 
+  const exportar = () => {
+    const csv = metricsToCsv(metrics.funnel, metrics.attendants, new Date());
+    baixarCsv(csv);
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      {canCompare ? (
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">Atendente</span>
-          <Select value={owner} onValueChange={setOwner}>
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="Todos os atendentes" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todos os atendentes</SelectItem>
-              {(team.data?.data ?? [])
-                .filter((m) => m.role !== "viewer")
-                .map((m) => (
-                  <SelectItem key={m.user_id} value={m.user_id}>
-                    {m.full_name ?? m.email ?? m.user_id.slice(0, 8)}
-                    {m.user_id === currentUserId ? " (você)" : ""}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : null}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {canCompare ? (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">Atendente</span>
+            <Select value={owner} onValueChange={setOwner}>
+              <SelectTrigger className="w-64">
+                <SelectValue placeholder="Todos os atendentes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos os atendentes</SelectItem>
+                {(team.data?.data ?? [])
+                  .filter((m) => m.role !== "viewer")
+                  .map((m) => (
+                    <SelectItem key={m.user_id} value={m.user_id}>
+                      {m.full_name ?? m.email ?? m.user_id.slice(0, 8)}
+                      {m.user_id === currentUserId ? " (você)" : ""}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div />
+        )}
+        <Button type="button" variant="outline" size="sm" onClick={exportar}>
+          <DownloadSimple size={14} aria-hidden /> Exportar CSV
+        </Button>
+      </div>
 
       {/* Acima do funil e da performance de propósito: é o número do sistema
           inteiro, ao qual as métricas de área se subordinam (doutrina §3.6).

@@ -236,4 +236,6 @@ export type AuditAction =
   // de código próprio para não somar duas grandezas no mesmo relatório.
   | "followup.scheduled"
   | "followup.cancelled"
-  | "lead.reactivation_proposed";
+  | "lead.reactivation_proposed"
+  | "org.scheduled_report_updated"
+  | "metrics.scheduled_report_sent";
