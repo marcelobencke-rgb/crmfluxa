@@ -15,9 +15,15 @@ import {
 } from "@/components/ui/select";
 import { updateTenant } from "@/app/actions/settings/updateTenant";
 import { tenantSchema, type Locale, type TenantInput } from "@/lib/schemas/settings";
+import { formatCentsBRL, parseReaisToCents } from "@/lib/money";
 
 interface Props {
   initial: TenantInput;
+}
+
+function centsToReais(cents: number | null | undefined): string {
+  if (cents === null || cents === undefined) return "";
+  return (cents / 100).toFixed(2).replace(".", ",");
 }
 
 const TIMEZONES = [
@@ -34,7 +40,10 @@ export function TenantForm({ initial }: Props) {
   const [reasonsText, setReasonsText] = useState(
     (initial.lost_reasons_extra ?? []).join(", "),
   );
+  const [goalReais, setGoalReais] = useState(centsToReais(initial.monthly_revenue_goal_cents));
   const [isPending, startTransition] = useTransition();
+
+  const goalCentsEco = goalReais.trim().length > 0 ? parseReaisToCents(goalReais) : null;
 
   function set<K extends keyof TenantInput>(key: K, value: TenantInput[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -46,7 +55,22 @@ export function TenantForm({ initial }: Props) {
       .split(",")
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
-    const candidate = { ...form, lost_reasons_extra: reasons };
+
+    const goalText = goalReais.trim();
+    let monthlyRevenueGoalCents: number | null = null;
+    if (goalText.length > 0) {
+      monthlyRevenueGoalCents = parseReaisToCents(goalText);
+      if (monthlyRevenueGoalCents === null) {
+        toast.error("Meta de receita inválida.");
+        return;
+      }
+    }
+
+    const candidate = {
+      ...form,
+      lost_reasons_extra: reasons,
+      monthly_revenue_goal_cents: monthlyRevenueGoalCents,
+    };
     const parsed = tenantSchema.safeParse(candidate);
     if (!parsed.success) {
       toast.error("Dados inválidos.");
@@ -160,6 +184,24 @@ export function TenantForm({ initial }: Props) {
           />
           <p className="text-xs text-muted-foreground">
             Adicionados ao set padrão. Cada pipeline pode ter seus próprios motivos.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="monthly_revenue_goal">Meta de receita mensal (R$)</Label>
+          <Input
+            id="monthly_revenue_goal"
+            inputMode="decimal"
+            placeholder="Sem meta definida"
+            value={goalReais}
+            onChange={(e) => setGoalReais(e.target.value)}
+          />
+          {goalCentsEco !== null && (
+            <p className="text-xs text-muted-foreground">= {formatCentsBRL(goalCentsEco)}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Usada pra comparar com o que a organização ganhou no mês, no Painel. Deixe em branco
+            pra não definir meta.
           </p>
         </div>
 

@@ -78,8 +78,31 @@ export const tenantSchema = z.object({
     .optional()
     .or(z.literal("").transform(() => null)),
   lost_reasons_extra: z.array(z.string().min(1).max(80)).max(50).default([]),
+  /**
+   * Meta de receita mensal — organizations.settings.monthly_revenue_goal_cents.
+   * `null` = sem meta definida (não é 0: zero seria "meta é não vender nada").
+   * Só organização por enquanto — por atendente é feature separada, maior.
+   */
+  monthly_revenue_goal_cents: z.number().int().min(0).nullable().default(null),
 });
 export type TenantInput = z.infer<typeof tenantSchema>;
+
+/**
+ * Relatório periódico de Desempenho por email — organizations.settings.scheduled_report.
+ * Cron (app/api/v1/cron/scheduled-reports/route.ts) decide o dia de disparo:
+ * 'weekly' dispara toda segunda, 'monthly' no dia 1. `recipients` é lista
+ * livre de email (não precisa ser membro do time — quem recebe relatório
+ * pode ser um sócio sem login no CRM).
+ */
+export const REPORT_FREQUENCIES = ["weekly", "monthly"] as const;
+export type ReportFrequency = (typeof REPORT_FREQUENCIES)[number];
+
+export const scheduledReportSchema = z.object({
+  enabled: z.boolean(),
+  frequency: z.enum(REPORT_FREQUENCIES),
+  recipients: z.array(z.string().email()).max(20),
+});
+export type ScheduledReportInput = z.infer<typeof scheduledReportSchema>;
 
 export const NOTIFICATION_CATEGORIES = [
   "lead_assigned",

@@ -40,6 +40,9 @@ export default async function TenantSettingsPage() {
     (row?.settings && Array.isArray((row.settings as { lost_reasons_extra?: unknown }).lost_reasons_extra)
       ? ((row.settings as { lost_reasons_extra?: string[] }).lost_reasons_extra ?? [])
       : []) as string[];
+  const rawGoal = (row?.settings as { monthly_revenue_goal_cents?: unknown } | null)
+    ?.monthly_revenue_goal_cents;
+  const monthlyRevenueGoalCents = typeof rawGoal === "number" ? rawGoal : null;
 
   return (
     <div className="flex h-full flex-col gap-6 p-6">
@@ -61,6 +64,7 @@ export default async function TenantSettingsPage() {
             dpo_email: row.dpo_email,
             privacy_policy_url: row.privacy_policy_url,
             lost_reasons_extra: lostReasonsExtra,
+            monthly_revenue_goal_cents: monthlyRevenueGoalCents,
           }}
         />
       )}
