@@ -190,7 +190,13 @@ function walk(dir: string): string[] {
   });
 }
 
+// ALLOWED e KNOWN_DEBT usam "/" (o padrão do repo, escrito por gente olhando
+// pra `app/api/...`). `join()` devolve "\" no Windows — sem normalizar, todo
+// arquivo vira "novo infrator" pra quem roda o lint fora do Linux do CI.
+const toPosix = (p: string) => p.split("\\").join("/");
+
 const offenders = ROOTS.flatMap(walk)
+  .map(toPosix)
   .filter((f) => !ALLOWED.some((re) => re.test(f)))
   .filter((f) => nomeiaProvider(readFileSync(f, "utf8")));
 
