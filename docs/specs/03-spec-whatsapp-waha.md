@@ -85,7 +85,7 @@ version: "3.9"
 services:
   waha:
     image: devlikeapro/waha-plus@sha256:<DIGEST_PINNED_NA_PROD>
-    container_name: deskcomm-waha
+    container_name: fluxa-waha
     restart: unless-stopped
     ports:
       - "127.0.0.1:3000:3000"   # bind localhost; Nginx faz TLS termination
@@ -152,7 +152,7 @@ volumes:
 
 ### 2.2 Variáveis de ambiente
 
-A `WAHA_API_KEY` do servidor é o **hash SHA512 hex (lowercase) do plaintext**. O backend DeskcommCRM guarda **só** o plaintext em Vercel Encrypted Env Var; nunca a hash duplicada. Geração:
+A `WAHA_API_KEY` do servidor é o **hash SHA512 hex (lowercase) do plaintext**. O backend Fluxa CRM guarda **só** o plaintext em Vercel Encrypted Env Var; nunca a hash duplicada. Geração:
 
 ```bash
 # Gerar plaintext seguro (nunca commitar; armazenar em 1Password/Vercel)
@@ -169,16 +169,16 @@ echo -n "$PLAINTEXT" | sha512sum | awk '{print $1}'
 ```dotenv
 # === WAHA server (no host do WAHA, NÃO no Vercel) ===
 WAHA_API_KEY_SHA512=<sha512 hex do plaintext>
-WAHA_DASHBOARD_USERNAME=admin_deskcomm
+WAHA_DASHBOARD_USERNAME=admin_fluxa
 WAHA_DASHBOARD_PASSWORD=<senha forte gerada>
 WAHA_S3_REGION=auto
-WAHA_S3_BUCKET=deskcomm-waha-media
+WAHA_S3_BUCKET=fluxa-waha-media
 WAHA_S3_ACCESS_KEY_ID=<r2/s3 access key>
 WAHA_S3_SECRET_ACCESS_KEY=<r2/s3 secret>
 
 # === Backend Vercel (Encrypted Env) ===
 WAHA_API_KEY=<plaintext — só aqui>
-WAHA_BASE_URL=https://waha.deskcomm.internal
+WAHA_BASE_URL=https://waha.fluxa.internal
 WAHA_WEBHOOK_PUBLIC_BASE_URL=https://api.deskcomm.com
 INTERNAL_CRON_SECRET=<openssl rand -hex 32>
 SUPABASE_URL=...
@@ -226,10 +226,10 @@ upstream waha_backend {
 
 server {
   listen 443 ssl http2;
-  server_name waha.deskcomm.internal;
+  server_name waha.fluxa.internal;
 
-  ssl_certificate     /etc/letsencrypt/live/waha.deskcomm.internal/fullchain.pem;
-  ssl_certificate_key /etc/letsencrypt/live/waha.deskcomm.internal/privkey.pem;
+  ssl_certificate     /etc/letsencrypt/live/waha.fluxa.internal/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/waha.fluxa.internal/privkey.pem;
 
   client_max_body_size 64M;     # mídia até 50MB + overhead
 
@@ -696,7 +696,7 @@ export class WahaClient {
       body: JSON.stringify({
         name: input.name,
         config: {
-          metadata: { source: "deskcomm" },
+          metadata: { source: "fluxa" },
           webhooks: [{
             url: input.webhookUrl,
             events: [
@@ -1847,7 +1847,7 @@ useEffect(() => {
 
 `sync-sessions` (§10.1) emite alerta `session_starting_too_long` em >5min; runbook:
 
-1. Verificar logs WAHA (`docker logs deskcomm-waha --tail 500`).
+1. Verificar logs WAHA (`docker logs fluxa-waha --tail 500`).
 2. Se volume `/app/.sessions` corrompido: backup + `docker volume rm` + re-criar sessão (re-scan obrigatório).
 3. Documentar no incident log; super-admin notifica tenant.
 
@@ -1945,8 +1945,8 @@ UI sempre ordena por `sent_at desc` (não `created_at`). Re-render reativo via S
   ```bash
   apt-get update && apt-get install -y docker.io docker-compose-plugin nginx certbot python3-certbot-nginx ufw fail2ban restic
   ufw allow 22/tcp && ufw allow 443/tcp && ufw enable
-  certbot --nginx -d waha.deskcomm.internal
-  cd /opt/deskcomm-waha && docker compose up -d
+  certbot --nginx -d waha.fluxa.internal
+  cd /opt/fluxa-waha && docker compose up -d
   ```
 - Nginx config: vide §2.4.
 - Backup `restic` diário pra Backblaze B2 (volumes `/var/lib/docker/volumes/waha_sessions`).
@@ -2051,4 +2051,4 @@ select indexname from pg_indexes where schemaname = 'public'
 
 ## Confirmação
 
-Spec 03 escrita em `/Users/rafaelmelgaco/DeskcommCRM/docs/specs/03-spec-whatsapp-waha.md`. Contém: schema SQL completo das 5 tabelas (channel_sessions + warmup, conversations, messages, webhook_events_log) com RLS e indexes; wrapper TypeScript do WAHA com classes de erro; handlers completos de criação de sessão, webhook receiver com HMAC-SHA512 timing-safe, send pipeline com optimistic UI e pg_boss; rate limiter Redis (1msg/1.2s + jitter), spinning de copy DSL, daily limit, janela horária, detector STOP, warm-up; 3 crons; 7 edge cases tratados; hospedagem Railway → Hostgator; 14 testes de integração mapeados; 9 migrations ordenadas. Todas as regras W-01 a W-12, T-07 e AT-07 estão materializadas em código. Pronto pra crítica e Epics.
+Spec 03 escrita em `/Users/rafaelmelgaco/crmfluxa/docs/specs/03-spec-whatsapp-waha.md`. Contém: schema SQL completo das 5 tabelas (channel_sessions + warmup, conversations, messages, webhook_events_log) com RLS e indexes; wrapper TypeScript do WAHA com classes de erro; handlers completos de criação de sessão, webhook receiver com HMAC-SHA512 timing-safe, send pipeline com optimistic UI e pg_boss; rate limiter Redis (1msg/1.2s + jitter), spinning de copy DSL, daily limit, janela horária, detector STOP, warm-up; 3 crons; 7 edge cases tratados; hospedagem Railway → Hostgator; 14 testes de integração mapeados; 9 migrations ordenadas. Todas as regras W-01 a W-12, T-07 e AT-07 estão materializadas em código. Pronto pra crítica e Epics.

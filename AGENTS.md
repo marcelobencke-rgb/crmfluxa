@@ -1,4 +1,4 @@
-# AGENTS.md — DeskcommCRM
+# AGENTS.md — Fluxa CRM
 
 > Contrato para **qualquer** agente de código (Codex, Cursor, Copilot, Amp, Claude Code).
 > Este arquivo é o núcleo portável. A **doutrina completa e não-negociável vive em

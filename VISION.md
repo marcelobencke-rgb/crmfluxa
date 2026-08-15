@@ -1,4 +1,4 @@
-# 🧭 Visão — DeskcommCRM
+# 🧭 Visão — Fluxa CRM
 
 > **O sistema operacional de vendas com agentes de IA, nativo no WhatsApp.**
 > Este documento é a fonte da verdade do posicionamento do projeto. Tudo que for público (site, materiais de vendas, docs) deriva daqui.
@@ -7,20 +7,19 @@
 
 ## O nome
 
-**Deskcomm** vem de **Desk** (mesa) + **comm** (comércio): **o comercial de mesa**.
-A ideia que o nome carrega: toda a operação comercial de um negócio — atendimento, qualificação, funil, pós-venda — operada a partir de uma única mesa, por pessoas e por agentes de IA trabalhando juntos.
+**Fluxa CRM** é o nome comercial do produto (decisão de 2026-08-14 — ver nota de proveniência abaixo). *A etimologia do nome anterior ("Desk" + "comm" = "o comercial de mesa") não se aplica a "Fluxa"; este trecho está pendente de nova redação — ver nota de revisão no changelog do rename.*
 
-O "CRM" no nome é a categoria de entrada, não o teto. O DeskcommCRM é **mais que um CRM**: é o sistema onde a venda acontece.
+O "CRM" no nome é a categoria de entrada, não o teto. O Fluxa CRM é **mais que um CRM**: é o sistema onde a venda acontece.
 
 ## De onde viemos, pra onde vamos
 
-O projeto nasceu em 2026 como um CRM operacional para **e-commerce brasileiro** — WhatsApp via WAHA, integração Nuvemshop, LGPD nativa. A demanda real apontou pra outra direção: a maior parte dos primeiros clientes passou a operar o Deskcomm em **clínicas, infoprodutos, imobiliárias, agências e prestadores de serviço** — qualquer negócio que vende conversando.
+O projeto nasceu em 2026 como um CRM operacional para **e-commerce brasileiro** — WhatsApp via WAHA, integração Nuvemshop, LGPD nativa. A demanda real apontou pra outra direção: a maior parte dos primeiros clientes passou a operar o Fluxa em **clínicas, infoprodutos, imobiliárias, agências e prestadores de serviço** — qualquer negócio que vende conversando.
 
 Esses casos de uso empurraram o produto na direção que hoje é a nossa identidade: **agentes de IA cada vez mais capazes, integrados ao sistema via MCP, operando o CRM de verdade**. O e-commerce continua sendo um caso de uso de primeira classe (foi nosso berço e a integração Nuvemshop prova isso) — mas ele é **um** vertical, não **o** produto.
 
 **A transição, em uma frase:** de "CRM de e-commerce com IA" para **"sistema operacional de vendas com agentes de IA, para qualquer negócio que vende pelo WhatsApp"**.
 
-> ⚠️ Nota de proveniência (interna, não pra material público): a base de código deste projeto tem origem numa distribuição MIT de terceiro (copyright original de Rafael Melgaço — ver `LICENSE`). A licença MIT permite uso comercial, modificação e venda sem exigir abertura do código das mudanças; a única obrigação é preservar o aviso de copyright e o texto da licença no software. Isso é diferente de trademark: antes de consolidar a marca "DeskcommCRM" publicamente num produto pago, confirmar que o nome/logo não pertence ao projeto original. Ver conversa de decisão de 2026-08-14.
+> ⚠️ Nota de proveniência (interna, não pra material público): a base de código deste projeto tem origem numa distribuição MIT de terceiro (copyright original de Rafael Melgaço — ver `LICENSE`). A licença MIT permite uso comercial, modificação e venda sem exigir abertura do código das mudanças; a única obrigação é preservar o aviso de copyright e o texto da licença no software. Isso é diferente de trademark: antes de consolidar a marca "Fluxa CRM" publicamente num produto pago, confirmar que o nome/logo não pertence ao projeto original. Ver conversa de decisão de 2026-08-14.
 
 ## O que acreditamos sobre agentes de IA
 
@@ -28,7 +27,7 @@ Esses casos de uso empurraram o produto na direção que hoje é a nossa identid
 
 2. **Agentes que se auto-aprimoram.** O sistema é desenhado como um flywheel: conversas resolvidas viram conhecimento novo na base RAG; handoffs pro humano marcam onde o agente ainda não alcança; métricas e budget por tenant fecham o loop. Cada dia de operação torna o agente melhor — com **gate humano** nas decisões que importam. Essa é a aposta central do roadmap.
 
-3. **MCP como sistema nervoso.** O CRM inteiro é exposto como tools MCP — primeiro para os agentes internos, depois como contrato pra agências e integradores parceiros. Um negócio deve poder plugar o agente que quiser (Claude, o que vier) e ele **opera** o Deskcomm: cria lead, responde cliente, agenda, consulta pedido. O CRM vira infraestrutura para agentes.
+3. **MCP como sistema nervoso.** O CRM inteiro é exposto como tools MCP — primeiro para os agentes internos, depois como contrato pra agências e integradores parceiros. Um negócio deve poder plugar o agente que quiser (Claude, o que vier) e ele **opera** o Fluxa: cria lead, responde cliente, agenda, consulta pedido. O CRM vira infraestrutura para agentes.
 
 4. **Humano no comando.** Handoff auditado, escopo por papel (RBAC), fila com posição, budget de IA por organização. Autonomia do agente cresce na medida em que a governança prova que ele acerta.
 
@@ -51,7 +50,7 @@ Esses casos de uso empurraram o produto na direção que hoje é a nossa identid
 **Categoria própria (bandeira):** **sistema operacional de vendas com agentes de IA** — *AI Sales OS*. É pra onde a âncora nos leva: os incumbentes vendem assinatura de chat com bot acoplado; nós entregamos um sistema onde o agente de IA é operador nativo do funil, não um add-on.
 
 **Uma frase (pt-br):**
-> DeskcommCRM é o sistema operacional de vendas com agentes de IA nativos e WhatsApp — SaaS multi-tenant, para qualquer negócio que vende conversando.
+> Fluxa CRM é o sistema operacional de vendas com agentes de IA nativos e WhatsApp — SaaS multi-tenant, para qualquer negócio que vende conversando.
 
 **One-liner (en):**
 > AI sales OS: a managed CRM where AI agents natively operate sales and support over WhatsApp — the AI-native alternative to Kommo, Octadesk and Intercom.
@@ -80,7 +79,7 @@ Esses casos de uso empurraram o produto na direção que hoje é a nossa identid
 
 ## Norte de 3 anos
 
-Ser a resposta padrão — do Google, do ChatGPT, do Reddit e do dono de negócio brasileiro — para a pergunta **"qual o melhor CRM com agentes de IA nativos pro WhatsApp?"**; com milhares de negócios pagantes operando vendas pelo Deskcomm, um ecossistema de agentes plugados via MCP, e um flywheel de auto-aprimoramento que faça cada conta vender melhor a cada mês de operação.
+Ser a resposta padrão — do Google, do ChatGPT, do Reddit e do dono de negócio brasileiro — para a pergunta **"qual o melhor CRM com agentes de IA nativos pro WhatsApp?"**; com milhares de negócios pagantes operando vendas pelo Fluxa, um ecossistema de agentes plugados via MCP, e um flywheel de auto-aprimoramento que faça cada conta vender melhor a cada mês de operação.
 
 ---
 

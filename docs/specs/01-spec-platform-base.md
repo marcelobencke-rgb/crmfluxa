@@ -11,7 +11,7 @@ regras_aplicadas: [T-01, T-02, T-03, T-04, T-05, T-06, T-07, T-08, L-04, L-06, L
 
 # Spec Técnica 01 — Plataforma Base
 
-> Spec foundational do DeskcommCRM. Define schema SQL completo, RLS policies, fluxos de auth, contratos de API REST `/api/v1/`, endpoints LGPD e onboarding de tenant. Toda spec posterior (Customer 360, WhatsApp, Pipeline, IA, Nuvemshop) **depende** desta. Divergências exigem ADR explícito.
+> Spec foundational do Fluxa CRM. Define schema SQL completo, RLS policies, fluxos de auth, contratos de API REST `/api/v1/`, endpoints LGPD e onboarding de tenant. Toda spec posterior (Customer 360, WhatsApp, Pipeline, IA, Nuvemshop) **depende** desta. Divergências exigem ADR explícito.
 
 ---
 
@@ -119,7 +119,7 @@ create trigger trg_organizations_touch
   before update on public.organizations
   for each row execute function public.fn_touch_updated_at();
 
-comment on table public.organizations is 'Tenants do DeskcommCRM. Cada linha = 1 e-commerce cliente.';
+comment on table public.organizations is 'Tenants do Fluxa CRM. Cada linha = 1 e-commerce cliente.';
 comment on column public.organizations.cnpj is 'CNPJ formatado XX.XXX.XXX/XXXX-XX. Único por tenant ativo.';
 comment on column public.organizations.status is 'active=operando | suspended=pausado por admin | redacted=LGPD store/redact aplicado | archived=cancelado.';
 ```
@@ -1125,7 +1125,7 @@ if (process.env.UPSTASH_REDIS_REST_URL) {
     redis: Redis.fromEnv(),
     limiter: Ratelimit.slidingWindow(100, '1 s'), // B-04: 100 RPS default
     analytics: true,
-    prefix: 'deskcomm:rl',
+    prefix: 'fluxa:rl',
   });
 }
 
@@ -1435,7 +1435,7 @@ commit;
 ### 9.1 CLI
 
 ```bash
-$ deskcomm tenant create \
+$ fluxa tenant create \
     --legal-name "Loja Exemplo LTDA" \
     --display-name "Loja Exemplo" \
     --cnpj "12345678000190" \
@@ -1590,7 +1590,7 @@ import pino from 'pino';
 
 export const log = pino({
   level: process.env.LOG_LEVEL ?? 'info',
-  base: { service: 'deskcomm-api', env: process.env.NODE_ENV },
+  base: { service: 'fluxa-api', env: process.env.NODE_ENV },
   redact: {
     paths: ['*.password','*.token','*.api_key','*.cookie','*.cpf','req.headers.authorization'],
     censor: '[REDACTED]',

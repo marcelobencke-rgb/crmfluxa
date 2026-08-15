@@ -30,7 +30,7 @@ owner: Rafael Melgaço
 
 1. Acesso SSH ao VPS (Hostgator entrega via cPanel ou root SSH; preferir SSH-only).
 2. Domínio com DNS gerenciado em Cloudflare (ou outro provider) — ex.: `waha.deskcomm.com.br`.
-3. Conta Backblaze B2 com bucket `deskcomm-waha-backup` (R$0,06/GB/mês ≈ $0.005/GB).
+3. Conta Backblaze B2 com bucket `fluxa-waha-backup` (R$0,06/GB/mês ≈ $0.005/GB).
 4. Licença ativa **WAHA Plus** (`https://waha.devlike.pro` — ~$30/mês).
 5. Vercel project com env vars `WAHA_API_BASE_URL`, `WAHA_API_KEY`, `WAHA_WEBHOOK_BASE_URL`, `WAHA_HMAC_SECRET` configurados (ainda apontando pra dev — atualizamos no fim).
 
@@ -44,12 +44,12 @@ owner: Rafael Melgaço
 ssh root@<IP_DO_VPS>
 
 # usuário não-root
-adduser deskcomm
-usermod -aG sudo deskcomm
-mkdir -p /home/deskcomm/.ssh
-cp ~/.ssh/authorized_keys /home/deskcomm/.ssh/
-chown -R deskcomm:deskcomm /home/deskcomm/.ssh
-chmod 700 /home/deskcomm/.ssh && chmod 600 /home/deskcomm/.ssh/authorized_keys
+adduser fluxa
+usermod -aG sudo fluxa
+mkdir -p /home/fluxa/.ssh
+cp ~/.ssh/authorized_keys /home/fluxa/.ssh/
+chown -R fluxa:fluxa /home/fluxa/.ssh
+chmod 700 /home/fluxa/.ssh && chmod 600 /home/fluxa/.ssh/authorized_keys
 
 # desabilitar password auth + root login
 sed -i 's/#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
@@ -57,7 +57,7 @@ sed -i 's/#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
 systemctl reload sshd
 ```
 
-A partir daqui: `ssh deskcomm@<IP>` + `sudo` para tudo.
+A partir daqui: `ssh fluxa@<IP>` + `sudo` para tudo.
 
 ### 3.2 Instalar dependências
 
@@ -68,7 +68,7 @@ sudo apt-get install -y \
   nginx certbot python3-certbot-nginx \
   ufw fail2ban restic curl jq
 
-sudo usermod -aG docker deskcomm
+sudo usermod -aG docker fluxa
 # logout + login pra grupo aplicar
 ```
 
@@ -86,7 +86,7 @@ sudo ufw enable
 ### 3.4 Fail2ban (SSH + Nginx 401)
 
 ```bash
-sudo tee /etc/fail2ban/jail.d/deskcomm.conf > /dev/null <<'EOF'
+sudo tee /etc/fail2ban/jail.d/fluxa.conf > /dev/null <<'EOF'
 [sshd]
 enabled = true
 maxretry = 3
@@ -123,12 +123,12 @@ Certbot já injeta SSL no `/etc/nginx/sites-available/default`.
 ### 5.1 Estrutura
 
 ```bash
-sudo mkdir -p /opt/deskcomm-waha
-sudo chown deskcomm:deskcomm /opt/deskcomm-waha
-cd /opt/deskcomm-waha
+sudo mkdir -p /opt/fluxa-waha
+sudo chown fluxa:fluxa /opt/fluxa-waha
+cd /opt/fluxa-waha
 ```
 
-Copiar (via `scp` ou `git clone`) o `docker-compose.yml` do repo (raiz do DeskcommCRM). Ajustes obrigatórios pra prod:
+Copiar (via `scp` ou `git clone`) o `docker-compose.yml` do repo (raiz do Fluxa CRM). Ajustes obrigatórios pra prod:
 
 ```yaml
 services:
@@ -148,7 +148,7 @@ services:
 
 ### 5.2 .env de produção
 
-`/opt/deskcomm-waha/.env` (chmod 600):
+`/opt/fluxa-waha/.env` (chmod 600):
 
 ```bash
 WAHA_API_KEY=<plaintext gerado novo, 64 chars hex>
@@ -157,13 +157,13 @@ WAHA_HMAC_SECRET=<32 bytes random distinto da api key>
 ```
 
 ```bash
-chmod 600 /opt/deskcomm-waha/.env
+chmod 600 /opt/fluxa-waha/.env
 ```
 
 ### 5.3 Subir
 
 ```bash
-cd /opt/deskcomm-waha
+cd /opt/fluxa-waha
 docker compose up -d
 docker compose logs -f waha       # confere "Nest application successfully started"
 ```
@@ -228,7 +228,7 @@ sudo nginx -t && sudo systemctl reload nginx
 EOF
 sudo chmod +x /usr/local/bin/refresh-vercel-cidrs.sh
 sudo /usr/local/bin/refresh-vercel-cidrs.sh
-echo "0 4 * * * deskcomm /usr/local/bin/refresh-vercel-cidrs.sh" | sudo tee /etc/cron.d/vercel-cidrs
+echo "0 4 * * * fluxa /usr/local/bin/refresh-vercel-cidrs.sh" | sudo tee /etc/cron.d/vercel-cidrs
 ```
 
 > Endpoint da Vercel pode mudar. Se a API responder 404, fallback é colar manualmente os ranges de https://vercel.com/docs/limits e revisar trimestralmente.
@@ -246,15 +246,15 @@ curl -I https://waha.deskcomm.com.br/api/health    # 401 esperado sem header
 ### 7.1 Setup
 
 ```bash
-sudo tee /opt/deskcomm-waha/backup.env > /dev/null <<EOF
+sudo tee /opt/fluxa-waha/backup.env > /dev/null <<EOF
 B2_ACCOUNT_ID=<key id>
 B2_ACCOUNT_KEY=<key>
-RESTIC_REPOSITORY=b2:deskcomm-waha-backup:/waha
+RESTIC_REPOSITORY=b2:fluxa-waha-backup:/waha
 RESTIC_PASSWORD=<senha forte armazenada no 1Password>
 EOF
-sudo chmod 600 /opt/deskcomm-waha/backup.env
+sudo chmod 600 /opt/fluxa-waha/backup.env
 
-source /opt/deskcomm-waha/backup.env
+source /opt/fluxa-waha/backup.env
 restic init    # uma vez só
 ```
 
@@ -263,7 +263,7 @@ restic init    # uma vez só
 `/etc/cron.d/waha-backup`:
 
 ```cron
-0 3 * * * deskcomm . /opt/deskcomm-waha/backup.env && restic backup /var/lib/docker/volumes/deskcomm-waha_waha-data --tag daily && restic forget --keep-daily 7 --keep-weekly 4 --keep-monthly 6 --prune
+0 3 * * * fluxa . /opt/fluxa-waha/backup.env && restic backup /var/lib/docker/volumes/fluxa-waha_waha-data --tag daily && restic forget --keep-daily 7 --keep-weekly 4 --keep-monthly 6 --prune
 ```
 
 ### 7.3 Restore drill (rodar mensal)
@@ -271,8 +271,8 @@ restic init    # uma vez só
 ```bash
 # em VPS de teste:
 docker compose down
-sudo rm -rf /var/lib/docker/volumes/deskcomm-waha_waha-data/*
-. /opt/deskcomm-waha/backup.env
+sudo rm -rf /var/lib/docker/volumes/fluxa-waha_waha-data/*
+. /opt/fluxa-waha/backup.env
 restic restore latest --target /
 docker compose up -d
 # verificar que sessões voltaram sem precisar re-parear
@@ -300,19 +300,19 @@ else
   FAILS=$((FAILS+1))
   echo $FAILS > /tmp/waha-fails
   if [ "$FAILS" -ge 3 ]; then
-    cd /opt/deskcomm-waha && docker compose restart waha
+    cd /opt/fluxa-waha && docker compose restart waha
     curl -s -X POST "https://hooks.sentry.io/..." -d "WAHA restarted após $FAILS falhas"
     echo 0 > /tmp/waha-fails
   fi
 fi
 EOF
 sudo chmod +x /usr/local/bin/waha-watchdog.sh
-echo "*/1 * * * * deskcomm /usr/local/bin/waha-watchdog.sh" | sudo tee /etc/cron.d/waha-watchdog
+echo "*/1 * * * * fluxa /usr/local/bin/waha-watchdog.sh" | sudo tee /etc/cron.d/waha-watchdog
 ```
 
 ### 8.3 Log shipping (opcional Fase 2)
 
-Better Stack ou Datadog Agent → `docker logs deskcomm-waha`. Sem isso, logs ficam só locais e somem em rotação.
+Better Stack ou Datadog Agent → `docker logs fluxa-waha`. Sem isso, logs ficam só locais e somem em rotação.
 
 ---
 

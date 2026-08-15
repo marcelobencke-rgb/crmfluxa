@@ -2,7 +2,7 @@
 
 [🇧🇷 Português](README.md) · 🇺🇸 English · [🇪🇸 Español](README.es.md)
 
-# 🛠️ DeskcommCRM — The open-source AI Sales OS for WhatsApp
+# 🛠️ Fluxa CRM — The open-source AI Sales OS for WhatsApp
 
 **AI agents that answer, qualify and sell on WhatsApp — inside an open-source CRM running on your own server.**
 **No subscription, no gated features, your data stays yours. The open alternative to Kommo, Octadesk and Intercom.**
@@ -11,7 +11,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript)](https://www.typescriptlang.org)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres%2BAuth%2BStorage-3ecf8e?logo=supabase)](https://supabase.com)
 [![Self-hosted](https://img.shields.io/badge/self--hosted-one%20command-orange)](hostgator-setup-kit/)
-[![CI](https://github.com/melgarafael/DeskcommCRM/actions/workflows/ci.yml/badge.svg)](https://github.com/melgarafael/DeskcommCRM/actions/workflows/ci.yml)
+[![CI](https://github.com/marcelobencke-rgb/crmfluxa/actions/workflows/ci.yml/badge.svg)](https://github.com/marcelobencke-rgb/crmfluxa/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 [**🧭 Vision**](VISION.md) · [**📘 Setup Guide**](docs/SETUP.md) · [**🏗️ Architecture**](ARCHITECTURE.md) · [**🤝 Contributing**](CONTRIBUTING.md) · [**📋 PRDs**](docs/prd/) · [**🗺️ Roadmap**](#%EF%B8%8F-roadmap)
@@ -22,7 +22,7 @@
 
 > ### ☁️ Run this CRM in production with one command
 >
-> DeskcommCRM is developed in **partnership with HostGator**: the [`hostgator-setup-kit/`](hostgator-setup-kit/)
+> Fluxa CRM is developed in **partnership with HostGator**: the [`hostgator-setup-kit/`](hostgator-setup-kit/)
 > installs the full CRM (app + WAHA + database) on a VPS with a single command, and the
 > [production runbook](docs/runbooks/waha-hostgator.md) assumes that environment.
 >
@@ -32,8 +32,8 @@
 > Already have the VPS? SSH into it and run:
 >
 > ```bash
-> git clone https://github.com/melgarafael/DeskcommCRM.git
-> cd DeskcommCRM
+> git clone https://github.com/marcelobencke-rgb/crmfluxa.git
+> cd crmfluxa
 > bash hostgator-setup-kit/install.sh
 > ```
 >
@@ -47,7 +47,7 @@
 
 ## ✨ What is it
 
-**Deskcomm** comes from **Desk** + **comm** (commerce): your entire sales operation on a single desk, run by people and AI agents working together.
+**Fluxa CRM**: your entire sales operation on a single desk, run by people and AI agents working together. *(commercial name adopted 2026-08-14 — positioning copy in progress, see [`VISION.md`](VISION.md))*
 
 The project was born as an e-commerce CRM — and the open-source community took it much further: today it runs in **clinics, real-estate agencies, info-product businesses, agencies, stores and service providers** — any business that sells over WhatsApp. The product followed that shift and became a **sales operating system**: AI agents with per-tenant RAG answer customers, qualify leads, move them through the pipeline, trigger automations and know when to hand off to a human — with the whole CRM exposed via **MCP** so agents can truly operate it. The full story is in [`VISION.md`](VISION.md).
 
@@ -76,8 +76,8 @@ Under the hood, every event becomes a row in `event_log` — no database trigger
 
 ```bash
 # 1. Clone
-git clone https://github.com/melgarafael/DeskcommCRM.git
-cd DeskcommCRM
+git clone https://github.com/marcelobencke-rgb/crmfluxa.git
+cd crmfluxa
 
 # 2. Node 22 + pnpm
 nvm use                    # or install Node 22+
@@ -175,9 +175,9 @@ This project is open source for the community. Every contribution is welcome —
 
 ## 🐛 Reporting bugs
 
-Open an [issue](https://github.com/melgarafael/DeskcommCRM/issues/new/choose) — the template asks for what we need (environment, `/api/v1/health`, steps).
+Open an [issue](https://github.com/marcelobencke-rgb/crmfluxa/issues/new/choose) — the template asks for what we need (environment, `/api/v1/health`, steps).
 
-For **security vulnerabilities**, **do NOT open a public issue** — use [private vulnerability reporting](https://github.com/melgarafael/DeskcommCRM/security/advisories/new). Details in [`SECURITY.md`](SECURITY.md).
+For **security vulnerabilities**, **do NOT open a public issue** — use [private vulnerability reporting](https://github.com/marcelobencke-rgb/crmfluxa/security/advisories/new). Details in [`SECURITY.md`](SECURITY.md).
 
 ---
 
@@ -197,7 +197,7 @@ For **security vulnerabilities**, **do NOT open a public issue** — use [privat
 
 ### 🔮 Next
 
-- **Public MCP** — CRM capabilities exposed to the agent ecosystem: plug in any agent and it operates Deskcomm.
+- **Public MCP** — CRM capabilities exposed to the agent ecosystem: plug in any agent and it operates Fluxa.
 - **Self-improvement flywheel** — the resolved-conversation → knowledge → better-agent loop, measured and human-gated.
 - **Niche templates** — ready-made pipelines and vocabularies for clinics, real estate, info-products and services (e-commerce already shipped).
 - **Integrations** — VTEX and Shopify via the adapter pattern (Nuvemshop already shipped).
@@ -207,8 +207,8 @@ For **security vulnerabilities**, **do NOT open a public issue** — use [privat
 
 ## 💬 Community
 
-- **Discussions:** [GitHub Discussions](https://github.com/melgarafael/DeskcommCRM/discussions)
-- **Issues:** [GitHub Issues](https://github.com/melgarafael/DeskcommCRM/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/marcelobencke-rgb/crmfluxa/discussions)
+- **Issues:** [GitHub Issues](https://github.com/marcelobencke-rgb/crmfluxa/issues)
 - **Instagram:** [@melgarafael](https://www.instagram.com/melgarafael)
 - **YouTube:** [youtube.com/@melgarafael](https://www.youtube.com/@melgarafael)
 
@@ -235,7 +235,7 @@ This is a **self-hosted** project: each person runs the CRM on their **own infra
 
 - **WAHA** ([devlikeapro](https://waha.devlikeapro.com/)) — WhatsApp engine.
 - **Supabase**, **Vercel**, **Anthropic** (Claude), **shadcn/ui**.
-- The community that took Deskcomm from e-commerce to clinics, real estate, info-products and beyond — you defined what this project is.
+- The community that took Fluxa from e-commerce to clinics, real estate, info-products and beyond — you defined what this project is.
 
 ---
 

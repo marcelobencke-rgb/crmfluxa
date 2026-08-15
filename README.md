@@ -2,7 +2,7 @@
 
 🇧🇷 Português · [🇺🇸 English](README.en.md) · [🇪🇸 Español](README.es.md)
 
-# 🛠️ DeskcommCRM — o Sistema Operacional de Vendas com IA, pro WhatsApp
+# 🛠️ Fluxa CRM — o Sistema Operacional de Vendas com IA, pro WhatsApp
 
 **Agentes de IA que atendem, qualificam e vendem no WhatsApp — dentro de um CRM com IA nativa operando o funil de verdade.**
 **A alternativa com IA nativa a Kommo, Octadesk e Intercom.**
@@ -10,7 +10,7 @@
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript)](https://www.typescriptlang.org)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres%2BAuth%2BStorage-3ecf8e?logo=supabase)](https://supabase.com)
-[![CI](https://github.com/melgarafael/DeskcommCRM/actions/workflows/ci.yml/badge.svg)](https://github.com/melgarafael/DeskcommCRM/actions/workflows/ci.yml)
+[![CI](https://github.com/marcelobencke-rgb/crmfluxa/actions/workflows/ci.yml/badge.svg)](https://github.com/marcelobencke-rgb/crmfluxa/actions/workflows/ci.yml)
 
 [**🧭 Visão**](VISION.md) · [**📘 Setup Guide**](docs/SETUP.md) · [**🏗️ Arquitetura**](ARCHITECTURE.md) · [**🤝 Contribuir**](CONTRIBUTING.md) · [**📋 PRDs**](docs/prd/) · [**🗺️ Roadmap**](#%EF%B8%8F-roadmap)
 
@@ -18,7 +18,7 @@
 
 ---
 
-> ⚠️ **Repositório privado / produto comercial.** O DeskcommCRM deixou de ser distribuído
+> ⚠️ **Repositório privado / produto comercial.** O Fluxa CRM deixou de ser distribuído
 > como projeto self-host de código aberto — hoje é um **SaaS pago, hospedado por nós**,
 > multi-tenant, segmentado em planos (Starter/Growth/Scale/Agency). Detalhe completo do
 > modelo de negócio em [`VISION.md`](VISION.md). Este README passa a servir o **time interno**
@@ -29,7 +29,7 @@
 
 ## ✨ O que é
 
-**Deskcomm** vem de **Desk** (mesa) + **comm** (comércio): **o comercial de mesa** — toda a operação de vendas do seu negócio numa mesa só, operada por pessoas e agentes de IA juntos.
+**Fluxa CRM**: toda a operação de vendas do seu negócio numa mesa só, operada por pessoas e agentes de IA juntos. *(nome comercial adotado em 2026-08-14 — texto de posicionamento em atualização, ver [`VISION.md`](VISION.md))*
 
 O projeto nasceu como CRM de e-commerce e a demanda real o levou muito além: hoje roda em **clínicas, imobiliárias, infoprodutos, agências, lojas e prestadores de serviço** — qualquer negócio que vende pelo WhatsApp. O produto acompanhou essa virada e virou um **sistema operacional de vendas**: agentes de IA com RAG por tenant atendem, qualificam, movem leads no funil, disparam automações e sabem a hora de passar pra um humano — com o CRM inteiro exposto via **MCP** pros agentes operarem de verdade. A história completa está em [`VISION.md`](VISION.md).
 
@@ -60,8 +60,8 @@ Ambiente local pra quem vai **trabalhar no código** — não é o caminho de pr
 
 ```bash
 # 1. Clone
-git clone https://github.com/melgarafael/DeskcommCRM.git
-cd DeskcommCRM
+git clone https://github.com/marcelobencke-rgb/crmfluxa.git
+cd crmfluxa
 
 # 2. Node 22 + pnpm
 nvm use                    # ou instale Node 22+
@@ -117,7 +117,7 @@ Detalhes: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 ## 📁 Estrutura
 
 ```
-DeskcommCRM/
+crmfluxa/
 ├── app/                    # Next.js App Router
 │   ├── (admin)/            # Rotas super-admin (impersonate, tenants)
 │   ├── (public)/           # Login, recovery
@@ -203,9 +203,9 @@ repositório sabe entregar.
 
 ## 🐛 Reportando bugs
 
-Abra uma [issue](https://github.com/melgarafael/DeskcommCRM/issues/new/choose) — o template pede o que precisamos (ambiente, `/api/v1/health`, steps).
+Abra uma [issue](https://github.com/marcelobencke-rgb/crmfluxa/issues/new/choose) — o template pede o que precisamos (ambiente, `/api/v1/health`, steps).
 
-Pra **vulnerabilidades de segurança**, **NÃO abra issue pública** — use o [relato privado de vulnerabilidades](https://github.com/melgarafael/DeskcommCRM/security/advisories/new). Detalhes em [`SECURITY.md`](SECURITY.md).
+Pra **vulnerabilidades de segurança**, **NÃO abra issue pública** — use o [relato privado de vulnerabilidades](https://github.com/marcelobencke-rgb/crmfluxa/security/advisories/new). Detalhes em [`SECURITY.md`](SECURITY.md).
 
 ---
 
@@ -227,7 +227,7 @@ Pra **vulnerabilidades de segurança**, **NÃO abra issue pública** — use o [
 
 - **Automação do deploy** — hoje o "clicar pra implantar" é manual; automatizar o gatilho (push/merge → deploy) é a próxima frente de infra.
 - **Definição formal de papéis LGPD (controlador/operador) sob o modelo SaaS** — o texto antigo assumia cada cliente controlando a própria instância; agora que hospedamos, os termos de tratamento de dados precisam ser redesenhados.
-- **MCP público** — capabilities do CRM expostas pro ecossistema de agentes: plugue o agente que quiser e ele opera o Deskcomm.
+- **MCP público** — capabilities do CRM expostas pro ecossistema de agentes: plugue o agente que quiser e ele opera o Fluxa.
 - **Flywheel de auto-aprimoramento** — o loop conversa resolvida → conhecimento → agente melhor, medido e com gate humano.
 - **Templates por nicho** — pipelines e vocabulários prontos pra clínica, imobiliária, infoproduto e serviços (e-commerce já entregue).
 - **Integrações** — VTEX e Shopify via adapter pattern (Nuvemshop já entregue).

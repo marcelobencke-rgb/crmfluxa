@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-# DeskcommCRM — imagem de produção self-host (Next.js standalone).
-# Build: docker build --build-arg NEXT_PUBLIC_SUPABASE_URL=... -t deskcomm-app .
+# Fluxa CRM — imagem de produção self-host (Next.js standalone).
+# Build: docker build --build-arg NEXT_PUBLIC_SUPABASE_URL=... -t fluxa-app .
 
 # ---- deps: instala dependências (layer cacheável) ----
 FROM node:22-alpine AS deps

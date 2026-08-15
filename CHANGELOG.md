@@ -4,7 +4,7 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
-Se você roda o DeskcommCRM numa VPS, **leia a seção da versão para a qual está atualizando antes de rodar `bash update.sh`**. Mudanças que exigem ação manual aparecem sob **⚠️ Requer atenção**.
+Se você roda o Fluxa CRM numa VPS, **leia a seção da versão para a qual está atualizando antes de rodar `bash update.sh`**. Mudanças que exigem ação manual aparecem sob **⚠️ Requer atenção**.
 
 ## [Não lançado]
 
@@ -81,7 +81,7 @@ Depois disso, nunca mais é preciso o terminal.
 
 ## [1.0.0] — 2026-07-27
 
-Primeira versão marcada do DeskcommCRM. O projeto vinha sendo desenvolvido publicamente desde abril de 2026 sem tags; esta release estabelece o ponto a partir do qual toda mudança passa a ser versionada e descrita — porque quem hospeda o próprio sistema precisa saber o que muda antes de atualizar.
+Primeira versão marcada do Fluxa CRM. O projeto vinha sendo desenvolvido publicamente desde abril de 2026 sem tags; esta release estabelece o ponto a partir do qual toda mudança passa a ser versionada e descrita — porque quem hospeda o próprio sistema precisa saber o que muda antes de atualizar.
 
 ### Plataforma
 
@@ -148,6 +148,6 @@ Primeira versão marcada do DeskcommCRM. O projeto vinha sendo desenvolvido publ
 
 - **Node 22 é obrigatório para desenvolvimento.** A suíte de invariantes instancia o cliente do Supabase, que exige o `WebSocket` global — nativo apenas a partir do Node 22. Isso não afeta quem apenas hospeda: a VPS roda a imagem pronta.
 
-[Não lançado]: https://github.com/melgarafael/DeskcommCRM/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/melgarafael/DeskcommCRM/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/melgarafael/DeskcommCRM/releases/tag/v1.0.0
+[Não lançado]: https://github.com/marcelobencke-rgb/crmfluxa/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/marcelobencke-rgb/crmfluxa/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/marcelobencke-rgb/crmfluxa/releases/tag/v1.0.0
