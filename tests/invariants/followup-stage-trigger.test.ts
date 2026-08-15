@@ -141,6 +141,11 @@ function nextOrgId(): string {
   return `fedcba${String(orgSeq).padStart(2, "0")}-0000-4000-8000-000000000001`;
 }
 
+/** `crm_pipelines_slug_format`/`crm_stages_slug_format`: `^[a-z0-9_-]{2,40}$` — sem ponto. */
+function slugSuffix(): string {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
+
 async function seedOrg(org: string): Promise<void> {
   const name = `followup-stage-${org.slice(0, 8)}`;
   await pool.query(
@@ -160,16 +165,16 @@ async function seedContact(org: string): Promise<string> {
 async function seedPipelineAndStages(org: string): Promise<{ pipelineId: string; stageId: string; otherStageId: string }> {
   const { rows: pipeRows } = await pool.query<{ id: string }>(
     `insert into crm_pipelines (organization_id, name, slug) values ($1, 'Funil Stage Trigger', $2) returning id`,
-    [org, `funil-stage-trigger-${Date.now()}-${Math.random()}`],
+    [org, `funil-stage-trigger-${slugSuffix()}`],
   );
   const pipelineId = pipeRows[0]!.id;
   const { rows: stageRows } = await pool.query<{ id: string }>(
     `insert into crm_stages (organization_id, pipeline_id, name, slug, position) values ($1, $2, 'Alvo', $3, 1000) returning id`,
-    [org, pipelineId, `alvo-${Date.now()}-${Math.random()}`],
+    [org, pipelineId, `alvo-${slugSuffix()}`],
   );
   const { rows: otherStageRows } = await pool.query<{ id: string }>(
     `insert into crm_stages (organization_id, pipeline_id, name, slug, position) values ($1, $2, 'Outra', $3, 2000) returning id`,
-    [org, pipelineId, `outra-${Date.now()}-${Math.random()}`],
+    [org, pipelineId, `outra-${slugSuffix()}`],
   );
   return { pipelineId, stageId: stageRows[0]!.id, otherStageId: otherStageRows[0]!.id };
 }
