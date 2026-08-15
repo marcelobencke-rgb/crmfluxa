@@ -8,7 +8,7 @@ import type pg from 'pg';
 
 import { runModelCall, type LlmEdgeConfig } from '../edge/llm/run-model-call';
 import type { Logger } from '../obs/logger';
-import { aggregateFollowupOutcomes, type FlowOutcomeStat } from '../../followup/outcome-stats';
+import { aggregateFollowupOutcomes, flagFlowsForReview, type FlowOutcomeStat } from '../../followup/outcome-stats';
 
 const JUDGE_MODEL = 'claude-haiku-4-5';
 // O distiller PRECISA de modelo próprio: o flywheel roda org-wide sem turno/agent
@@ -95,6 +95,31 @@ function judgePrompt(m: TraceMaterial, optionOrder: 'yes_first' | 'no_first'): s
   ].join('\n');
 }
 
+/**
+ * Fecha o loop do flywheel de follow-up (migration 0145): o distiller NÃO
+ * edita o fluxo — propõe uma hipótese pro humano ler na aba de Propostas e
+ * decidir no builder. Diferente de playbook_bullet, esta proposta não tem
+ * aplicação automática (ver lib/ai/apply-proposal.ts).
+ */
+function followupFlowDistillerPrompt(stat: FlowOutcomeStat): string {
+  const pct = ((stat.conversion_rate ?? 0) * 100).toFixed(1);
+  return [
+    'Você revisa FLUXOS DE FOLLOW-UP automático de um SDR de WhatsApp. Um fluxo publicado',
+    `("${stat.flow_name}") converteu ${pct}% dos ${stat.terminal} enrollments terminados até agora`,
+    '— abaixo do esperado.',
+    '',
+    `Contadores: convertido=${stat.counts.converted}, respondeu_sem_converter=${stat.counts.replied},`,
+    ` esgotou_tentativas=${stat.counts.exhausted}, saiu_stop=${stat.counts.opted_out},`,
+    ` foi_pra_humano=${stat.counts.handoff}.`,
+    '',
+    'Proponha, em pt-BR e em ATÉ 4 linhas, a hipótese mais provável de causa (cadência agressiva',
+    'demais, copy que soa robótico, classificação de resposta ruim, etc.) e UMA sugestão concreta',
+    'de ajuste — sem inventar dado que você não tem. Isto NÃO edita o fluxo sozinho: um humano lê',
+    'e decide no builder.',
+    'Responda SOMENTE JSON: {"content": string}',
+  ].join('\n');
+}
+
 function distillerPrompt(missingFacts: string[]): string {
   return [
     'Você melhora PLAYBOOKS de agentes SDR por DELTAS mínimos. Um juiz constatou falha de higiene de',
@@ -126,6 +151,10 @@ export interface FlywheelRunResult {
    *  (via os turnos coletados). Fecha o loop: o flywheel passa a enxergar
    *  quais fluxos convertem, não só a higiene de memória do turno. */
   followupOutcomes: Array<{ organization_id: string; stats: FlowOutcomeStat[] }>;
+  /** Migration 0145 — quantas propostas `followup_flow_adjustment` novas esta
+   *  rodada gravou (fluxos flagados por `flagFlowsForReview` sem proposta
+   *  pendente já aberta pra eles). */
+  followupProposals: number;
 }
 
 export async function runFlywheelOnce(
@@ -224,14 +253,77 @@ export async function runFlywheelOnce(
   // suficiente por instrução do brief.
   const orgIds = [...new Set(turns.map((t) => t.organization_id))];
   const followupOutcomes: FlywheelRunResult['followupOutcomes'] = [];
+  let followupProposals = 0;
   for (const orgId of orgIds) {
     const stats = await aggregateFollowupOutcomes(pool, orgId);
     if (stats.length === 0) continue;
     followupOutcomes.push({ organization_id: orgId, stats });
     log.info('flywheel: outcomes de follow-up por fluxo', { run_id: runId, organization_id: orgId, stats });
+
+    // Migration 0145 — fecha o loop: fluxo com volume+conversão ruins vira
+    // proposta na aba existente, gate humano (nunca aplica sozinho — ver
+    // lib/ai/apply-proposal.ts, que trata este type como unsupported).
+    for (const flow of flagFlowsForReview(stats)) {
+      const { rows: pending } = await pool.query<{ id: string }>(
+        `select id from flywheel_distiller_proposals
+         where organization_id = $1 and type = 'followup_flow_adjustment' and target = $2 and applied_at is null
+         limit 1`,
+        [orgId, flow.pointer_id],
+      );
+      if (pending.length > 0) continue; // já tem proposta pendente pra este fluxo — não empilha
+
+      try {
+        const distilled = await runModelCall(
+          pool,
+          llmCfg,
+          {
+            tenantId: orgId,
+            purpose: 'flywheel_followup_distiller',
+            model: DISTILLER_MODEL,
+            messages: [{ role: 'user', content: followupFlowDistillerPrompt(flow) }],
+          },
+          { log },
+        );
+        const proposal = parseJson<{ content: string }>(distilled.result.text);
+        await pool.query(
+          `insert into flywheel_distiller_proposals
+             (organization_id, run_id, dataset, type, target, content, evidence)
+           values ($1, $2, $3, 'followup_flow_adjustment', $4, $5, $6)`,
+          [
+            orgId,
+            runId,
+            DATASET,
+            flow.pointer_id,
+            proposal.content,
+            JSON.stringify({
+              pointer_id: flow.pointer_id,
+              version_id: flow.version_id,
+              flow_name: flow.flow_name,
+              counts: flow.counts,
+              total: flow.total,
+              terminal: flow.terminal,
+              conversion_rate: flow.conversion_rate,
+            }),
+          ],
+        );
+        followupProposals += 1;
+        log.info('flywheel: proposta de ajuste de fluxo gravada (gate humano pendente)', {
+          run_id: runId,
+          organization_id: orgId,
+          pointer_id: flow.pointer_id,
+        });
+      } catch (err) {
+        log.error('flywheel: falha ao gerar proposta de ajuste de fluxo', {
+          run_id: runId,
+          organization_id: orgId,
+          pointer_id: flow.pointer_id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
   }
 
-  return { runId, judged, proposals, followupOutcomes };
+  return { runId, judged, proposals, followupOutcomes, followupProposals };
 }
 
 /** Loop agendado do flywheel (4B) — intervalo por knob; erro nunca derruba o worker. */

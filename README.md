@@ -2,17 +2,15 @@
 
 🇧🇷 Português · [🇺🇸 English](README.en.md) · [🇪🇸 Español](README.es.md)
 
-# 🛠️ DeskcommCRM — o Sistema Operacional de Vendas com IA, open source, pro WhatsApp
+# 🛠️ DeskcommCRM — o Sistema Operacional de Vendas com IA, pro WhatsApp
 
-**Agentes de IA que atendem, qualificam e vendem no WhatsApp — dentro de um CRM open source rodando no seu servidor.**
-**Sem mensalidade, sem feature travada, seus dados com você. A alternativa aberta a Kommo, Octadesk e Intercom.**
+**Agentes de IA que atendem, qualificam e vendem no WhatsApp — dentro de um CRM com IA nativa operando o funil de verdade.**
+**A alternativa com IA nativa a Kommo, Octadesk e Intercom.**
 
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript)](https://www.typescriptlang.org)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres%2BAuth%2BStorage-3ecf8e?logo=supabase)](https://supabase.com)
-[![Self-hosted](https://img.shields.io/badge/self--hosted-1%20comando-orange)](hostgator-setup-kit/)
 [![CI](https://github.com/melgarafael/DeskcommCRM/actions/workflows/ci.yml/badge.svg)](https://github.com/melgarafael/DeskcommCRM/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 [**🧭 Visão**](VISION.md) · [**📘 Setup Guide**](docs/SETUP.md) · [**🏗️ Arquitetura**](ARCHITECTURE.md) · [**🤝 Contribuir**](CONTRIBUTING.md) · [**📋 PRDs**](docs/prd/) · [**🗺️ Roadmap**](#%EF%B8%8F-roadmap)
 
@@ -20,58 +18,31 @@
 
 ---
 
-> ### ☁️ Rode este CRM em produção com 1 comando
->
-> O DeskcommCRM foi desenvolvido em **parceria com a HostGator**: o [`hostgator-setup-kit/`](hostgator-setup-kit/)
-> instala o CRM completo (app + WAHA + banco) numa VPS com um único comando, e o
-> [runbook de produção](docs/runbooks/waha-hostgator.md) já assume esse ambiente.
->
-> **[👉 Assinar a VPS HostGator com desconto da parceria](https://www.hostgator.com.br/52708-141-3-52.html)** —
-> datacenter em São Paulo, ideal pro WhatsApp rodando 24/7. *(link de parceiro — assinar por ele apoia o projeto e sai mais barato)*
->
-> **Ainda não tem servidor?** Rode isto **no seu computador** (macOS, Linux ou WSL). Ele diz
-> qual plano contratar — com os números do runbook, não um "depende" — e te devolve o
-> comando certo pro seu caso:
->
-> ```bash
-> curl -fsSL https://raw.githubusercontent.com/melgarafael/DeskcommCRM/main/hostgator-setup-kit/comecar.sh | bash
-> ```
->
-> *(prefere ler antes de executar? clone o repo e rode `bash hostgator-setup-kit/comecar.sh` —
-> ele não instala nada sem você confirmar.)*
->
-> Já tem a VPS? Entre nela por SSH e rode:
->
-> ```bash
-> git clone https://github.com/melgarafael/DeskcommCRM.git
-> cd DeskcommCRM
-> bash hostgator-setup-kit/install.sh
-> ```
->
-> O instalador pergunta só o que é seu (domínio, chaves do Supabase, chave de IA, senha do
-> admin), valida cada resposta antes de seguir, gera todos os outros segredos sozinho, aplica
-> o schema do banco e sobe a stack inteira com HTTPS. Detalhes em
-> [`hostgator-setup-kit/README.md`](hostgator-setup-kit/README.md).
->
-> ⚠️ O **Quickstart** abaixo é o caminho de *desenvolvimento* (rodar o app na sua máquina).
-> Se você comprou a VPS pra rodar o CRM, use o comando acima, não o Quickstart.
+> ⚠️ **Repositório privado / produto comercial.** O DeskcommCRM deixou de ser distribuído
+> como projeto self-host de código aberto — hoje é um **SaaS pago, hospedado por nós**,
+> multi-tenant, segmentado em planos (Starter/Growth/Scale/Agency). Detalhe completo do
+> modelo de negócio em [`VISION.md`](VISION.md). Este README passa a servir o **time interno**
+> (setup de ambiente de dev, arquitetura, convenções), não mais clientes instalando a própria
+> instância — as seções abaixo estão em processo de atualização pra refletir isso; onde ainda
+> houver instrução de "instale na sua VPS", trate como resquício em revisão, não como caminho
+> válido pro cliente.
 
 ## ✨ O que é
 
 **Deskcomm** vem de **Desk** (mesa) + **comm** (comércio): **o comercial de mesa** — toda a operação de vendas do seu negócio numa mesa só, operada por pessoas e agentes de IA juntos.
 
-O projeto nasceu como CRM de e-commerce e a comunidade o levou muito além: hoje roda em **clínicas, imobiliárias, infoprodutos, agências, lojas e prestadores de serviço** — qualquer negócio que vende pelo WhatsApp. O produto acompanhou essa virada e virou um **sistema operacional de vendas**: agentes de IA com RAG por tenant atendem, qualificam, movem leads no funil, disparam automações e sabem a hora de passar pra um humano — com o CRM inteiro exposto via **MCP** pros agentes operarem de verdade. A história completa está em [`VISION.md`](VISION.md).
+O projeto nasceu como CRM de e-commerce e a demanda real o levou muito além: hoje roda em **clínicas, imobiliárias, infoprodutos, agências, lojas e prestadores de serviço** — qualquer negócio que vende pelo WhatsApp. O produto acompanhou essa virada e virou um **sistema operacional de vendas**: agentes de IA com RAG por tenant atendem, qualificam, movem leads no funil, disparam automações e sabem a hora de passar pra um humano — com o CRM inteiro exposto via **MCP** pros agentes operarem de verdade. A história completa está em [`VISION.md`](VISION.md).
 
 ### Diferenciais
 
 - 🤖 **Agentes de IA que operam o CRM** — RAG por tenant, análise de sentimento, handoff IA→humano auditado, IA como assignee de primeira classe e controle de budget por organização. Não é chatbot decorativo: o agente atende, qualifica e move o funil.
 - 🔁 **Agentes que se auto-aprimoram** — conversas resolvidas viram conhecimento novo na base RAG; handoffs marcam onde o agente ainda não alcança; métricas fecham o loop. Cada mês de operação torna o agente melhor, com gate humano no que importa.
 - 🧩 **Multi-nicho por design** — vocabulário configurável por pipeline: lead vira *Cliente*, *Paciente* ou *Comprador*; won vira *Pago*, *Agendado* ou *Fechado*. O mesmo core serve e-commerce (nosso berço, com integração Nuvemshop), clínica, imobiliária ou infoproduto.
-- 🔌 **MCP-ready** — MCP server interno pros agentes; contrato público pra agentes externos em construção. O CRM como infraestrutura pra qualquer agente de IA.
+- 🔌 **MCP-ready** — MCP server interno pros agentes; contrato pra agências e integradores parceiros em construção. O CRM como infraestrutura pra qualquer agente de IA.
 - 💬 **WhatsApp-native via WAHA** — multi-número, anti-banimento (throttle + jitter + janela de horário), mídia via Storage, STOP detection.
 - 👥 **Governança de atendimento** — RBAC server-side de verdade, atribuição/transferência auditada, fila com posição, roteamento automático e escopo de visualização por papel.
 - 🏢 **Multi-tenant + LGPD by-design** — RLS em toda tabela tenant-aware com teste de isolamento como gate de CI; anonimização preferida sobre delete; audit append-only com retenção 5 anos.
-- 🖥️ **Self-hosted de verdade** — seus dados na sua VPS; instalação com 1 comando; sem versão paga, sem feature travada.
+- ☁️ **SaaS gerenciado** — infraestrutura, atualização, backup e monitoramento por nossa conta. O cliente assina e usa; não instala, não opera servidor.
 
 ### 🔌 Webhooks & Automações
 
@@ -79,11 +50,13 @@ Todo tenant pode criar **fontes de captação**: um endereço público (`/api/v1
 
 Na UI, tudo mora em **Webhooks** na sidebar (visível só pra quem tem papel `manager`/`admin` — `agent`/`viewer` não veem o item nem acessam a rota, redirecionados pro inbox). A tela tem três abas: **Receber dados** (criar fonte, copiar o endereço/formulário pronto, disparar um lead de teste, ver os últimos recebimentos), **Automações** (montar a regra, que sempre nasce pausada até o tenant revisar e ligar) e **Atividade** (timeline de cada execução, com o resultado de cada ação e reenvio manual quando uma chamada de webhook externo falha).
 
-Por baixo, cada evento (lead criado, tag adicionada, etc.) vira uma linha em `event_log` — nenhum trigger de banco faz chamada HTTP diretamente. Quem drena essa fila e realmente dispara as automações é a rota `/api/v1/cron/event-log-drain`, chamada a cada minuto. No Vercel isso é um Cron Job gerenciado; **no kit self-host da HostGator** (`hostgator-setup-kit/`), o `install.sh`/`update.sh` já configura sozinho uma linha de `crontab` que roda essa rota todo minuto com o `INTERNAL_SECRET` do `.env` — sem esse cron ativo, fontes e automações continuam sendo criadas normalmente, mas os eventos ficam empilhados em `event_log` e nenhuma automação chega a rodar de verdade.
+Por baixo, cada evento (lead criado, tag adicionada, etc.) vira uma linha em `event_log` — nenhum trigger de banco faz chamada HTTP diretamente. Quem drena essa fila e realmente dispara as automações é a rota `/api/v1/cron/event-log-drain`, chamada a cada minuto por um cron na nossa infraestrutura de produção — sem esse cron ativo, fontes e automações continuam sendo criadas normalmente, mas os eventos ficam empilhados em `event_log` e nenhuma automação chega a rodar de verdade.
 
 ---
 
-## 🚀 Quickstart (5 minutos pra ver rodando)
+## 🚀 Quickstart de desenvolvimento (5 minutos pra ver rodando)
+
+Ambiente local pra quem vai **trabalhar no código** — não é o caminho de produção (produção é gerenciada por nós, ver nota no topo).
 
 ```bash
 # 1. Clone
@@ -104,8 +77,8 @@ docker compose up -d
 
 # 5. Schema do banco — aplique o baseline, NÃO as migrations
 #    As migrations 0001-0009 e 0013 são stubs `SELECT 1;`: a cadeia não sobe do
-#    zero. O schema real vive no baseline.sql, que é o mesmo que o install.sh
-#    aplica na VPS. `supabase db push` "passa" e deixa o banco vazio.
+#    zero. O schema real vive no baseline.sql.
+#    `supabase db push` "passa" e deixa o banco vazio.
 supabase link --project-ref <seu-ref>
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/baseline.sql
 
@@ -115,7 +88,7 @@ pnpm dev
 
 App: <http://localhost:3000> · Health check: <http://localhost:3000/api/v1/health>
 
-> 🆕 **Primeira vez? Não pula etapa.** [`docs/SETUP.md`](docs/SETUP.md) é o tutorial completo passo a passo de **todas as integrações** (Supabase, WAHA, Anthropic, Upstash, Sentry, Resend, Nuvemshop) — feito pra quem nunca configurou nada disso antes. ~60–90 min do zero ao app rodando.
+> 🆕 **Primeira vez? Não pula etapa.** [`docs/SETUP.md`](docs/SETUP.md) é o tutorial completo passo a passo de **todas as integrações** (Supabase, WAHA, Anthropic, Upstash, Sentry, Resend, Nuvemshop). ~60–90 min do zero ao app rodando.
 
 ---
 
@@ -134,8 +107,8 @@ App: <http://localhost:3000> · Health check: <http://localhost:3000/api/v1/heal
 | **Rate limit** | Upstash Redis (sliding window) | Serverless, free tier suficiente |
 | **AI** | Vercel AI SDK v7 (providers Anthropic/Google/OpenAI v4) via AI Gateway | Fallback automático, ZDR |
 | **Validação** | Zod | Input externo, env, payloads |
-| **Observability** | Sentry (scrub em erro, transação, span e breadcrumb) | Telemetria opt-in no install |
-| **Hospedagem** | Vercel (app) + Hostgator VPS Turing/SP (WAHA) | Edge + dedicado pra WhatsApp; datacenter Brasil |
+| **Observability** | Sentry (scrub em erro, transação, span e breadcrumb) | Telemetria da nossa operação |
+| **Hospedagem** | Vercel (app) + VPS própria (WAHA) — deploy hoje é manual, disparado por quem administra a infra; automação do trigger é trabalho futuro | Edge + dedicado pra WhatsApp |
 
 Detalhes: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
@@ -155,12 +128,12 @@ DeskcommCRM/
 ├── components/             # React (ui/, inbox/, kanban/, shell/, ...)
 ├── lib/                    # supabase/, waha/, ai/, api/, routing/, env.ts
 ├── hooks/
-├── supabase/migrations/    # SQL versionado (+ baseline.sql pro self-host)
+├── supabase/migrations/    # SQL versionado (+ baseline.sql da nossa infra)
 ├── workers/                # consumers de event_log (IA, RAG, LGPD, rotinas)
 ├── tests/{e2e,unit,invariants}/
 ├── scripts/                # seeds, qa-waves, manutenção
 ├── docs/                   # PRDs, specs, stories, SETUP.md
-└── hostgator-setup-kit/    # instalação self-host com 1 comando
+└── hostgator-setup-kit/    # kit de deploy da nossa própria infra (uso interno — ver nota no topo do README)
 ```
 
 ---
@@ -185,9 +158,9 @@ Entre eles está o **teste de isolamento RLS**: cria 2 organizações, simula os
 
 | Doc | O que tem |
 |---|---|
-| [`VISION.md`](VISION.md) | **Visão e posicionamento** — o que o projeto é, no que acredita e pra onde vai |
-| [`docs/SETUP.md`](docs/SETUP.md) | **Setup completo passo a passo** de todas as integrações |
-| [`docs/white-label.md`](docs/white-label.md) | **Instalar para clientes** — trocar a marca, uma instalação por cliente vs compartilhada, operação de revenda |
+| [`VISION.md`](VISION.md) | **Visão e posicionamento** — o que o projeto é, no que acredita, modelo de negócio e planos |
+| [`docs/SETUP.md`](docs/SETUP.md) | **Setup completo passo a passo** de todas as integrações (ambiente de dev) |
+| [`docs/white-label.md`](docs/white-label.md) | Multi-tenant / white-label — trocar a marca por conta do plano Agency |
 | [`CLAUDE.md`](CLAUDE.md) | Convenções não-negociáveis (leitura obrigatória pra contribuir) |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Visão de 1 página da arquitetura |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Fluxo PR + epic-executor |
@@ -195,20 +168,19 @@ Entre eles está o **teste de isolamento RLS**: cria 2 organizações, simula os
 | [`docs/specs/`](docs/specs/) | Specs técnicas 01–13 (schema SQL, payloads, MCP, governança) |
 | [`docs/business-rules/`](docs/business-rules/) | Regras de negócio fora do código |
 | [`docs/DEPLOY-CHECKLIST.md`](docs/DEPLOY-CHECKLIST.md) | Preflight pré-go-live |
-| [`docs/runbooks/waha-hostgator.md`](docs/runbooks/waha-hostgator.md) | Runbook completo de WAHA em produção (VPS Hostgator) |
-| [`docs/ATUALIZANDO.md`](docs/ATUALIZANDO.md) | Como atualizar uma instalação self-host |
+| [`docs/runbooks/waha-hostgator.md`](docs/runbooks/waha-hostgator.md) | Runbook de WAHA em produção (nossa infra) |
+| [`docs/ATUALIZANDO.md`](docs/ATUALIZANDO.md) | Como atualizar a instância de produção (operação interna) |
 
 ---
 
-## 🤝 Contribuindo
+## 🤝 Contribuindo (time interno)
 
-Esse projeto é open source pra comunidade. Toda contribuição é bem-vinda — desde fix de typo em doc até feature nova.
+Repositório privado — fluxo de PR pro time e colaboradores diretos, não contribuição pública externa.
 
 **Antes de abrir PR:**
 
 1. Leia [`CLAUDE.md`](CLAUDE.md) (~5 min) — convenções não-negociáveis (multi-tenancy, RLS, audit, LGPD).
 2. Leia [`CONTRIBUTING.md`](CONTRIBUTING.md) — fluxo de branches, commits, epic-executor.
-3. Siga o [Código de Conduta](CODE_OF_CONDUCT.md).
 
 **Fluxo curto:**
 
@@ -245,14 +217,16 @@ Pra **vulnerabilidades de segurança**, **NÃO abra issue pública** — use o [
 - **Atendimento WhatsApp** — inbox 3 painéis em tempo real, conexões WAHA multi-número, mídia via Storage, anti-banimento (throttle + jitter + janela de horário), STOP detection.
 - **CRM & pedidos** — kanban com vocabulário configurável por nicho (fractional indexing), customer 360, contatos, tags, integração Nuvemshop pra e-commerce.
 - **IA nativa** — agentes com RAG por tenant (pgvector), análise de sentimento, handoff IA→humano, controle de budget por org, MCP server interno.
-- **LGPD** — export e redact via workers, anonimização em cascata, consentimento auditado.
-- **Self-host** — `hostgator-setup-kit` (app + WAHA + banco com 1 comando), `baseline.sql` auto-curativo, runbook de produção.
+- **LGPD** — export e redact via workers, anonimização em cascata, consentimento auditado. *(papéis de controlador/operador em revisão por conta do modelo SaaS — ver nota abaixo)*
+- **Infraestrutura de produção** — deploy em VPS própria (app + WAHA + banco), `baseline.sql` auto-curativo, runbook de produção. Trigger de deploy ainda manual; automação é próximo passo.
 - **Webhooks & automação** — fontes de captação + regras QUANDO/SE/ENTÃO + gatilhos pra sistemas externos.
 - **Governança de atendimento** — RBAC server-side em toda a API, atribuição e transferência auditadas (IA como assignee de 1ª classe), visualização por papel (RLS) + métricas por atendente, roteamento automático com fila e painel de gestão, e contrato de governança pra agentes de IA externos ([`docs/specs/14`](docs/specs/14-contrato-governanca-agentes-externos.md)). Épico guiado por 100+ invariantes (G1–G6).
 - **Operação visível** — telas pro operador entender o agente: motivo da retenção anti-ban traduzido na conversa, central de avisos com severidade, controle de proteção de envio (janela/ritmo/teto) e propostas do flywheel aplicáveis como versão nova (com gate humano).
 
 ### 🔮 Próximo
 
+- **Automação do deploy** — hoje o "clicar pra implantar" é manual; automatizar o gatilho (push/merge → deploy) é a próxima frente de infra.
+- **Definição formal de papéis LGPD (controlador/operador) sob o modelo SaaS** — o texto antigo assumia cada cliente controlando a própria instância; agora que hospedamos, os termos de tratamento de dados precisam ser redesenhados.
 - **MCP público** — capabilities do CRM expostas pro ecossistema de agentes: plugue o agente que quiser e ele opera o Deskcomm.
 - **Flywheel de auto-aprimoramento** — o loop conversa resolvida → conhecimento → agente melhor, medido e com gate humano.
 - **Templates por nicho** — pipelines e vocabulários prontos pra clínica, imobiliária, infoproduto e serviços (e-commerce já entregue).
@@ -261,50 +235,13 @@ Pra **vulnerabilidades de segurança**, **NÃO abra issue pública** — use o [
 
 ---
 
-## 💬 Comunidade
+## 📜 Licença do código-fonte
 
-- **Discussões:** [GitHub Discussions](https://github.com/melgarafael/DeskcommCRM/discussions) — pra perguntas, ideias, showcase.
-- **Issues:** [GitHub Issues](https://github.com/melgarafael/DeskcommCRM/issues) — bugs e tasks.
-- **Instagram:** [@melgarafael](https://www.instagram.com/melgarafael)
-- **YouTube:** [youtube.com/@melgarafael](https://www.youtube.com/@melgarafael)
-
----
-
-## 📜 Licença
-
-Distribuído sob a licença **MIT** — veja [`LICENSE`](LICENSE). Você pode usar, modificar
-e distribuir livremente, inclusive comercialmente. O software é fornecido **"como está",
-sem garantias** (ver cláusula de isenção no `LICENSE`).
-
----
-
-## 🛟 Suporte & responsabilidades (self-host)
-
-Este é um projeto **self-host**: cada pessoa roda o CRM na **própria infraestrutura**
-(VPS, banco Supabase e chave de IA próprios). Isso implica:
-
-- **Suporte é comunitário e "as-is".** Dúvidas e bugs entram como
-  [Issues](https://github.com/melgarafael/DeskcommCRM/issues) ou
-  [Discussions](https://github.com/melgarafael/DeskcommCRM/discussions). Não há SLA nem
-  suporte garantido — é open source mantido por boa vontade.
-- **Você é responsável pela sua instalação.** Atualizações não são automáticas
-  (`bash hostgator-setup-kit/update.sh` quando quiser), e manter/backup do seu servidor
-  é com você.
-- **LGPD — atenção:** quem **hospeda** a instância é o **controlador** dos dados pessoais
-  ali tratados (clientes, conversas, pedidos), com as obrigações legais decorrentes. Os
-  mantenedores do projeto **não são** controladores nem operadores da sua instância, e não
-  têm acesso ao seu banco, ao seu WhatsApp nem ao seu storage. A única coisa que pode sair
-  da sua máquina para nós é o relatório de erro descrito abaixo — e só se você deixar.
-- **Telemetria (Sentry):** o `install.sh` **pergunta** durante a instalação e respeita a
-  sua resposta; em modo não-interativo, sem `SENTRY_DSN` definido, a telemetria fica
-  **desligada**. Se você aceitar o Sentry da comunidade, o que é enviado são **relatórios
-  de erro** (stack trace) com CPF, telefone e e-mail substituídos, cabeçalhos sensíveis
-  removidos, e token de webhook/convite redigido da URL — **sem** rastreamento de
-  performance e **sem** replay de sessão, que ficam em 0 nesse caminho. Para desligar a
-  qualquer momento: `SENTRY_DSN=off` no `.env`. Para mandar ao **seu** Sentry (aí sim com
-  performance e replay): `SENTRY_DSN=<seu-dsn>`. O que é redigido, e por quê, está em
-  [`lib/sentry/scrub.ts`](lib/sentry/scrub.ts); a resolução do DSN em
-  [`lib/sentry/dsn.ts`](lib/sentry/dsn.ts).
+O código-base tem origem numa distribuição sob licença **MIT** (ver [`LICENSE`](LICENSE)) —
+o aviso de copyright original é preservado no arquivo por obrigação da própria licença.
+O repositório é privado e o produto é comercializado como SaaS pago; isso não altera a
+obrigação de manter o aviso de copyright no software. Questões de marca/trademark do nome
+do projeto original, se houver, seguem em avaliação separada da licença de código.
 
 ---
 
@@ -315,14 +252,12 @@ Este é um projeto **self-host**: cada pessoa roda o CRM na **própria infraestr
 - **Vercel** — hosting + AI Gateway.
 - **Anthropic** (Claude) — IA conversacional.
 - **shadcn/ui** — base de componentes.
-- A comunidade que nos levou do e-commerce pra clínicas, imobiliárias, infoprodutos e além — vocês definiram o que este projeto é.
+- Os primeiros clientes que nos levaram do e-commerce pra clínicas, imobiliárias, infoprodutos e além — vocês definiram o que este projeto é.
 
 ---
 
 <div align="center">
 
-**Built with ☕ in Brasil** · **Made for the community**
-
-Siga o desenvolvimento: [Instagram](https://www.instagram.com/melgarafael) · [YouTube](https://www.youtube.com/@melgarafael)
+**Built with ☕ in Brasil**
 
 </div>

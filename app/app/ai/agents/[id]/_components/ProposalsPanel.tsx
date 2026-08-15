@@ -6,6 +6,7 @@
  */
 import { formatDistanceToNowStrict } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import Link from "next/link";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,16 @@ const TYPE_LABEL: Record<ProposalRow["type"], string> = {
   golden_case: "Caso exemplar",
   reentry_trigger: "Gatilho de reengajamento",
   org_memory_entry: "Memória da organização",
+  followup_flow_adjustment: "Ajuste de fluxo de follow-up",
 };
+
+/** Migration 0145 — este tipo não tem aplicação automática (editar um fluxo
+ *  publicado é mudança estrutural de grafo, não um texto que se anexa); o
+ *  gate humano é ler a evidência aqui e ir editar no builder. */
+function followupFlowLink(evidence: Record<string, unknown>): string | null {
+  const pointerId = evidence.pointer_id;
+  return typeof pointerId === "string" ? `/app/ai/followups/${pointerId}` : null;
+}
 
 export function ProposalsPanel({
   agentId,
@@ -88,7 +98,16 @@ export function ProposalsPanel({
               </p>
               <p className="mt-1 whitespace-pre-wrap text-sm">{p.content}</p>
             </div>
-            {!p.applied_at && !readOnly ? (
+            {p.type === "followup_flow_adjustment" ? (
+              (() => {
+                const href = followupFlowLink(p.evidence);
+                return href ? (
+                  <Button size="sm" variant="outline" asChild>
+                    <Link href={href}>Ver fluxo</Link>
+                  </Button>
+                ) : null;
+              })()
+            ) : !p.applied_at && !readOnly ? (
               <Button
                 size="sm"
                 variant="outline"

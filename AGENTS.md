@@ -9,13 +9,19 @@
 
 ## Objetivo do projeto
 
-Sistema operacional de vendas open source com agentes de IA nativos, multi-nicho,
+Sistema operacional de vendas com agentes de IA nativos, multi-nicho,
 WhatsApp como canal primário (via WAHA). Multi-tenant com RLS desde o dia 1, LGPD
-nativa. Monetização = self-host em VPS, não assinatura. Posicionamento: [`VISION.md`](VISION.md).
+nativa. Monetização = SaaS pago, hospedado por nós, segmentado em planos (Starter/
+Growth/Scale/Agency). Posicionamento: [`VISION.md`](VISION.md).
 
-**Consequência que muda como você trabalha:** o produto é distribuído como código.
-Quem instala numa VPS **é** o usuário. Uma mudança que funciona na máquina do dev e
-quebra no clone fresco é um bug de produto, não um detalhe de ambiente.
+**⚠️ Doutrina técnica ainda não reconciliada com o pivô de negócio (2026-08-14):**
+o restante deste arquivo e o `CLAUDE.md` (seções de Migrations, Deploy, QA Visual)
+ainda assumem "o produto é distribuído como código, quem instala numa VPS é o
+usuário" — ou seja, o modelo de auto-hospedagem pelo cliente via `hostgator-setup-kit`.
+Isso não foi revisado à luz do SaaS hospedado por nós. Até decisão explícita, trate
+como **desatualizado, não como doutrina válida** nas partes que descrevem o cliente
+instalando o produto — mas a disciplina de migration versionada + `baseline.sql`
+continua valendo pra *nossa própria* infraestrutura multi-tenant.
 
 ## Stack (CONFIRMADO em `package.json`)
 

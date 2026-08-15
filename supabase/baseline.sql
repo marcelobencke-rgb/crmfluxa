@@ -6872,10 +6872,12 @@ create table if not exists org_memory_entries (
 create index if not exists idx_org_memory_entries_org_status
   on org_memory_entries (organization_id, status, created_at);
 
--- Flywheel: novo destino de proposta (entry de memória da org).
+-- Flywheel: novo destino de proposta (entry de memória da org). Estendido pela
+-- migration 0145 (followup_flow_adjustment) — UMA constraint, UM bloco: editar
+-- aqui, não recriar mais abaixo (tests/unit/baseline-constraint-reconstruida.test.ts).
 alter table flywheel_distiller_proposals drop constraint if exists flywheel_distiller_proposals_type_check;
 alter table flywheel_distiller_proposals add constraint flywheel_distiller_proposals_type_check
-  check (type in ('playbook_bullet', 'golden_case', 'reentry_trigger', 'org_memory_entry'));
+  check (type in ('playbook_bullet', 'golden_case', 'reentry_trigger', 'org_memory_entry', 'followup_flow_adjustment'));
 
 -- RLS (mesmo shape do loop tenant_isolation_* do baseline).
 do $$
