@@ -10835,6 +10835,43 @@ create policy org_guardrail_layers_admin_write on public.org_guardrail_layers
 revoke all on public.org_guardrail_layers from anon;
 
 
+-- ---- seed de funil deixa de ser e-commerce fixo (migration 0144) ----
+-- Redefine por cima do CREATE OR REPLACE lá em cima (linha ~688): o funil
+-- automático de organização nova passa a nascer com o mesmo padrão neutro de
+-- 4 etapas que a tela "criar funil" já usa (Novo · Em andamento · Ganho ·
+-- Perdido), em vez de "Pedidos" com 8 etapas de e-commerce. Organizações que
+-- já existem não são tocadas.
+CREATE OR REPLACE FUNCTION "public"."fn_seed_default_pipeline_for_org"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public', 'pg_temp'
+    AS $$
+declare
+  v_pipeline_id uuid;
+  v_position numeric := 1000;
+  r record;
+begin
+  insert into public.crm_pipelines (organization_id, name, slug, is_default, position)
+  values (new.id, 'Funil de vendas', 'funil-de-vendas', true, 1000)
+  returning id into v_pipeline_id;
+
+  for r in
+    select * from (values
+      ('Novo',           'novo',           false, false),
+      ('Em andamento',   'em_andamento',   false, false),
+      ('Ganho',          'ganho',          true,  false),
+      ('Perdido',        'perdido',        false, true)
+    ) as t(stage_name, stage_slug, won, lost)
+  loop
+    insert into public.crm_stages (organization_id, pipeline_id, name, slug, position, is_won, is_lost)
+    values (new.id, v_pipeline_id, r.stage_name, r.stage_slug, v_position, r.won, r.lost);
+    v_position := v_position + 1000;
+  end loop;
+
+  return new;
+end$$;
+
+notify pgrst, 'reload schema';
+
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
 -- ⚠️ ESTE BLOCO É, DE PROPÓSITO, O ÚLTIMO DO ARQUIVO. Apêndice novo entra ANTES
@@ -10908,42 +10945,5 @@ grant execute on function public.fn_decrypt_oauth(bytea) to service_role;
 grant execute on function public.fn_encrypt_oauth(text) to service_role;
 grant execute on function public.fn_lgpd_cascade_redact_contact(uuid, uuid, uuid) to service_role;
 grant execute on function public.fn_update_budget_consumption() to service_role;
-
-notify pgrst, 'reload schema';
-
--- ---- seed de funil deixa de ser e-commerce fixo (migration 0144) ----
--- Redefine por cima do CREATE OR REPLACE lá em cima (linha ~688): o funil
--- automático de organização nova passa a nascer com o mesmo padrão neutro de
--- 4 etapas que a tela "criar funil" já usa (Novo · Em andamento · Ganho ·
--- Perdido), em vez de "Pedidos" com 8 etapas de e-commerce. Organizações que
--- já existem não são tocadas.
-CREATE OR REPLACE FUNCTION "public"."fn_seed_default_pipeline_for_org"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO 'public', 'pg_temp'
-    AS $$
-declare
-  v_pipeline_id uuid;
-  v_position numeric := 1000;
-  r record;
-begin
-  insert into public.crm_pipelines (organization_id, name, slug, is_default, position)
-  values (new.id, 'Funil de vendas', 'funil-de-vendas', true, 1000)
-  returning id into v_pipeline_id;
-
-  for r in
-    select * from (values
-      ('Novo',           'novo',           false, false),
-      ('Em andamento',   'em_andamento',   false, false),
-      ('Ganho',          'ganho',          true,  false),
-      ('Perdido',        'perdido',        false, true)
-    ) as t(stage_name, stage_slug, won, lost)
-  loop
-    insert into public.crm_stages (organization_id, pipeline_id, name, slug, position, is_won, is_lost)
-    values (new.id, v_pipeline_id, r.stage_name, r.stage_slug, v_position, r.won, r.lost);
-    v_position := v_position + 1000;
-  end loop;
-
-  return new;
-end$$;
 
 notify pgrst, 'reload schema';
