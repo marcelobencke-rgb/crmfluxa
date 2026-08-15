@@ -54,7 +54,7 @@ import {
  * Doutrina: docs/doctrine/sistema-vivo.md — "por qual porta se chega até mim?"
  */
 
-export type NavGroupId = "visao_geral" | "atendimento" | "crm" | "ia" | "analise" | "organizacao";
+export type NavGroupId = "visao_geral" | "atendimento" | "crm" | "ia" | "canais" | "analise" | "organizacao";
 
 export interface NavGroup {
   id: NavGroupId;
@@ -102,6 +102,7 @@ export const NAV_GROUPS: NavGroup[] = [
   { id: "atendimento", label: "Atendimento" },
   { id: "crm", label: "CRM" },
   { id: "ia", label: "Agente de IA", hub: { href: "/app/ai", label: "Ver tudo em IA" } },
+  { id: "canais", label: "Canais" },
   { id: "analise", label: "Análise" },
   {
     id: "organizacao",
@@ -359,10 +360,10 @@ export const NAV_DESTINATIONS: NavDestination[] = [
     description:
       "Seus números de WhatsApp: por QR ou canal oficial da Meta, com saúde, reconexão e templates.",
     icon: PlugsConnected,
-    group: "organizacao",
-    section: "Canais",
+    group: "canais",
     minRole: "admin",
     healthDot: true,
+    sidebar: true,
   },
   {
     // Não tinha link nenhum no app inteiro: só se chegava digitando a URL.
@@ -370,20 +371,20 @@ export const NAV_DESTINATIONS: NavDestination[] = [
     label: "Nuvemshop",
     description: "Conecte a loja para trazer pedidos e clientes para dentro do CRM.",
     icon: Storefront,
-    group: "organizacao",
-    section: "Canais",
+    group: "canais",
     // A página não filtra por papel, mas as Server Actions de conectar e
     // desconectar exigem admin — mostrar a um viewer seria oferecer botão morto.
     minRole: "admin",
+    sidebar: true,
   },
   {
     href: "/app/webhooks",
     label: "Webhooks",
     description: "Avise outros sistemas quando algo acontecer aqui dentro.",
     icon: WebhooksLogo,
-    group: "organizacao",
-    section: "Canais",
+    group: "canais",
     minRole: "manager",
+    sidebar: true,
   },
 
   // ---- Análise — olhar o sistema funcionando ----
@@ -410,9 +411,9 @@ export const NAV_DESTINATIONS: NavDestination[] = [
     label: "Audit Log",
     description: "Quem fez o quê, quando — o histórico que não se apaga.",
     icon: ClockCounterClockwise,
-    group: "organizacao",
-    section: "Dados e acesso",
+    group: "analise",
     minRole: "manager",
+    sidebar: true,
   },
 
   // ---- Organização — conta, empresa, acesso ----
