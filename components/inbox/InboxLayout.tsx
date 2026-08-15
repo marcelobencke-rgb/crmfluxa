@@ -51,7 +51,7 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
   const composerRef = useRef<ComposerHandle | null>(null);
 
   const filters: ConversationsFilters = useMemo(() => {
-    let f: ConversationsFilters = { search: filterValue.search || undefined };
+    const f: ConversationsFilters = { search: filterValue.search || undefined };
 
     // 1. Status
     if (filterValue.status === "open") {

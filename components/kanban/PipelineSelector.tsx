@@ -107,7 +107,7 @@ export function PipelineSelector({
           // Redireciona para o kanban base (que vai buscar o padrão)
           router.push("/app/pipelines");
         },
-        onError: (e) => toast.error(`Erro: ${(e as any).message || "Falha ao arquivar"}`),
+        onError: (e) => toast.error(`Erro: ${e instanceof Error ? e.message : "Falha ao arquivar"}`),
       }
     );
   };

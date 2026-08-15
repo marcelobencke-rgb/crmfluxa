@@ -80,7 +80,7 @@ export interface AutomationRuleRunRow {
   error: string | null;
   created_at: string;
   automation_rules: { name: string } | null;
-  event_log?: { entity_kind: string; entity_id: string; payload: any } | null;
+  event_log?: { entity_kind: string; entity_id: string; payload: Record<string, unknown> } | null;
 }
 
 const RUNS_KEY = ["automation-rule-runs"];

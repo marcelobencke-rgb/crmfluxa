@@ -2,6 +2,7 @@
 import { useCallback, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { MagnifyingGlass, Funnel, Inbox, User, Robot, CheckCircle, EnvelopeSimple, WarningCircle, Users, Clock } from "@/lib/ui/icons";
+import type { Icon } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -90,7 +91,7 @@ function SidebarItem({
   active,
   onClick,
 }: {
-  icon: any;
+  icon: Icon;
   label: string;
   active: boolean;
   onClick: () => void;

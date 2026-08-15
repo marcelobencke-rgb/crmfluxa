@@ -13,7 +13,7 @@ import { carregarEnvLocal } from "./lib/env-de-teste";
 if (typeof globalThis.WebSocket === "undefined") {
   globalThis.WebSocket = class WebSocket {
     constructor() { throw new Error("WebSocket not implemented"); }
-  } as any;
+  } as unknown as typeof globalThis.WebSocket;
 }
 
 const env = carregarEnvLocal();

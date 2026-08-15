@@ -12,36 +12,20 @@ import { describe, expect, it, vi } from "vitest";
  * A correção é na VISTA, não no dado: `exclude_finished` esconde os estados
  * terminais. As fechadas continuam existindo, com dono, na aba Fechadas.
  *
- * Os três elos da corrente são provados separados porque quebram separados:
- * o significado da aba, a serialização para a query string, e o predicado SQL.
+ * Os dois elos da corrente são provados separados porque quebram separados:
+ * a serialização para a query string, e o predicado SQL. (Um terceiro elo,
+ * o significado da aba via `tabToFilter`, existia enquanto o InboxLayout
+ * mapeava tabs nomeadas 1:1 pra filtro; o componente migrou pra dois eixos
+ * independentes — status × assignee — direto no `filters` useMemo, sem
+ * função isolada pra testar. Os elos abaixo continuam válidos porque testam
+ * o schema e o handler, que não mudaram.)
  */
 
 import { listConversationsHandler } from "@/app/api/v1/conversations/_handler";
-import { tabToFilter } from "@/components/inbox/InboxLayout";
 import { CONVERSATION_TERMINAL_STATUSES, listConversationsQuerySchema } from "@/lib/schemas";
 
 // ---------------------------------------------------------------------------
-// elo 1 — o significado da aba
-// ---------------------------------------------------------------------------
-
-describe("tabToFilter — o que cada aba significa", () => {
-  it("Minhas pede as minhas SEM as terminais", () => {
-    expect(tabToFilter("mine")).toEqual({ assigned_to: "me", exclude_finished: true });
-  });
-
-  it("Fechadas continua mostrando as fechadas — senão não sobra onde vê-las", () => {
-    expect(tabToFilter("closed")).toEqual({ status: "closed" });
-  });
-
-  it("as outras abas não ganham o filtro de tabela", () => {
-    expect(tabToFilter("unassigned").exclude_finished).toBeUndefined();
-    expect(tabToFilter("all").exclude_finished).toBeUndefined();
-    expect(tabToFilter("ai").exclude_finished).toBeUndefined();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// elo 2 — a query string
+// elo 1 — a query string
 // ---------------------------------------------------------------------------
 
 describe("schema da rota", () => {
@@ -62,7 +46,7 @@ describe("schema da rota", () => {
 });
 
 // ---------------------------------------------------------------------------
-// elo 3 — o predicado SQL
+// elo 2 — o predicado SQL
 // ---------------------------------------------------------------------------
 
 /** Registra a cadeia do PostgREST; resolve como lista vazia no `await`. */

@@ -54,7 +54,7 @@ export const updateWebhookSourceSchema = createWebhookSourceSchema.partial().ext
 
 export const createAutomationRuleSchema = z.object({
   name: z.string().min(1, "O nome da automação é obrigatório").max(120),
-  trigger_event: z.enum(TRIGGER_EVENTS, { errorMap: () => ({ message: "Escolha um gatilho" }) }),
+  trigger_event: z.enum(TRIGGER_EVENTS, { error: "Escolha um gatilho" }),
   conditions: z.array(conditionSchema).max(10).default([]),
   actions: z.array(actionSchema).min(1, "Adicione pelo menos uma ação").max(10),
 });

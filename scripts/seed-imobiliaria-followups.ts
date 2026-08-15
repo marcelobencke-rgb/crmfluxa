@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { carregarEnvLocal } from "./lib/env-de-teste";
 
 class DummyWebSocket {}
-globalThis.WebSocket = DummyWebSocket as any;
+globalThis.WebSocket = DummyWebSocket as unknown as typeof WebSocket;
 
 const env = carregarEnvLocal();
 
@@ -23,7 +23,7 @@ async function getFirstOrg(): Promise<string> {
   return data.id;
 }
 
-async function createFlow(orgId: string, name: string, triggerConfig: any, handoffPolicy: string, graph: any) {
+async function createFlow(orgId: string, name: string, triggerConfig: Record<string, unknown>, handoffPolicy: string, graph: Record<string, unknown>) {
   console.log(`\n> Criando fluxo: "${name}"...`);
   
   // Create pointer
