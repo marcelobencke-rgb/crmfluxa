@@ -420,6 +420,18 @@ export const PONTOS_DE_IA: readonly PontoDeIa[] = [
     registraEm: "llm_calls",
   },
   {
+    id: "flywheel_followup_distiller",
+    rotulo: "Ajustar o fluxo de follow-up",
+    oQueFaz:
+      "Olha um fluxo de follow-up com desempenho fraco e propõe um ajuste na mensagem ou no tempo de espera.",
+    papel: "melhorar",
+    exige: {},
+    emissor: "lib/agent-engine/flywheel/live.ts",
+    sintomaDeFalha:
+      "Um fluxo de follow-up que está performando mal continua do mesmo jeito, sem ninguém sugerir o que trocar.",
+    registraEm: "llm_calls",
+  },
+  {
     id: "connection_test",
     rotulo: "Testar a conexão com o provedor",
     oQueFaz:
