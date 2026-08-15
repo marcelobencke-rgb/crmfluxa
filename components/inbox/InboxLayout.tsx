@@ -132,8 +132,8 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
   // parcialmente abaixo da borda, atrapalhando justo na hora de escrever.
   //
   // As duas parcelas NÃO estão na mesma unidade, e por isso o padding entra pelo
-  // token e não como `3rem`: o `tailwind.config.ts` remapeia a escala de spacing
-  // para `var(--space-N)` — `--space-6` é `24px` LITERAL (app/globals.css) —, mas
+  // token e não como `3rem`: o `@theme inline` de `app/globals.css` remapeia a
+  // escala de spacing para `var(--space-N)` — `--space-6` é `24px` LITERAL —, mas
   // não remapeia o `14`, que segue sendo `3.5rem` de verdade. Escrever a soma como
   // `6.5rem` só acerta enquanto a raiz for 16px; com acessibilidade de fonte maior
   // ou menor o composer sai da tela de novo. Pelo token, a conta se auto-corrige
