@@ -22,13 +22,22 @@ export class PdfExtractError extends Error {
  */
 export async function extractPdfText(buffer: Buffer): Promise<string> {
   // --- Primary: pdf-parse ---
+  // v2 trocou o export default (função) por uma classe `PDFParse` com
+  // `getText()`/`destroy()` — a chamada antiga (`.default(buffer)`) não
+  // lançaria typecheck, só falharia em runtime (import undefined) e cairia
+  // sempre no fallback pdfjs-dist, silenciosamente mais lento e frágil.
   try {
-    const pdfParse = (await import("pdf-parse")).default;
-    const result = await pdfParse(buffer);
-    const text = (result.text ?? "").trim();
-    if (text.length > 0) return text;
-    // Empty text from pdf-parse — may be an image-only PDF; fall through to pdfjs
-    console.warn("[pdf-extract] pdf-parse returned empty text — trying pdfjs fallback");
+    const { PDFParse } = await import("pdf-parse");
+    const parser = new PDFParse({ data: buffer });
+    try {
+      const result = await parser.getText();
+      const text = (result.text ?? "").trim();
+      if (text.length > 0) return text;
+      // Empty text from pdf-parse — may be an image-only PDF; fall through to pdfjs
+      console.warn("[pdf-extract] pdf-parse returned empty text — trying pdfjs fallback");
+    } finally {
+      await parser.destroy();
+    }
   } catch (err) {
     console.warn("[pdf-extract] pdf-parse failed, trying pdfjs-dist fallback:", err);
   }

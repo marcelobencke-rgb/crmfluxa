@@ -32,8 +32,10 @@ describe("extractPdfText", () => {
     // Sabota só o caminho primário. Se o fallback estiver quebrado, isto fica
     // vermelho — que é exatamente o que não acontecia antes desta correção.
     vi.doMock("pdf-parse", () => ({
-      default: () => {
-        throw new Error("pdf-parse sabotado de propósito");
+      PDFParse: class {
+        constructor() {
+          throw new Error("pdf-parse sabotado de propósito");
+        }
       },
     }));
     vi.resetModules();
@@ -48,8 +50,10 @@ describe("extractPdfText", () => {
     // self-hoster vê "DOMMatrix is not defined" e não tem como ligar isso a uma
     // dependência opcional que ele nem sabe que existe.
     vi.doMock("pdf-parse", () => ({
-      default: () => {
-        throw new Error("pdf-parse sabotado de propósito");
+      PDFParse: class {
+        constructor() {
+          throw new Error("pdf-parse sabotado de propósito");
+        }
       },
     }));
     // Na VPS o erro nasce no IMPORT do módulo. Aqui ele nasce no getDocument, e é
