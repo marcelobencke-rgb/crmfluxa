@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { createClient } from "@/lib/supabase/server";
+import { listSelectableChannels } from "@/lib/channels/selectable";
 import {
   Card,
   CardContent,
@@ -150,11 +151,11 @@ export default async function DashboardPage() {
   // SCAN_QR_CODE | WORKING | STOPPED | FAILED — 'connected' nunca foi um
   // valor válido, então este card também sempre mostrou 0. Mesma classe de
   // bug corrigida hoje mais cedo em ConnectionsClient.tsx.
-  const { count: activeChannels } = await supabase
-    .from("channel_sessions")
-    .select("*", { count: "exact", head: true })
-    .eq("organization_id", orgId)
-    .eq("status", "WORKING");
+  // Via listSelectableChannels (não select à mão): senão o card conta canal
+  // arquivado como "online" se o status dele ainda estiver WORKING.
+  const activeChannels = (await listSelectableChannels(supabase, orgId)).filter(
+    (c) => c.status === "WORKING",
+  ).length;
 
   // 7. Atividades de hoje e movimentação de funil da semana — os 2 cards que
   // eram mock fixo, agora com dado real.
