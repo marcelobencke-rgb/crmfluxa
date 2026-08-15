@@ -23,7 +23,7 @@
 
 ## Estado atual
 
-- **Onda:** 5 ✅. Onda 6 ✅. Onda 7 ✅. Onda 8 EM ANDAMENTO: **Task 8.1 ✅ — gatilho de silêncio.** **Task 8.3 (jornada E2E) ✅ — `tests/e2e/followup-journey.spec.ts`, 2/2 rodadas verdes.** Ver Log de avanços. Falta na Onda 8: `stage_change` (não pedido nesta task — brief 8.1 focou só em `silence`), flywheel, e o restante da Task 8.3 (checklist DoD item a item + doc do PRD — o controller cobre essa parte separadamente).
+- **Onda:** 5 ✅. Onda 6 ✅. Onda 7 ✅. Onda 8 EM ANDAMENTO: **Task 8.1 ✅ — gatilho de silêncio.** **Task 8.3 (jornada E2E) ✅ — `tests/e2e/followup-journey.spec.ts`, 2/2 rodadas verdes.** **Gatilho `stage_change` ✅ (2026-08-14, sessão fora do worktree — ver entrada mais recente do Log).** **Task 8.2/flywheel fechado de verdade ✅ (mesma sessão) — outcomes agregados (que já existiam, mas só logavam) agora viram proposta `followup_flow_adjustment` na aba existente.** Falta na Onda 8: o restante da Task 8.3 (checklist DoD item a item + doc do PRD — o controller cobre essa parte separadamente), e **prova via `pnpm test:db` real** dos dois itens novos (a sessão que os implementou não tinha Docker disponível — ver entrada do Log).
 - **Task 7.1 ✅ — endpoint fila + aba + cancelar.** `GET /api/v1/ai/followups/queue` (viewer+): UNION app-side de `followup_enrollments` + `cron_jobs` (kind='at'+job_kind='followup_turn'), ordenado `(next_fire_at asc nulls last, id asc)`, cursor seek `{next_fire_at,id}` aplicado às 2 fontes, janela `limit+1` por fonte + merge (k-way lookahead — sem pular/duplicar entre páginas). `status`/`pointer_id` pulam a fonte de promessas (não têm esses campos); `q` resolve pra `contact_id`s primeiro, aplicado nas 2 fontes. `POST /api/v1/ai/followups/enrollments/:id/cancel` (manager+): 409 `already_terminal` se já encerrado, senão cancela + evento `cancelled_manual` + audit `followup_enrollment.cancelled` (ação nova). `app/app/ai/followups/page.tsx` virou `Tabs` (Fluxos/Fila) — o gate de página que exigia manager+ pra ver QUALQUER coisa foi relaxado pra só exigir org ativa (Fila é viewer+; Fluxos manteve seu próprio `canWrite`). `QueueTab.tsx` + `useFollowupQueue.ts` (useInfiniteQuery, mesmo padrão de `useAdminIncidents`) — filtros status/fluxo/busca (debounce 250ms), relativo+absoluto via `date-fns`/`ptBR` (reuso, sem dep nova), `AlertDialog` de cancelar.
   **PROVA AO VIVO (`tests/e2e/followup-queue.spec.ts`, 2/2 verde, `E2E_PORT=3010`):** setup 100% via API real (fluxo publicado, contato, enrollment) + `scripts/seed-e2e-followup-promise.ts` novo (mesmo padrão de `seed-e2e-queue.ts`, service role — não existe rota pública pra criar `cron_jobs`, só a tool do agente em runtime). Os 4 casos de aceite cobertos SEM DEFERIR NENHUM: (1) linha do enrollment com contato/fluxo/nó/próximo-disparo/status; (2) filtro status esconde e filtro por fluxo estreita pra exatamente 1 linha; (3) cancelar via dialog → some do filtro Ativo + toast + prova via API (`GET queue?status=cancelled` contém o id cancelado) + RBAC extra verificada ad-hoc (viewer faz POST direto em `/cancel` → 403 `forbidden_role` server-side, não só botão escondido); (4) busca por nome da promessa seedada estreita a fila INTEIRA da org pra exatamente 1 linha (`flow_name="Promessa"`, motivo, "Agendada", "em 3 dias", sem botão Cancelar). Screenshots em `test-results/followup-7.1-0{1..6}-*.png` — a 01 mostra dado 100% real incluindo 3 promessas de uso genuíno da IA já existentes no dev DB ("Prova Multimodal"). `npm run typecheck` 0, `npm run lint` 0 novo (2 erros pré-existentes intocados da Task 2.1), `npm run test:unit` 547/547 sem regressão. **Sem migration** (só leitura de tabelas já existentes; `cancelled_manual` é `event_type text` livre, sem CHECK a alterar). Detalhe completo em `.superpowers/sdd/task-7.1-report.md`.
 - **Task 6.3 ✅ — editor de condição de aresta.** `lib/followup/edge-condition-options.ts` (novo, puro): `edgeConditionOptions(sourceNode)` — `ai_classify` → `always` + 1 `class_match` por classe declarada + `class_match:no_reply`; `condition` → `always` + `cond_result:true/false`; qualquer outro tipo → só `always`. Mais `conditionKey`/`conditionLabel` (pt-br: classe crua, `no_reply`→"Sem resposta", `true`→"Sim", `false`→"Não", `always`→"Sempre") — 9 testes unit. `app/app/ai/followups/[id]/_components/EdgeConfigPanel.tsx` (novo): painel docado (mesmo estilo do NodeConfigPanel), mostra origem→destino e um Select com as opções exatas do nó de origem. `FlowCanvas.tsx`: `onEdgeClick` seleciona a aresta (fecha o painel de nó, e vice-versa — mutuamente exclusivos), `edgesForRender` (memo) injeta `label` derivado de `data.condition` em TODA aresta pro fio mostrar "positivo"/"Sem resposta"/"Sempre"/"Sim"/"Não" (React Flow's built-in edge label, sem edge customizado — confirmado no dist instalado que `BaseEdge`/`EdgeText` já suportam `label` nos 4 tipos default). `graph-mappers.ts`: só um `export` adicionado em `toFlowNode` (já existia, não exportada) — reuso, ZERO mudança de comportamento/round-trip.
@@ -40,6 +40,42 @@
 - 2026-07-21 (Task 4.1): **`AdminClient` do engine NÃO é `SupabaseClient`** — é uma interface própria e estreita (poucos métodos nomeados: claim/loadGraph/loadLeadFacts/loadEvents/insertEvent/updateEnrollment/loadPointerName/insertDeadInbox). Motivo: `tests/invariants/**` roda contra Postgres cru (`pg.Pool`, sem PostgREST — `NEXT_PUBLIC_SUPABASE_URL` aponta pra porta inalcançável de propósito no `vitest.db.config.ts`), então um `AdminClient=SupabaseClient` real seria intestável ali. `lib/followup/engine.ts` exporta `createSupabaseAdminClient(admin)` pra produção (ainda sem consumidor — a rota de cron é task futura) e o teste DB implementa o adapter `pg`-puro inline. **Próximas tasks que precisarem de uma rota real usando o engine devem usar `createSupabaseAdminClient`, não reinventar.**
 
 ## Log de avanços (mais recente primeiro)
+
+- 2026-08-14: **Gatilho `stage_change` + fechamento do loop do flywheel ✅ — sessão de chat fora
+  do worktree/branch `feat/followup-flows` (que já foi mergeada; trabalho direto em
+  `feat/followup-stage-flywheel` a partir de `main`).**
+  **Gatilho de etapa:** `lib/followup/enroll-contact.ts` (novo) extrai o insert idempotente
+  compartilhado, usado por `silence-sweep.ts` (refatorado, mesmo comportamento) e pelo gatilho
+  novo `lib/followup/stage-trigger.ts` + `stage-trigger.handler.ts`, registrado em
+  `lib/event-log/register-handlers.ts`. Reusa o MESMO evento `lead.stage_changed`
+  (`entity_kind='crm_lead'`) que `lib/automation/engine.ts` já consome — event-driven, não sweep
+  novo, porque mudança de etapa TEM evento (diferente de silêncio). Guard de `entity_kind` idêntico
+  ao do automation engine, contra o emissor legado de banco. `tests/invariants/followup-stage-trigger.test.ts`
+  (5 casos: enrolla, dedupe do legado, etapa não configurada, gate-out, exclusividade org-wide) —
+  **escrito seguindo o padrão de `followup-silence-sweep.test.ts`, mas NÃO RODADO contra Postgres
+  real** — esta sessão não tinha Docker disponível. Rodar `pnpm test:db` antes de mesclar.
+  **Flywheel:** `lib/followup/outcome-stats.ts` ganhou `terminal: number` no `FlowOutcomeStat`
+  (o dado já era calculado em SQL, só não saía) e `flagFlowsForReview` (puro, testado
+  `lib/followup/outcome-stats.test.ts`, 8/8 verde). `lib/agent-engine/flywheel/live.ts`:
+  `runFlywheelOnce` agora, pra cada fluxo flagado, gera uma proposta via distiller dedicado
+  (`followupFlowDistillerPrompt`) e grava em `flywheel_distiller_proposals` com
+  `type='followup_flow_adjustment'`, deduplicando contra proposta pendente já aberta pro mesmo
+  pointer. **Migration 0145** estende o CHECK de `type` (editando o bloco ÚNICO existente da 0067,
+  não recriando — `tests/unit/baseline-constraint-reconstruida.test.ts` pegou minha primeira
+  tentativa errada, que criava um segundo bloco). Decisão do dono: **sem aplicação automática** —
+  `lib/ai/apply-proposal.ts` já trata o tipo como `proposal_type_unsupported` de graça; a UI
+  (`ProposalsPanel.tsx`) mostra "Ver fluxo" linkando pro builder em vez de um botão Aplicar.
+  **PROVA:** `pnpm typecheck` limpo (os 2 erros que aparecem são pré-existentes em `main`,
+  confirmado via `git stash`); `pnpm eslint` limpo em todos os arquivos tocados;
+  `pnpm vitest run lib/followup lib/agent-engine/flywheel` → 194/194 verde; suíte completa
+  (`pnpm vitest run`) tem ~20 falhas em arquivos que não têm NENHUMA relação com este trabalho
+  (branding, sidebar, composer, rate-limit, cobertura de e2e — confirmado que nenhum importa
+  nada tocado aqui), pré-existentes no checkout. **Achado à parte, NÃO desta task:** a migration
+  0144 (commit `75a8737`, mesma data) colou seu bloco de função DEPOIS do bloco "VARREDURA anon"
+  no apêndice do baseline — quebra `tests/unit/varredura-anon-e-o-ultimo-bloco.test.ts`,
+  confirmado pré-existente via `git show HEAD`. Flagado como task separada, não corrigido aqui.
+  **Pendente pro controller:** rodar `pnpm test:db` de verdade (Docker) pra provar o teste de
+  invariante novo; aplicar a migration 0145 no dev DB remoto + regenerar `database.types.ts`.
 
 - 2026-07-23: **Task 8.6 ✅ — furo anti-spam do Rafael fechado: 1 follow-up vivo por lead
   ORG-WIDE + pin do agente no enrollment.**

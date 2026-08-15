@@ -32,6 +32,11 @@ export interface FlowOutcomeStat {
   flow_name: string;
   counts: FlowOutcomeCounts;
   total: number;
+  /** Denominador de `conversion_rate` — status completed OU cancelled. Exposto à
+   *  parte de `counts` (que é só os buckets por `outcome`) porque enrollments
+   *  `cancelled` sem outcome setado (ex.: `exclusivity_backfill`) são terminais
+   *  sem caírem em nenhum bucket de `counts` — somar os buckets subestimaria. */
+  terminal: number;
   conversion_rate: number | null;
 }
 
@@ -87,7 +92,36 @@ export async function aggregateFollowupOutcomes(pool: pg.Pool, orgId: string): P
         in_flight: Number(row.in_flight),
       },
       total: Number(row.total),
+      terminal,
       conversion_rate: terminal > 0 ? converted / terminal : null,
     };
   });
+}
+
+export interface FlagForReviewOptions {
+  /** Mínimo de enrollments terminais pra ter significância estatística — abaixo
+   *  disso, 1 ou 2 conversões já movem a taxa inteira e a proposta seria ruído. */
+  minTerminal?: number;
+  /** `conversion_rate` estritamente abaixo disso é candidato a proposta. */
+  maxConversionRate?: number;
+}
+
+const DEFAULT_MIN_TERMINAL = 20;
+const DEFAULT_MAX_CONVERSION_RATE = 0.15;
+
+/**
+ * Task B.1 — critério PURO (sem I/O) de quais fluxos merecem virar proposta
+ * do flywheel: volume terminal suficiente pra o número significar algo, E
+ * conversion_rate abaixo do limiar. `conversion_rate === null` (zero
+ * terminal) nunca é flagado — não há o que julgar ainda.
+ */
+export function flagFlowsForReview(
+  stats: FlowOutcomeStat[],
+  opts: FlagForReviewOptions = {},
+): FlowOutcomeStat[] {
+  const minTerminal = opts.minTerminal ?? DEFAULT_MIN_TERMINAL;
+  const maxConversionRate = opts.maxConversionRate ?? DEFAULT_MAX_CONVERSION_RATE;
+  return stats.filter(
+    (s) => s.conversion_rate !== null && s.terminal >= minTerminal && s.conversion_rate < maxConversionRate,
+  );
 }

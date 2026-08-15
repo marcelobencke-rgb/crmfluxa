@@ -40,6 +40,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { flowGraphSchema } from "./graph-schema";
 import { triggerConfigSchema } from "./api-schemas";
 import { resolveAgentForAutomaticTrigger, type FollowupGateDb } from "./agent-followup-gate";
+import { enrollContactIntoPointer } from "./enroll-contact";
 
 export interface SilencePointer {
   id: string;
@@ -125,16 +126,16 @@ export async function runSilenceSweep(deps: SilenceSweepDeps): Promise<SilenceSw
     const nextEvalAt = clock().toISOString();
 
     for (const contactId of contactIds) {
-      const { inserted } = await db.insertEnrollment({
-        organization_id: pointer.organization_id,
-        pointer_id: pointer.id,
-        version_id: pointer.active_version_id,
-        contact_id: contactId,
-        current_node_id: triggerNodeId,
-        next_eval_at: nextEvalAt,
-        agent_id: agentId,
+      const result = await enrollContactIntoPointer(db, {
+        organizationId: pointer.organization_id,
+        pointerId: pointer.id,
+        versionId: pointer.active_version_id,
+        contactId,
+        triggerNodeId,
+        agentId,
+        nextEvalAt,
       });
-      if (inserted) summary.enrolled++;
+      if (result.inserted) summary.enrolled++;
       else summary.skipped_existing++;
     }
   }
