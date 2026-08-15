@@ -45,7 +45,6 @@ describe("Composer + modo nota interna", () => {
 
     expect(sendMock).toHaveBeenCalledWith(
       expect.objectContaining({ conversation_id: "conv-1", body: "oi cliente", type: "text" }),
-      expect.anything(),
     );
     expect(createNoteMock).not.toHaveBeenCalled();
   });
@@ -72,7 +71,6 @@ describe("Composer + modo nota interna", () => {
 
     expect(createNoteMock).toHaveBeenCalledWith(
       expect.objectContaining({ conversation_id: "conv-1", body: "cliente ligou reclamando" }),
-      expect.anything(),
     );
     expect(sendMock).not.toHaveBeenCalled();
   });
