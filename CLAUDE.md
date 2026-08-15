@@ -14,7 +14,7 @@
 
 ## Visão (1 parágrafo)
 
-DeskcommCRM é um sistema operacional de vendas open source com agentes de IA nativos — multi-nicho (e-commerce, clínicas, imobiliárias, infoprodutos, serviços), com WhatsApp como canal primário (via WAHA). Agentes com RAG por tenant atendem, qualificam e movem o funil junto com humanos; CRM inteiro exposto via MCP. Monetização = self-host em VPS (parceria HostGator), não assinatura. Arquitetura multi-tenant com RLS desde o dia 1; LGPD nativa. Posicionamento completo: `VISION.md`.
+DeskcommCRM é um sistema operacional de vendas com agentes de IA nativos — multi-nicho (e-commerce, clínicas, imobiliárias, infoprodutos, serviços), com WhatsApp como canal primário (via WAHA). Agentes com RAG por tenant atendem, qualificam e movem o funil junto com humanos; CRM inteiro exposto via MCP. Monetização = SaaS pago, hospedado por nós, segmentado em planos por uso de IA/números/seats (Starter/Growth/Scale/Agency — detalhe em `VISION.md`). Arquitetura multi-tenant com RLS desde o dia 1; LGPD nativa. Posicionamento completo: `VISION.md`.
 
 ---
 
@@ -177,6 +177,14 @@ O caminho normal **não constrói nada na VPS**: commit → push → PR → merg
 `main` → o CI publica no GHCR → a VPS puxa. Imagem construída na VPS é exceção
 de emergência e é dívida: existe só naquele disco e qualquer `up -d` sem
 `APP_PULL_POLICY=never` a substitui em silêncio.
+
+**Estado atual (2026-08-14): o gatilho do deploy é manual.** Depois do merge na
+`main` e do CI publicar no GHCR, alguém precisa entrar na VPS/painel e disparar o
+`up -d` acima — não existe hoje um passo automático que puxe a imagem nova sozinho.
+Isso é reconhecido como dívida, não como doutrina desejada: automatizar o gatilho
+(deploy automático em push/merge) é o próximo passo planejado. Até lá, todo deploy
+real depende de alguém lembrar de clicar — trate isso como um risco operacional
+conhecido, não como "já está resolvido porque o CI publica a imagem".
 
 ---
 
