@@ -346,7 +346,15 @@ jobs:
           # ver o comentário do passo de build: vazio NÃO desliga.
           SENTRY_DSN: "off"
 
+      # `if: !cancelled()`: sem isto, QUALQUER falha na parte 1 pula a parte 2
+      # inteira (default do GitHub Actions é `success()` em passo sem `if`) — 18
+      # specs ficam mudas, e o triador não sabe se elas ainda passam. O split
+      # existe só pra isolar o contador de rate-limit de login (comentário
+      # acima), não pra fazer a segunda metade depender do resultado da
+      # primeira. `!cancelled()` (em vez de `always()`) evita rodar a parte 2
+      # depois de um cancelamento manual ou de timeout do job.
       - name: E2E — parte 2 de 2 (processo novo, contador de login zerado)
+        if: ${{ !cancelled() }}
         run: pnpm exec playwright test --workers=1 $SPECS_PARTE_2
         env:
           # Só o que NÃO vem do `.env.e2e`: isto é ajuste de CI, não config do

@@ -2,10 +2,10 @@
 type: harness-audit
 project: Fluxa CRM
 status: draft
-last_updated: 2026-07-29
+last_updated: 2026-08-16
 generated_by: auditoria documental (Claude Code) — verificação de arquivos, CI e configs
 confidence: alta (todos os itens verificados por leitura direta de arquivo/config; nenhum comando executado)
-audited_against: origin/main @ 789dfa6 (v1.0.0, 2026-07-27)
+audited_against: origin/main @ 789dfa6 (v1.0.0, 2026-07-27); apêndice de 2026-08-16 auditado contra origin/main @ 61effc5
 ---
 
 # Auditoria do harness — Fluxa CRM
@@ -133,6 +133,129 @@ O script existe e não é exercitado.
 - Se as branch protection rules do GitHub exigem os dois checks verdes para merge — é
   config de repositório remoto, invisível no checkout. **Isso decide se o gate de RLS é
   bloqueante ou apenas informativo**, e é a pergunta mais importante em aberto sobre o harness.
+
+---
+
+## Apêndice — `e2e.yml` crônico em vermelho (2026-08-16)
+
+Disparado por relato do usuário: as últimas 10 execuções de `e2e.yml` na `main` estavam
+vermelhas, incluindo commits totalmente não relacionados (bump de dependência, rename de
+marca), e PRs #6, #7, #8, #9 mergearam mesmo assim. Investigação via API pública do GitHub
+(sem `gh` CLI nem token disponíveis nesta sandbox — ver "Não pôde ser confirmado" abaixo) +
+leitura direta de código. Achados, na ordem em que explicam o maior número de falhas:
+
+### 1. Falha em cascata por design do workflow — CONSERTADO
+
+`e2e.yml` divide a suíte em dois passos (`E2E — parte 1 de 2` / `parte 2 de 2`) só para
+isolar o contador de rate-limit de login por IP entre dois processos `next start`
+separados (motivo documentado no próprio arquivo, linhas 316–337). O passo da parte 2 não
+tinha `if:`, e o default do GitHub Actions para passo sem `if` é `success()` — ou seja,
+**qualquer falha isolada na parte 1 pulava a parte 2 inteira** (hoje 18 dos 37 specs). Foi
+exatamente o que a run mais recente (31967651451, commit `61effc5`) mostrou: passo 17
+(`parte 1`) `failure`, passo 18 (`parte 2`) `skipped`. Isso por si só explica a metade dos
+"specs que nem rodaram" do relato — não é falta de cobertura, é cobertura real escondida
+atrás de um "skipped" que parece neutro mas não é.
+
+Conserto aplicado: `if: ${{ !cancelled() }}` no passo da parte 2
+([e2e.yml](../.github/workflows/e2e.yml)), para que ela sempre rode (exceto se o job for
+cancelado) e reporte o próprio resultado em vez de ficar muda quando a parte 1 falha.
+
+### 2. String de marca obsoleta em `signup-journey.spec.ts` — CONSERTADO
+
+`tests/e2e/signup-journey.spec.ts:46` esperava o texto literal `"Boas-vindas ao
+DeskcommCRM"`. `DEFAULT_APP_NAME` em [`lib/branding.ts`](../lib/branding.ts) virou
+`"Fluxa CRM"` no commit `3fb9fc0` (2026-08-14, `feat(automations)` — **não** no commit de
+rename `bf90366` do dia seguinte, que tocou só docs/config). Ou seja, o app já dizia "Fluxa
+CRM" na tela de onboarding um dia inteiro antes de qualquer commit de rename existir, e o
+spec ficou desalinhado desde então — toda run de `e2e.yml` neste repo (as 8 execuções
+existentes, todas de 2026-08-15 em diante) rodou depois dessa divergência, então
+**nunca houve uma run verde de `signup-journey` no histórico deste workflow**.
+
+Conserto aplicado: string do spec atualizada para `"Boas-vindas ao Fluxa CRM"`.
+
+### 3. Contraste insuficiente no rótulo de grupo da sidebar — CONSERTADO
+
+`components/shell/SidebarNav.tsx:84` (título de cada grupo de navegação, ex. "PRINCIPAL",
+"ATENDIMENTO") usava `text-muted-foreground/60` num texto de 10px. Contraste calculado
+(fórmula WCAG, luminância relativa sRGB) contra o fundo do card:
+
+| Tema | Cor efetiva (60% opacidade sobre o fundo) | Contraste | Limite AA (texto normal) |
+|---|---|---|---|
+| Claro | `#5d594f` a 60% sobre `#ffffff` → ≈`rgb(158,155,149)` | **≈2.77:1** | 4.5:1 — **reprova** |
+| Escuro | `#8e8b7f` a 60% sobre `#1d1c17` | não medido (o claro já reprova, motivo suficiente) |  |
+
+10px é texto normal (limite de "texto grande" do WCAG é 18pt/24px, ou 14pt bold), então o
+teto é 4.5:1, não 3:1. `text-muted-foreground` em opacidade cheia mede ≈6.98:1 (claro) e
+≈5.00:1 (escuro) contra o mesmo fundo — ambos confortavelmente acima do limite. Essa cor
+não é nova: existe desde o commit inicial do repo, então este achado é uma dívida
+pré-existente, não uma regressão do bump de Tailwind 3→4 (`492d514`) — mas explica a
+violação de `color-contrast` na sidebar que `rbac-roles.spec.ts` reporta via `axe-core` em
+toda tela `/app/*` que não exclui a sidebar do scan (a maioria dos `expectNoBlockingA11y`
+do spec não exclui — só o `[role="tablist"]` do Inbox está excluído, por um defeito
+diferente e já documentado no próprio spec, linhas 120–123).
+
+Conserto aplicado: removida a opacidade (`text-muted-foreground/60` → `text-muted-foreground`).
+
+### 4. Contradição de doutrina: `e2e` é check obrigatório ou não? — NÃO RESOLVIDO, PRECISA DE DONO
+
+O `CLAUDE.md` deste repo afirma (seção "Testes"): *"Todos os quatro são obrigatórios —
+medido em 2026-08-08 na branch protection"*, listando `verify, build-and-size, invariants,
+e2e` via `gh api .../branches/main/protection`. Mas o **comentário do próprio
+`.github/workflows/e2e.yml`** (linhas 10–17, escrito pela mesma doutrina) diz o oposto:
+*"NÃO-BLOQUEANTE por ausência... `e2e` não está na lista de checks obrigatórios da branch
+protection, então falhar aqui não segura merge"*, com uma nota para promovê-lo a obrigatório
+só "quando N execuções seguidas passarem limpas".
+
+As duas afirmações não podem estar certas ao mesmo tempo. O comportamento observado (PRs
+#6, #7, #8, #9 mergeados com `e2e` vermelho, confirmado pelo usuário) é consistente com o
+que o `e2e.yml` diz, não com o que o `CLAUDE.md` diz — ou seja, o `CLAUDE.md` provavelmente
+ficou desatualizado depois de alguma reversão, ou a medição de 2026-08-08 nunca foi refletida
+de volta no arquivo do workflow. **Não consegui confirmar qual é o estado real da branch
+protection nesta sessão** (ver abaixo) — isso precisa ser reconferido na fonte
+(`gh api repos/marcelobencke-rgb/crmfluxa/branches/main/protection --jq
+'.required_status_checks.contexts'`) por alguém com acesso, e o arquivo que estiver errado
+(`CLAUDE.md` ou o comentário do `e2e.yml`) precisa ser corrigido para parar de mentir pro
+próximo leitor.
+
+### O que NÃO foi medido nesta auditoria
+
+- **Não tive acesso a `gh` CLI nem a um token do GitHub nesta sandbox** (`gh: command not
+  found`; API REST de branch protection devolveu 401 sem autenticação). Toda conclusão
+  sobre runs/jobs veio da API pública não-autenticada (`GET
+  .../actions/workflows/e2e.yml/runs`, `GET .../actions/runs/{id}/jobs`), que expõe
+  status/conclusão por passo mas **não** o log bruto (`GET .../jobs/{id}/logs` devolveu
+  403 sem token) nem o artefato `playwright-report` de cada run. Os achados #2 e #3 vieram
+  de leitura de código correlacionada ao texto do relato do usuário, não da leitura direta
+  da falha no log — alta confiança pela precisão da correlação (a string bate byte a byte;
+  o cálculo de contraste bate com "color-contrast... na sidebar"), mas não é a mesma coisa
+  que ter visto a asserção `expect(...).toBeVisible()` falhando na saída do Playwright.
+- **Não reproduzi a suíte localmente.** Nem `docker` nem `supabase` (CLI) estão instalados
+  nesta sandbox — a receita de ambiente fresco da Doutrina de QA Visual
+  (`baseline.sql` + Supabase local pg17 + seeds + `next build`/`next start`) não é
+  executável aqui. Os três consertos acima não têm prova visual/E2E verde local — só leitura
+  de código e cálculo de contraste. **Isso é exatamente o tipo de "verde que não foi
+  medido" que a doutrina pede pra declarar**: alguém com Docker/Supabase CLI precisa rodar
+  `pnpm exec playwright test tests/e2e/signup-journey.spec.ts tests/e2e/rbac-roles.spec.ts`
+  (mínimo) contra os dois arquivos tocados antes de considerar #2 e #3 verificados de verdade.
+- **Não investiguei as outras 5 specs do relato do usuário** (`invite-lifecycle`,
+  `inbox-scope`, `prova-painel-provedores`, `vps-webhook-outbound-ssrf`,
+  `agente-papeis-operador`) além de ler o código sem achar uma divergência estática óbvia
+  como nos casos #2/#3. É plausível que algumas dessas fossem consequência indireta do
+  achado #1 (ex.: estado deixado por specs anteriores da mesma `parte 1` que falharam e
+  não limparam `finally`), mas isso é hipótese, não medição — não incluí como "conserto".
+  `vps-webhook-outbound-ssrf` importa em especial: é a única prova automatizada do guard
+  anti-SSRF (P0 de segurança), e continua sem causa raiz confirmada nesta auditoria.
+- **Não confirmei se `e2e` é ou não check obrigatório hoje** (achado #4) — ver acima.
+
+### Próximo passo recomendado
+
+1. Alguém com `gh` autenticado roda os specs restantes localmente com log completo
+   (`--reporter=list` ou baixando o artefato `playwright-report` das runs vermelhas) para
+   os 5 specs não diagnosticados aqui.
+2. Reconferir a branch protection na fonte e corrigir o arquivo (`CLAUDE.md` ou
+   `e2e.yml`) que estiver desatualizado — os dois não podem seguir se contradizendo.
+3. Depois de N runs limpas consecutivas (o próprio `e2e.yml` já declara esse critério),
+   promover `e2e` a obrigatório de verdade, se ainda não estiver.
 
 ---
 
