@@ -238,4 +238,11 @@ export type AuditAction =
   | "followup.cancelled"
   | "lead.reactivation_proposed"
   | "org.scheduled_report_updated"
-  | "metrics.scheduled_report_sent";
+  | "metrics.scheduled_report_sent"
+  // Admin removeu o MFA de um colega que perdeu o autenticador E os 10 códigos
+  // de recuperação (o único caminho self-service). Colega reenrola no próximo
+  // login. Ver app/api/v1/team/[user_id]/reset-mfa/route.ts.
+  | "team.mfa_reset"
+  // W-02 override: admin desbloqueou contato que a detecção STOP marcou
+  // automaticamente. Ver app/api/v1/contacts/[id]/unblock/route.ts.
+  | "contact.unblocked";

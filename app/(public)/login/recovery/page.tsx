@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { RecoveryForm } from "@/components/auth/RecoveryForm";
+import { SupportContactLink } from "@/components/auth/SupportContactLink";
 
 export const metadata = { title: "Recuperar acesso" };
 
@@ -19,6 +20,13 @@ export default async function RecoveryPage({
         </p>
       </div>
       <RecoveryForm next={next} />
+      <div className="space-y-3">
+        <p className="text-center text-xs text-muted-foreground">
+          Perdeu o autenticador e não tem nenhum código salvo? Um administrador do seu time
+          pode resetar sua verificação em duas etapas.
+        </p>
+        <SupportContactLink message="Olá! Perdi acesso ao autenticador do Fluxa CRM e não tenho os códigos de recuperação. Podem me ajudar?" />
+      </div>
       <div className="text-center text-sm">
         <Link
           href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"}

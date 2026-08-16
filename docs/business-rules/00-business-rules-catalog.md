@@ -167,11 +167,18 @@ owner: Rafael Melgaço
 - **Exceção**: Nenhuma. Vale inclusive pra envio "manual" do atendente.
 
 ### W-02 — Detecção STOP automática bloqueia contact
-- **Origem**: Sub-PRD 03 §3.7
+- **Origem**: Sub-PRD 03 §3.7; regex corrigido conforme docs/specs/03-spec-whatsapp-waha.md §8.5
+  (issue real: versão anterior sem âncora casava "sair" — verbo comum do português —
+  dentro de qualquer frase, bloqueando contato ativo por engano).
 - **Tipo**: Hard constraint
-- **Regra**: GIVEN mensagem inbound text; WHEN body matches regex `/STOP|PARAR|SAIR|UNSUBSCRIBE|CANCELAR/i`; THEN `contacts.is_blocked=true` + emitir activity `system.contact_blocked_by_stop`.
+- **Regra**: GIVEN mensagem inbound text; WHEN o corpo INTEIRO (tirando espaço/pontuação em
+  volta) é `stop|parar|pare|sair|sai|cancelar|unsubscribe|descadastrar` — `STOP_RX` /
+  `isStopMessage()` em `lib/waha/ingest.ts`; THEN `contacts.is_blocked=true`, uma nota interna
+  do sistema é criada em `conversation_notes` explicando o motivo, e o audit `contact.blocked`
+  é emitido.
 - **Enforcement**: Worker de webhook (após persist da message).
-- **Override**: Tenant admin pode desbloquear manualmente; ação auditada.
+- **Override**: Tenant admin desbloqueia via `POST /api/v1/contacts/[id]/unblock`
+  (`app/api/v1/contacts/[id]/unblock/route.ts`); ação auditada como `contact.unblocked`.
 
 ### W-03 — Contact bloqueado nunca recebe outbound automatizado
 - **Origem**: Sub-PRD 03 §3.7

@@ -156,7 +156,17 @@ async function avisarChatNaoReconhecido(
   }
 }
 
-const STOP_RX = /\b(STOP|PARAR|SAIR|UNSUBSCRIBE)\b/i;
+// Ancorado na mensagem INTEIRA (com no máximo espaço/pontuação em volta) —
+// nunca em substring. Palavra solta em `\b...\b` (versão anterior) confundia
+// "sair" — verbo comum do português, não só opt-out — usado no meio de uma
+// frase qualquer com o pedido de descadastro que a campanha instrui o cliente
+// a responder. Contrato original em docs/specs/03-spec-whatsapp-waha.md §8.5.
+export const STOP_RX = /^\s*(stop|parar|pare|sair|sai|cancelar|unsubscribe|descadastrar)\s*[!.]*\s*$/i;
+
+/** Mensagem inbound é (só) um pedido de opt-out — ver STOP_RX acima. */
+export function isStopMessage(body: string): boolean {
+  return STOP_RX.test(body);
+}
 
 export function verifyHmacSha512(
   rawBody: string,
@@ -509,11 +519,22 @@ async function handleInbound(
 
   await markConversation(admin, session.organization_id, conversationId, "inbound", previewFromMessage(p), now);
 
-  if (p.body && STOP_RX.test(p.body)) {
+  if (p.body && isStopMessage(p.body)) {
     await admin
       .from("contacts")
       .update({ is_blocked: true, blocked_reason: "stop_keyword", blocked_at: now })
       .eq("id", contactId);
+    // Nota interna visível na conversa — quem vê o badge "Bloqueado" no inbox
+    // (sem abrir audit log) entende o motivo sem precisar perguntar por quê.
+    // Não bloqueia o resto da ingestão se falhar (mesmo padrão do resto deste
+    // handler: side effect não-crítico, contato já está bloqueado de qualquer jeito).
+    await admin.from("conversation_notes").insert({
+      organization_id: session.organization_id,
+      conversation_id: conversationId,
+      body: `Contato bloqueado automaticamente: a mensagem "${p.body.trim()}" foi reconhecida como pedido de descadastro (STOP/PARAR/SAIR/UNSUBSCRIBE). Envios automáticos (campanhas, IA, follow-up) ficam pausados até um admin desbloquear manualmente.`,
+      created_by_user_id: null,
+      created_by_name: "Sistema",
+    });
     await audit({
       action: "contact.blocked",
       organizationId: session.organization_id,

@@ -26,6 +26,9 @@ export async function PublicEnvScript() {
     // leem daqui. Não são segredo — já aparecem na tela. Ver lib/branding.ts.
     APP_NAME: env.APP_NAME,
     APP_LOGO_URL: env.APP_LOGO_URL,
+    // Contato de suporte (WhatsApp) das telas de recuperação de acesso.
+    // Não é segredo — vira um link visível. Ver lib/support.ts.
+    SUPPORT_WHATSAPP_NUMBER: env.SUPPORT_WHATSAPP_NUMBER,
   })
     // Evita quebrar o </script> se algum valor contiver a sequência.
     .replace(/</g, "\\u003c");

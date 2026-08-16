@@ -160,10 +160,21 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
   // Em 1280 isso dá 424px de conversa em vez de 372 — 54px de folga sobre o
   // piso do composer (370px), em vez dos 2px que a versão de uma faixa só
   // deixava. Margem de 2px não é margem, é sorte.
+  //
+  // `overflow-hidden` aqui é o que faltava pra essa conta valer de verdade.
+  // `<main>` (AppShell.tsx) é `overflow-auto` — serve as OUTRAS telas, que
+  // crescem com o conteúdo e rolam ali mesmo. O inbox é o oposto: a grade
+  // inteira já tem altura EXATA (a conta acima) e cada coluna rola por dentro
+  // de si (ChatThread tem seu próprio `overflow-y-auto`). Sem travar a grade
+  // aqui, qualquer sobra de 1px (dvh arredondando diferente, mídia que só
+  // sabe a própria altura depois de carregar) empurra `<main>` a rolar A TELA
+  // INTEIRA em vez de só a lista de mensagens — e quanto mais mensagens
+  // carregadas, maior a chance de essa sobra aparecer. Bug real: conversa
+  // longa criava scroll de página inteira, escondendo tudo acima do fold.
   return (
-    <div 
+    <div
       className={cn(
-        "grid h-[calc(100dvh-3.5rem-calc(var(--space-6)*2))] min-h-0 w-full transition-all duration-300",
+        "grid h-[calc(100dvh-3.5rem-calc(var(--space-6)*2))] min-h-0 w-full overflow-hidden transition-all duration-300",
         sidebarCollapsed
           ? (crmPanelCollapsed 
               ? "grid-cols-1 md:grid-cols-[300px_1fr]" 

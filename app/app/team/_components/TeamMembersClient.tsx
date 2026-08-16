@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useTeamMembers, type TeamMember } from "@/hooks/team/useTeamMembers";
 import { useChangeRole } from "@/hooks/team/useChangeRole";
 import { useRevokeMember } from "@/hooks/team/useRevokeMember";
+import { useResetMfa } from "@/hooks/team/useResetMfa";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,8 +49,10 @@ export function TeamMembersClient({ currentUserId, canManage }: Props) {
   const { data, isLoading, isError } = useTeamMembers();
   const changeRole = useChangeRole();
   const revoke = useRevokeMember();
+  const resetMfa = useResetMfa();
 
   const [revokeDialog, setRevokeDialog] = useState<TeamMember | null>(null);
+  const [resetMfaDialog, setResetMfaDialog] = useState<TeamMember | null>(null);
 
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">Carregando…</p>;
@@ -132,6 +135,11 @@ export function TeamMembersClient({ currentUserId, canManage }: Props) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          {m.mfa_enrolled ? (
+                            <DropdownMenuItem onClick={() => setResetMfaDialog(m)}>
+                              Resetar MFA
+                            </DropdownMenuItem>
+                          ) : null}
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => setRevokeDialog(m)}
@@ -150,6 +158,40 @@ export function TeamMembersClient({ currentUserId, canManage }: Props) {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!resetMfaDialog} onOpenChange={(o) => !o && setResetMfaDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resetar verificação em duas etapas</DialogTitle>
+            <DialogDescription>
+              {resetMfaDialog?.email ?? resetMfaDialog?.user_id} vai perder o autenticador
+              cadastrado e vai precisar configurar um novo no próximo login. Use isto quando a
+              pessoa perdeu o celular do autenticador E todos os códigos de recuperação.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setResetMfaDialog(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={resetMfa.isPending}
+              onClick={async () => {
+                if (!resetMfaDialog) return;
+                try {
+                  await resetMfa.mutateAsync(resetMfaDialog.user_id);
+                  toast.success("MFA resetado. A pessoa reconfigura no próximo login.");
+                  setResetMfaDialog(null);
+                } catch {
+                  /* showApiError already triggered by the hook */
+                }
+              }}
+            >
+              Resetar MFA
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!revokeDialog} onOpenChange={(o) => !o && setRevokeDialog(null)}>
         <DialogContent>
