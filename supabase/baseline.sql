@@ -25,7 +25,7 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA public;
 ALTER SCHEMA "public" OWNER TO "pg_database_owner";
 
 
-COMMENT ON SCHEMA "public" IS 'DeskcommCRM v0.1 - Migration 0001 platform_base applied 2026-04-28';
+COMMENT ON SCHEMA "public" IS 'Fluxa CRM v0.1 - Migration 0001 platform_base applied 2026-04-28';
 
 
 
@@ -1778,7 +1778,7 @@ CREATE TABLE IF NOT EXISTS "public"."organizations" (
 ALTER TABLE "public"."organizations" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "public"."organizations" IS 'Tenants do DeskcommCRM. Cada linha = 1 e-commerce cliente.';
+COMMENT ON TABLE "public"."organizations" IS 'Tenants do Fluxa CRM. Cada linha = 1 e-commerce cliente.';
 
 
 

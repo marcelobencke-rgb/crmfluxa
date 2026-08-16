@@ -21,7 +21,7 @@ A VPS (Hostinger) vem com um **Traefik próprio** ocupando as portas 80/443.
 `docker-compose.traefik.yml` é o ÚNICO lugar que:
 
 - coloca no contêiner `app` as labels de roteamento
-  (`traefik.http.routers.deskcomm.rule=Host(...)`);
+  (`traefik.http.routers.fluxa.rule=Host(...)`);
 - associa o contêiner à rede que o Traefik enxerga (`TRAEFIK_DOCKER_NETWORK`);
 - desliga o `caddy` do compose base por profile (senão dois processos brigam
   pela mesma porta).
@@ -80,10 +80,10 @@ Só quando é preciso validar algo em produção **antes** de a imagem oficial
 existir (ex.: CI ainda rodando e um bug bloqueando o usuário).
 
 ```bash
-APP_IMAGE=deskcomm-app:local docker compose \
+APP_IMAGE=fluxa-app:local docker compose \
   -f docker-compose.prod.yml -f docker-compose.build.yml --env-file .env build app
 
-APP_IMAGE=deskcomm-app:local APP_PULL_POLICY=never docker compose \
+APP_IMAGE=fluxa-app:local APP_PULL_POLICY=never docker compose \
   -f docker-compose.prod.yml -f docker-compose.traefik.yml --env-file .env up -d app
 ```
 

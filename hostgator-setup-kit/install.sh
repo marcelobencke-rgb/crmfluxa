@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# DeskcommCRM — instalador self-host para VPS (HostGator).
+# Fluxa CRM — instalador self-host para VPS (HostGator).
 #
 # Idempotente: pode rodar de novo sem estragar nada. Dependências no host:
 # só docker, docker compose, git, openssl, curl. psql/bootstrap rodam via Docker.
@@ -15,7 +15,7 @@ set -euo pipefail
 # de qualquer 'cd' (step 2 pode entrar num repo clonado à parte).
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 
-REPO_URL="${REPO_URL:-https://github.com/melgarafael/DeskcommCRM.git}"
+REPO_URL="${REPO_URL:-https://github.com/marcelobencke-rgb/crmfluxa.git}"
 # Uma constante, dois usos (o fim feliz e o fim travado) — e o comecar.sh tem a
 # gêmea. Link repetido à mão vira link divergente na primeira troca.
 COMUNIDADE_URL="https://lp-comunidade.automatiklabs.com.br"
@@ -96,7 +96,7 @@ fase() { printf '\n'; paint 1 "━━━ Fase $1/$FASE_TOTAL · $2"; }
 # caractere em sed/awk: sob LC_ALL=C essas ferramentas tratam a entrada como
 # BYTES, e todos esses glifos começam com 0xE2 — uma classe [╗║…] casaria
 # pedaço de █ e embaralharia o desenho na VPS de quem roda em locale C.
-LOGO_COLS=71
+LOGO_COLS=29
 banner() {
   local cols linha ch
   cols="$(tput cols 2>/dev/null || echo 80)"
@@ -105,7 +105,7 @@ banner() {
   # Terminal estreito recebe a versão de uma linha: logo quebrado no meio é
   # pior do que logo nenhum.
   if [ "$COLOR" != 1 ] || [ "$cols" -lt $((LOGO_COLS + 2)) ]; then
-    paint 1 "  DESKCOMM"
+    paint 1 "  FLUXA"
   else
     # Tela limpa: tira o ruído do clone/apt de cima do logo. Exige TTY de
     # verdade (não basta COLOR=1): com FORCE_COLOR numa saída redirecionada, um
@@ -116,17 +116,17 @@ banner() {
       for ch in ═ ╗ ║ ╝ ╚ ╔; do linha="${linha//$ch/$'\033[2m'$ch$'\033[0m'}"; done
       printf '  %s\n' "$linha"
     done <<'LOGO'
-██████╗ ███████╗███████╗██╗  ██╗ ██████╗ ██████╗ ███╗   ███╗███╗   ███╗
-██╔══██╗██╔════╝██╔════╝██║ ██╔╝██╔════╝██╔═══██╗████╗ ████║████╗ ████║
-██║  ██║█████╗  ███████╗█████╔╝ ██║     ██║   ██║██╔████╔██║██╔████╔██║
-██║  ██║██╔══╝  ╚════██║██╔═██╗ ██║     ██║   ██║██║╚██╔╝██║██║╚██╔╝██║
-██████╔╝███████╗███████║██║  ██╗╚██████╗╚██████╔╝██║ ╚═╝ ██║██║ ╚═╝ ██║
-╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚═╝
+█████ █     █   █ █   █  ███
+█     █     █   █  █ █  █   █
+████  █     █   █   █   █   █
+█     █     █   █  █ █  █████
+█     █     █   █ █   █ █   █
+█     █████  ███  █   █ █   █
 LOGO
   fi
   printf '\n'
   c_dim "  Agentes de IA que atendem no WhatsApp, dentro do seu CRM."
-  c_dim "  Open-source · roda no seu servidor · os dados são seus."
+  c_dim "  Fluxa CRM · roda no seu servidor · os dados são seus."
 }
 
 # ── Rede de segurança: nenhuma saída silenciosa ─────────────────────────────
@@ -725,7 +725,7 @@ fi
 #
 # A varredura NÃO procura por "traefik": procura por QUEM PUBLICA as portas, e
 # só depois pergunta o que é. A versão anterior só reconhecia Traefik, então um
-# Caddy — inclusive o de outro DeskcommCRM instalado na mesma VPS — passava
+# Caddy — inclusive o de outro Fluxa CRM instalado na mesma VPS — passava
 # despercebido e a instalação escolhia `caddy`, garantindo o choque de portas.
 # Medido numa VPS com produção rodando: exatamente esse erro, na fase 4.
 #
@@ -842,7 +842,7 @@ e, se for mesmo um Traefik, ponha REVERSE_PROXY=traefik no .env e rode de novo."
     printf '\n%s\n'   "  O CRM precisa dessas duas portas para publicar o site com HTTPS. Subir um"
     printf '%s\n\n'   "  segundo proxy nelas não funciona: o Docker recusa e a instalação para."
     printf '%s\n'     "  Como resolver, na ordem do mais provável:"
-    printf '\n%s\n'   "  1. Já é outro DeskcommCRM neste servidor? Então use aquele — entre na"
+    printf '\n%s\n'   "  1. Já é outro Fluxa CRM neste servidor? Então use aquele — entre na"
     printf '%s\n'     "     pasta dele e rode: bash hostgator-setup-kit/update.sh"
     printf '\n%s\n'   "  2. Não usa mais o que está ocupando? Desligue e rode este instalador de novo:"
     [ -n "$dono_portas" ] && printf '%s\n' "       docker stop ${dono_portas}"
@@ -887,7 +887,7 @@ fi
 # colar. Sem o token, nada muda: seguem as perguntas de sempre.
 if [ -z "${NEXT_PUBLIC_SUPABASE_URL:-}" ] && [ -n "${SUPABASE_ACCESS_TOKEN:-}" ]; then
   step "Criando o projeto Supabase automaticamente"
-  _sb_out="$(bash "$KIT_DIR/supabase-provision.sh" "${APP_NAME:-DeskcommCRM}" "${SUPABASE_REGION:-sa-east-1}")" \
+  _sb_out="$(bash "$KIT_DIR/supabase-provision.sh" "${APP_NAME:-Fluxa CRM}" "${SUPABASE_REGION:-sa-east-1}")" \
     || die "Não consegui criar o projeto Supabase. Crie no painel e rode de novo sem SUPABASE_ACCESS_TOKEN."
   # O script imprime `CHAVE='valor'` em stdout (o visual dele vai para stderr).
   # A leitura é por parse, não por `eval` — o porquê está em
@@ -993,7 +993,7 @@ FIELDS=(
   ${CAMPO_OPENAI_EXTRA:+"$CAMPO_OPENAI_EXTRA"}
   "OWNER_EMAIL|E-mail do primeiro admin (dono)||v_email||"
   "OWNER_PASSWORD|Senha do primeiro admin (mínimo 8 caracteres)||v_password|secret|"
-  "APP_NAME|Nome que aparece na interface (Enter para o padrão)|DeskcommCRM|||"
+  "APP_NAME|Nome que aparece na interface (Enter para o padrão)|Fluxa CRM|||"
 )
 
 field_at() { IFS='|' read -r F_VAR F_PROMPT F_DEF F_VAL F_SEC F_OPT <<< "${FIELDS[$1]}"; }

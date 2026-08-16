@@ -1,4 +1,4 @@
-# Contributing — DeskcommCRM
+# Contributing — Fluxa CRM
 
 ## Antes de começar
 
@@ -124,9 +124,9 @@ Veja [`README.md`](README.md) §Como rodar local.
 
 ## Suporte
 
-**[GitHub Discussions](https://github.com/melgarafael/DeskcommCRM/discussions)** — é o canal público,
+**[GitHub Discussions](https://github.com/marcelobencke-rgb/crmfluxa/discussions)** — é o canal público,
 funciona para qualquer pessoa e é onde a resposta fica registrada para quem vier depois. Para bug,
-[abra uma issue](https://github.com/melgarafael/DeskcommCRM/issues/new/choose).
+[abra uma issue](https://github.com/marcelobencke-rgb/crmfluxa/issues/new/choose).
 
 Se for algo que não cabe em público (segurança, por exemplo): `rafael@maudibrasil.com.br` — o mesmo
 endereço do [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).

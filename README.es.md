@@ -2,7 +2,7 @@
 
 [🇧🇷 Português](README.md) · [🇺🇸 English](README.en.md) · 🇪🇸 Español
 
-# 🛠️ DeskcommCRM — El Sistema Operativo de Ventas con Agentes de IA
+# 🛠️ Fluxa CRM — El Sistema Operativo de Ventas con Agentes de IA
 
 **Agentes de IA que atienden, califican y venden por WhatsApp — dentro de un CRM open source corriendo en tu propio servidor.**
 **Sin mensualidad, sin funciones bloqueadas, tus datos contigo. La alternativa abierta a Kommo, Octadesk e Intercom.**
@@ -21,7 +21,7 @@
 
 > ### ☁️ Pon este CRM en producción con un solo comando
 >
-> DeskcommCRM se desarrolla en **alianza con HostGator**: el [`hostgator-setup-kit/`](hostgator-setup-kit/)
+> Fluxa CRM se desarrolla en **alianza con HostGator**: el [`hostgator-setup-kit/`](hostgator-setup-kit/)
 > instala el CRM completo (app + WAHA + base de datos) en un VPS con un único comando, y el
 > [runbook de producción](docs/runbooks/waha-hostgator.md) ya asume ese entorno.
 >
@@ -31,8 +31,8 @@
 > ¿Ya tienes el VPS? Entra por SSH y ejecuta:
 >
 > ```bash
-> git clone https://github.com/melgarafael/DeskcommCRM.git
-> cd DeskcommCRM
+> git clone https://github.com/marcelobencke-rgb/crmfluxa.git
+> cd crmfluxa
 > bash hostgator-setup-kit/install.sh
 > ```
 >
@@ -46,7 +46,7 @@
 
 ## ✨ Qué es
 
-**Deskcomm** viene de **Desk** (escritorio) + **comm** (comercio): toda la operación de ventas de tu negocio en un solo escritorio, operada por personas y agentes de IA trabajando juntos.
+**Fluxa CRM**: toda la operación de ventas de tu negocio en un solo escritorio, operada por personas y agentes de IA trabajando juntos. *(nombre comercial adoptado el 2026-08-14 — texto de posicionamiento en actualización, ver [`VISION.md`](VISION.md))*
 
 El proyecto nació como un CRM de e-commerce — y la comunidad open source lo llevó mucho más allá: hoy funciona en **clínicas, inmobiliarias, negocios de infoproductos, agencias, tiendas y empresas de servicios** — cualquier negocio que vende por WhatsApp. El producto acompañó ese giro y se convirtió en un **sistema operativo de ventas**: agentes de IA con RAG por tenant atienden clientes, califican leads, los mueven por el embudo, disparan automatizaciones y saben cuándo pasar la conversación a un humano — con el CRM completo expuesto vía **MCP** para que los agentes lo operen de verdad. La historia completa está en [`VISION.md`](VISION.md).
 
@@ -75,8 +75,8 @@ Por debajo, cada evento se convierte en una fila en `event_log` — ningún trig
 
 ```bash
 # 1. Clona
-git clone https://github.com/melgarafael/DeskcommCRM.git
-cd DeskcommCRM
+git clone https://github.com/marcelobencke-rgb/crmfluxa.git
+cd crmfluxa
 
 # 2. Node 22 + pnpm
 nvm use                    # o instala Node 22+
@@ -174,9 +174,9 @@ Este proyecto es open source para la comunidad. Toda contribución es bienvenida
 
 ## 🐛 Reportar bugs
 
-Abre un [issue](https://github.com/melgarafael/DeskcommCRM/issues/new/choose) — la plantilla pide lo que necesitamos (entorno, `/api/v1/health`, pasos).
+Abre un [issue](https://github.com/marcelobencke-rgb/crmfluxa/issues/new/choose) — la plantilla pide lo que necesitamos (entorno, `/api/v1/health`, pasos).
 
-Para **vulnerabilidades de seguridad**, **NO abras un issue público** — usa el [reporte privado de vulnerabilidades](https://github.com/melgarafael/DeskcommCRM/security/advisories/new). Detalles en [`SECURITY.md`](SECURITY.md).
+Para **vulnerabilidades de seguridad**, **NO abras un issue público** — usa el [reporte privado de vulnerabilidades](https://github.com/marcelobencke-rgb/crmfluxa/security/advisories/new). Detalles en [`SECURITY.md`](SECURITY.md).
 
 ---
 
@@ -196,7 +196,7 @@ Para **vulnerabilidades de seguridad**, **NO abras un issue público** — usa e
 
 ### 🔮 Próximo
 
-- **MCP público** — capacidades del CRM expuestas al ecosistema de agentes: conecta el agente que quieras y opera Deskcomm.
+- **MCP público** — capacidades del CRM expuestas al ecosistema de agentes: conecta el agente que quieras y opera Fluxa.
 - **Flywheel de auto-mejora** — el ciclo conversación resuelta → conocimiento → agente mejor, medido y con compuerta humana.
 - **Plantillas por nicho** — pipelines y vocabularios listos para clínicas, inmobiliarias, infoproductos y servicios (e-commerce ya entregado).
 - **Integraciones** — VTEX y Shopify vía adapter pattern (Nuvemshop ya entregada).
@@ -206,8 +206,8 @@ Para **vulnerabilidades de seguridad**, **NO abras un issue público** — usa e
 
 ## 💬 Comunidad
 
-- **Discusiones:** [GitHub Discussions](https://github.com/melgarafael/DeskcommCRM/discussions)
-- **Issues:** [GitHub Issues](https://github.com/melgarafael/DeskcommCRM/issues)
+- **Discusiones:** [GitHub Discussions](https://github.com/marcelobencke-rgb/crmfluxa/discussions)
+- **Issues:** [GitHub Issues](https://github.com/marcelobencke-rgb/crmfluxa/issues)
 - **Instagram:** [@melgarafael](https://www.instagram.com/melgarafael)
 - **YouTube:** [youtube.com/@melgarafael](https://www.youtube.com/@melgarafael)
 
@@ -234,7 +234,7 @@ Este es un proyecto **self-hosted**: cada persona ejecuta el CRM en su **propia 
 
 - **WAHA** ([devlikeapro](https://waha.devlikeapro.com/)) — engine de WhatsApp.
 - **Supabase**, **Vercel**, **Anthropic** (Claude), **shadcn/ui**.
-- La comunidad que llevó Deskcomm del e-commerce a clínicas, inmobiliarias, infoproductos y más allá — ustedes definieron lo que este proyecto es.
+- La comunidad que llevó Fluxa del e-commerce a clínicas, inmobiliarias, infoproductos y más allá — ustedes definieron lo que este proyecto es.
 
 ---
 
