@@ -30,6 +30,7 @@ interface MemberDto extends MembershipRow {
   email: string | null;
   full_name: string | null;
   last_sign_in_at: string | null;
+  mfa_enrolled: boolean;
 }
 
 export async function GET(_req: NextRequest): Promise<Response> {
@@ -57,6 +58,7 @@ export async function GET(_req: NextRequest): Promise<Response> {
       email: null,
       full_name: null,
       last_sign_in_at: null,
+      mfa_enrolled: false,
     }));
     return ok(degraded, { requestId });
   }
@@ -71,6 +73,7 @@ export async function GET(_req: NextRequest): Promise<Response> {
         email: u?.email ?? null,
         full_name: (u?.user_metadata?.full_name as string | undefined) ?? null,
         last_sign_in_at: u?.last_sign_in_at ?? null,
+        mfa_enrolled: (u?.factors?.length ?? 0) > 0,
       };
     }),
   );

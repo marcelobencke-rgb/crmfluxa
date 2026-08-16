@@ -12,6 +12,7 @@ export interface TeamMember {
   email: string | null;
   full_name: string | null;
   last_sign_in_at: string | null;
+  mfa_enrolled: boolean;
 }
 
 export function useTeamMembers(opts?: { enabled?: boolean }) {

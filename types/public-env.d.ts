@@ -13,6 +13,8 @@ interface PublicEnv {
   /** Marca da instalação (white-label). Ver `lib/branding.ts`. */
   APP_NAME?: string;
   APP_LOGO_URL?: string;
+  /** Contato de suporte (WhatsApp). Ver `lib/support.ts`. */
+  SUPPORT_WHATSAPP_NUMBER?: string;
 }
 
 interface Window {

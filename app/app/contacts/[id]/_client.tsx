@@ -15,6 +15,7 @@ import { ROLE_RANK } from "@/lib/auth/types";
 import { TimelineView } from "@/components/contacts/TimelineView";
 import { EditContactDialog } from "@/components/contacts/EditContactDialog";
 import { AnonymizeDialog } from "@/components/contacts/AnonymizeDialog";
+import { UnblockContactDialog } from "@/components/contacts/UnblockContactDialog";
 import { PropostasDeDado } from "@/components/contacts/PropostasDeDado";
 import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { origemAmigavel } from "@/lib/contacts/origem-amigavel";
@@ -28,6 +29,7 @@ export function ContactDetailClient({ contactId }: Props) {
   const { user, activeOrg } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const [anonOpen, setAnonOpen] = useState(false);
+  const [unblockOpen, setUnblockOpen] = useState(false);
   // Atalho pro dossiê do lead (LeadDossier) linkar direto na aba certa em vez
   // de largar o admin na Visão geral e esperar que ele ache a aba sozinho.
   // Só honra ?tab=lgpd pra quem PODE ver a aba — ela é isAdmin-only mais
@@ -94,7 +96,20 @@ export function ContactDetailClient({ contactId }: Props) {
             {contact.tags.map((t) => (
               <Badge key={t} variant="neutral">{t}</Badge>
             ))}
-            {contact.is_blocked && <Badge variant="warning">Bloqueado</Badge>}
+            {contact.is_blocked && (
+              <span className="inline-flex items-center gap-1.5">
+                <Badge variant="warning">Bloqueado</Badge>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+                    onClick={() => setUnblockOpen(true)}
+                  >
+                    Desbloquear
+                  </button>
+                )}
+              </span>
+            )}
             {contact.is_anonymized && <Badge variant="destructive">Anonimizado</Badge>}
           </div>
         </div>
@@ -221,6 +236,11 @@ export function ContactDetailClient({ contactId }: Props) {
         contactId={contactId}
         open={anonOpen}
         onOpenChange={setAnonOpen}
+      />
+      <UnblockContactDialog
+        contactId={contactId}
+        open={unblockOpen}
+        onOpenChange={setUnblockOpen}
       />
     </div>
   );

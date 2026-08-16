@@ -55,6 +55,7 @@ function members(): TeamMember[] {
       email: "admin@example.com",
       full_name: "Admin",
       last_sign_in_at: null,
+      mfa_enrolled: true,
     },
     {
       user_id: AGENT_ID,
@@ -66,6 +67,7 @@ function members(): TeamMember[] {
       email: "agente@example.com",
       full_name: "Agente",
       last_sign_in_at: null,
+      mfa_enrolled: false,
     },
   ];
 }
@@ -140,5 +142,42 @@ describe("TeamMembersClient — seletor de papel (G2-02)", () => {
     await waitFor(() => expect(trigger).toHaveTextContent("agent"));
     await waitFor(() => expect(toast.error).toHaveBeenCalled());
     expect(toast.success).not.toHaveBeenCalled();
+  });
+});
+
+describe("TeamMembersClient — reset de MFA por admin", () => {
+  it("some do menu quando o membro não tem MFA enrolado", async () => {
+    // Fixture padrão: AGENT_ID tem mfa_enrolled: false.
+    const user = userEvent.setup();
+    renderClient();
+
+    await screen.findByText("agente@example.com");
+    await user.click(screen.getByRole("button", { name: "Ações" }));
+    expect(screen.queryByText("Resetar MFA")).not.toBeInTheDocument();
+  });
+
+  it("admin confirma reset → POST /api/v1/team/[user_id]/reset-mfa e toast de sucesso", async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: [members()[0], { ...members()[1], mfa_enrolled: true }],
+    });
+    vi.mocked(apiClient.post).mockResolvedValue({
+      data: { user_id: AGENT_ID, factors_removed: 1 },
+    });
+
+    const user = userEvent.setup();
+    renderClient();
+
+    await screen.findByText("agente@example.com");
+    await user.click(screen.getByRole("button", { name: "Ações" }));
+    await user.click(await screen.findByText("Resetar MFA"));
+
+    await user.click(await screen.findByRole("button", { name: "Resetar MFA" }));
+
+    expect(apiClient.post).toHaveBeenCalledWith(`/api/v1/team/${AGENT_ID}/reset-mfa`, {});
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith(
+        "MFA resetado. A pessoa reconfigura no próximo login.",
+      ),
+    );
   });
 });
