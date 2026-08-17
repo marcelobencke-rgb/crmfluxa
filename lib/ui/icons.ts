@@ -120,4 +120,6 @@ export {
   EnvelopeSimple,
   WarningCircle,
   User,
+  // spec 18 — agendamento
+  CalendarCheck,
 } from "@phosphor-icons/react/dist/ssr";

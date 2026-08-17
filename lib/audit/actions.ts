@@ -245,4 +245,27 @@ export type AuditAction =
   | "team.mfa_reset"
   // W-02 override: admin desbloqueou contato que a detecção STOP marcou
   // automaticamente. Ver app/api/v1/contacts/[id]/unblock/route.ts.
-  | "contact.unblocked";
+  | "contact.unblocked"
+  // Spec 18 — catálogo de produtos/serviços (crm_products).
+  | "product.created"
+  | "product.updated"
+  | "product.deleted"
+  // Spec 18 — recursos agendáveis (crm_resources) e sua configuração.
+  | "resource.created"
+  | "resource.updated"
+  | "resource.deleted"
+  | "resource.service_linked"
+  | "resource.service_unlinked"
+  | "resource.availability_replaced"
+  // Spec 18 — agendamento (crm_appointments).
+  | "appointment.created"
+  | "appointment.rescheduled"
+  | "appointment.cancelled"
+  | "appointment.status_changed"
+  // Spec 18 §4 — sync Google Agenda (crm_calendar_connections).
+  | "calendar_connection.connected"
+  | "calendar_connection.oauth_failed"
+  | "calendar_connection.disconnected"
+  // Anotação manual do time sobre o negócio (aba Notas do dossiê) — mesma
+  // atividade que entra na timeline como `type='note'`.
+  | "lead.note_added";

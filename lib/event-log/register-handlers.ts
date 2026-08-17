@@ -17,6 +17,8 @@ import { followupStageTriggerHandler } from "@/lib/followup/stage-trigger.handle
 import { mediaPersistHandler } from "@/workers/media-persist-worker.handler";
 import { mediaDeriveHandler } from "@/workers/media-derive-worker.handler";
 import { qrRescanAlertHandler } from "@/lib/channels/qr-rescan-alert.handler";
+import { calendarSyncPushHandler } from "@/workers/calendar-sync-push.handler";
+import { calendarSyncPullHandler } from "@/workers/calendar-sync-pull.handler";
 import { registerHandler } from "@/lib/event-log/dispatcher";
 
 let _registered = false;
@@ -35,5 +37,7 @@ export function ensureHandlersRegistered(): void {
   registerHandler(mediaPersistHandler);
   registerHandler(mediaDeriveHandler);
   registerHandler(qrRescanAlertHandler);
+  registerHandler(calendarSyncPushHandler);
+  registerHandler(calendarSyncPullHandler);
   _registered = true;
 }

@@ -6,6 +6,7 @@ import {
   BookOpen,
   Brain,
   Buildings,
+  CalendarCheck,
   ChartBar,
   ChartLineUp,
   ClipboardText,
@@ -32,6 +33,7 @@ import {
   ShieldCheck,
   Signpost,
   Storefront,
+  Tag,
   UserCircle,
   Users,
   UsersThree,
@@ -189,6 +191,34 @@ export const NAV_DESTINATIONS: NavDestination[] = [
     label: "Contatos",
     description: "As pessoas do outro lado da conversa e seu histórico.",
     icon: Users,
+    group: "crm",
+    sidebar: true,
+  },
+  {
+    // Spec 18 — catálogo de produtos/serviços (barbearia, clínica). Visível a
+    // todo mundo (viewer lê preço); escrita é agent+, checado na própria tela.
+    href: "/app/catalog",
+    label: "Catálogo",
+    description: "Produtos e serviços que sua empresa vende, com preço e duração.",
+    icon: Tag,
+    group: "crm",
+    sidebar: true,
+  },
+  {
+    // Spec 18 — recursos agendáveis: quem/onde presta o serviço do Catálogo.
+    href: "/app/resources",
+    label: "Recursos",
+    description: "Profissionais, salas e equipamentos — o que cada um faz e quando atende.",
+    icon: UsersThree,
+    group: "crm",
+    sidebar: true,
+  },
+  {
+    // Spec 18 — agendamento em si: marcar/remarcar/cancelar horário.
+    href: "/app/appointments",
+    label: "Agendamentos",
+    description: "Horários marcados por recurso e serviço.",
+    icon: CalendarCheck,
     group: "crm",
     sidebar: true,
   },

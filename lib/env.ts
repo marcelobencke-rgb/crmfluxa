@@ -144,6 +144,13 @@ const schema = z.object({
     .default("false")
     .transform((v) => v === "true"),
 
+  // Google Calendar (spec 18) — opcional. Sem estas duas, o botão "Conectar
+  // Google Agenda" não aparece (lib/integrations/google-calendar/config.ts
+  // degrada via getConfig()==null); reaproveita NUVEMSHOP_OAUTH_ENCRYPTION_KEY
+  // pra cifrar token (fn_encrypt_oauth), não pede uma chave nova.
+  GOOGLE_OAUTH_CLIENT_ID: z.string().optional().default(""),
+  GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional().default(""),
+
   // App URLs
   NEXT_PUBLIC_APP_URL: z
     .string()
