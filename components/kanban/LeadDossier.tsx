@@ -1,11 +1,13 @@
 "use client";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLeadTimeline } from "@/hooks/leads/useLeadTimeline";
 import type { Lead } from "@/lib/types/leads";
 import { LeadFieldsForm } from "./LeadFieldsForm";
 import { ScoreSlot } from "./ScoreSlot";
 import { LeadTimeline } from "./LeadTimeline";
+import { LeadNotes } from "./LeadNotes";
 import { OwnerBadge } from "./OwnerBadge";
 import { OwnerSelector } from "./OwnerSelector";
 import { resolveLeadOwner } from "@/lib/kanban/owner";
@@ -174,19 +176,25 @@ export function LeadDossier({
             </div>
           </div>
 
-          {/* COLUNA DIREITA: Timeline */}
+          {/* COLUNA DIREITA: Timeline / Notas */}
           <div className="flex flex-col border-border md:border-l md:pl-6 pt-6 md:pt-0">
-            <section className="flex-1">
-              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
-                Linha do tempo
-              </h3>
-              <LeadTimeline
-                itens={timeline.itens}
-                chegouAoVivo={timeline.chegouAoVivo}
-                isLoading={timeline.isLoading}
-                isError={timeline.isError}
-              />
-            </section>
+            <Tabs defaultValue="timeline" className="flex-1">
+              <TabsList>
+                <TabsTrigger value="timeline">Linha do tempo</TabsTrigger>
+                <TabsTrigger value="notas">Notas</TabsTrigger>
+              </TabsList>
+              <TabsContent value="timeline">
+                <LeadTimeline
+                  itens={timeline.itens}
+                  chegouAoVivo={timeline.chegouAoVivo}
+                  isLoading={timeline.isLoading}
+                  isError={timeline.isError}
+                />
+              </TabsContent>
+              <TabsContent value="notas">
+                <LeadNotes leadId={lead.id} />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </SheetContent>
