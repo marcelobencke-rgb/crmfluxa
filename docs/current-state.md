@@ -76,6 +76,12 @@ correspondentes localizados no repo):
 - **Webhooks & automação** — captação + regras QUANDO/SE/ENTÃO + gatilhos externos.
 - **Operação visível** — transparência do motivo de retenção anti-ban, central de avisos,
   knobs de proteção de envio, propostas do flywheel com gate humano.
+- **Agendamento + Catálogo** (2026-08-17, spec `docs/specs/18-spec-agendamento-catalogo.md`,
+  migrations 0146+0147) — catálogo de produtos/serviços, recursos agendáveis (profissionais/
+  salas) com disponibilidade semanal, agendamento com exclusion constraint anti-double-booking
+  no banco, visão em lista e em agenda (grade por recurso), 6 tools MCP pro agente marcar/
+  remarcar/cancelar/consultar. **PARCIAL** — ver §3, esta linha é relato de quem construiu na
+  sessão, não uma auditoria read-only como o resto deste documento.
 
 ### Épico de Governança de Atendimento (G1–G6) — COMPLETO
 
@@ -100,6 +106,7 @@ o contrato de governança para agentes de IA externos.
 | **Casos humanos** (`docs/handoffs/HANDOFF-casos-humanos.md`) | Waves 1–6 ✅ e revisadas; Wave 7 (prova E2E) relatada PARCIAL — interrompida por limite de API, não por bug | **A CONFIRMAR** se fechou: o HANDOFF saiu da raiz para `docs/handoffs/`, o que normalmente sinaliza épico encerrado |
 | **Inbox multimodal** (`docs/handoffs/HANDOFF-inbox-multimodal.md`) | Ondas 0–3.1 ✅ com prova real (WhatsApp real, mídia real) | **A CONFIRMAR** o estado das ondas 4–6. **Bloqueios externos que valem revalidar:** chave Google era de gateway (gemini real inacessível) e credencial Anthropic era placeholder (`last4 1234`) — o agente multimodal foi provado só em OpenAI/gpt-4o |
 | **Fase FG / Vendaval** | Não iniciada | O gatilho era a aprovação de G6, que existe (`G6.approved`). O README **não lista mais** a Fase FG em "Próximo" — **A CONFIRMAR** se saiu de escopo ou foi absorvida |
+| **Agendamento + Catálogo** (spec 18, 2026-08-17) | Schema+API+UI+tools MCP prontos, verificados manualmente pela tela (não é auditoria — é relato direto de quem construiu). Vínculo agendamento↔lead provado de ponta a ponta (timeline grava `appointment_scheduled`) | `pnpm test:db` **nunca rodou** (sem Docker nesta sessão) — zero prova automatizada de isolamento RLS nas 9 tabelas novas. Zero `tests/e2e/*.spec.ts` e zero `tests/invariants/*.test.ts` novos. Sync Google Agenda sem credencial real testada (só degradação sem env verificada). Criação automática do canal de push (watch) não implementada — pull só via poll de 15min. Sem CRUD de `crm_resource_time_off` (férias/feriado) apesar da tabela existir. Tools MCP nunca chamadas pelo agente de verdade (só via REST equivalente). Vocabulário de agendamento e pacote de múltiplos serviços num horário só, fora de escopo por decisão do dono |
 
 ### Próximo no roadmap (não iniciado — CONFIRMADO no README)
 

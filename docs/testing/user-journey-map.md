@@ -202,6 +202,35 @@ Critério: nenhuma tela quebra, nenhum stack trace, nenhum texto de erro cru.
 
 ---
 
+## J9 — Catálogo, Recursos e Agendamento `[P1]` (spec 18, 2026-08-17)
+
+> **Nota de método, diferente do resto deste mapa:** os `PASS` abaixo vêm de verificação
+> manual pela tela (Playwright MCP interativo) durante a sessão que construiu a feature —
+> não de uma spec `tests/e2e/*.spec.ts` automatizada, que **não existe ainda** pra este
+> módulo. Sem banco fresco/`baseline.sql` limpo — testado direto no ambiente de
+> desenvolvimento com dados que já existiam. Tratar como evidência mais fraca que o resto
+> deste documento até alguém escrever a spec E2E de verdade.
+
+| # | Caso | Expectativa | Resultado |
+|---|------|-------------|-----------|
+| J9.1 | Criar produto/serviço em `/app/catalog`, editar, excluir | CRUD completo, preço formatado, badge de agendável | **PASS** |
+| J9.2 | Criar recurso em `/app/resources`, configurar serviços que executa | vínculo liga/desliga, mostra preço/duração do catálogo | **PASS** |
+| J9.3 | Configurar disponibilidade semanal de um recurso | grade de 7 dias, horários persistem e recarregam certo | **PASS** |
+| J9.4 | Criar agendamento pela tela: recurso → serviço → data → horário livre | só mostra horário realmente livre; `POST` cria com `ends_at` calculado | **PASS** |
+| J9.5 | Tentar marcar o mesmo recurso/horário duas vezes | segunda tentativa recusada (`409 slot_unavailable`) — trava é a exclusion constraint do banco | **PASS** (via API; UI sempre oferece só horário livre, não dá pra reproduzir o conflito clicando) |
+| J9.6 | Remarcar e cancelar um agendamento | duração preservada na remarcação; cancelamento exige motivo | **PASS** |
+| J9.7 | Vincular um lead ao criar o agendamento (LeadPicker) | busca por título, agendamento aparece na timeline do lead (`crm_lead_activities`) | **PASS** — buscado "Lead de Teste", vinculado, `POST` gravou `lead_id`, `GET /api/v1/leads/:id/timeline` devolveu `source_module:"agendamento", type:"appointment_scheduled"` |
+| J9.8 | Visão em Agenda (grade por recurso, navegação por dia) | colunas por recurso, bloco na posição/horário certos, clique abre cancelamento | **PASS** |
+| J9.9 | Google Agenda: app sobe sem `GOOGLE_OAUTH_CLIENT_ID`/`_SECRET` | aba mostra "não configurada", sem crash | **PASS** |
+| J9.10 | Google Agenda: conectar, sincronizar de verdade (push e pull) | — | **NÃO EXERCITADO** — sem credencial OAuth real nesta sessão |
+| J9.11 | Agente MCP: `crm_search_catalog`, `crm_list_available_slots`, `crm_create_appointment` etc. | tool aparece no catálogo leigo-friendly, chamada funciona | **PARCIAL** — o handler que cada tool chama foi provado pela REST equivalente (`GET /api/v1/products?search=`, `POST /api/v1/appointments` etc., todos testados nesta sessão) e a varredura de consistência catálogo↔handler passou. **NÃO EXERCITADO**: o agente de verdade chamando a tool via MCP numa conversa |
+
+**Dívida clara desta jornada:** zero `tests/e2e/*.spec.ts`, zero `tests/invariants/*.test.ts`
+novos, `pnpm test:db` nunca rodou (sem Docker na máquina de desenvolvimento desta sessão).
+Ver `docs/current-state.md` §3 pra lista completa do que falta.
+
+---
+
 ## Achados do mapeamento (pré-execução) — candidatos a correção
 
 | ID | Achado | Origem | Severidade |

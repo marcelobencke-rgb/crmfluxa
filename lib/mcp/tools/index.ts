@@ -8,6 +8,14 @@
  */
 import type { McpToolDefinition } from "../types";
 import { TOOL_CATALOG, VALID_TOOL_IDS } from "./catalog";
+import {
+  crmListAvailableSlots,
+  crmListAppointments,
+  crmSearchCatalog,
+  crmCreateAppointment,
+  crmRescheduleAppointment,
+  crmCancelAppointment,
+} from "./agendamento";
 import { crmSearchContacts, crmGetContact, crmProposeContactField } from "./contacts";
 import {
   crmListConversations,
@@ -79,6 +87,9 @@ import {
 // unknown>` e cada handler valida no Zod do registerTool.
 export const allTools: ReadonlyArray<McpToolDefinition> = [
   // read
+  crmListAvailableSlots,
+  crmListAppointments,
+  crmSearchCatalog,
   crmSearchContacts,
   crmGetContact,
   crmProposeContactField,
@@ -113,6 +124,9 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmListHumanCases,
   crmGetHumanCase,
   // write
+  crmCreateAppointment,
+  crmRescheduleAppointment,
+  crmCancelAppointment,
   crmCreateLead,
   crmUpdateLead,
   crmMoveLeadStage,
