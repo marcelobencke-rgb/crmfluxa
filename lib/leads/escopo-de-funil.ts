@@ -65,6 +65,16 @@ export const ALVO_DE_FUNIL: Record<string, AlvoDeFunil> = {
   crm_schedule_followup: "funil_vem_do_lead",
   crm_cancel_followup: "funil_vem_do_lead",
 
+  // ---- spec 18: agendamento — marcar carrega lead_id opcional no argumento;
+  //      remarcar/cancelar só recebem appointment_id, sem ponte pro lead sem
+  //      consulta ao banco que esta função (pura, sem I/O) não faz. Declarado
+  //      "sem_funil" em vez de forçar "funil_vem_do_lead" sobre um argumento
+  //      que não existe — isso faria o check silenciosamente nunca recusar
+  //      nada, que é pior que a ausência de escopo aqui SER honesta. ----
+  crm_create_appointment: "funil_vem_do_lead",
+  crm_reschedule_appointment: "sem_funil",
+  crm_cancel_appointment: "sem_funil",
+
   // ---- não têm funil, e isso é declarado ----
   crm_send_whatsapp_message: "sem_funil",
   crm_add_case_note: "sem_funil",

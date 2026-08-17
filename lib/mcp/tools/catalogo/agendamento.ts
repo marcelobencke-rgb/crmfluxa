@@ -17,7 +17,9 @@ export const TOOLS_AGENDAMENTO = declararTools([
       "Busca no catálogo o preço e a duração de um produto ou serviço, pra responder quanto custa ou achar o que marcar.",
     oQueToca: "Catálogo",
     risco: "seguro",
-    pacotes: ["atender", "vender"],
+    // "agendar" (bundle próprio, spec 18) + "vender": consultar preço/duração
+    // também serve quem está fechando negócio sem agendar nada.
+    pacotes: ["agendar", "vender"],
   },
   {
     name: "crm_list_available_slots",
@@ -27,7 +29,7 @@ export const TOOLS_AGENDAMENTO = declararTools([
       "Mostra quais horários estão livres pra marcar um serviço, com um profissional específico ou com qualquer um disponível.",
     oQueToca: "Agenda",
     risco: "seguro",
-    pacotes: ["atender"],
+    pacotes: ["agendar"],
   },
   {
     name: "crm_list_appointments",
@@ -37,7 +39,7 @@ export const TOOLS_AGENDAMENTO = declararTools([
       "Consulta os horários já marcados, pra responder quando é o compromisso do cliente ou conferir se ele já tem algo agendado.",
     oQueToca: "Agenda",
     risco: "seguro",
-    pacotes: ["atender"],
+    pacotes: ["agendar"],
   },
   {
     name: "crm_create_appointment",
@@ -47,7 +49,7 @@ export const TOOLS_AGENDAMENTO = declararTools([
       "Marca um horário pro cliente num serviço e profissional/sala disponíveis, a partir de um horário livre já consultado.",
     oQueToca: "Agenda",
     risco: "atencao",
-    pacotes: ["atender", "vender"],
+    pacotes: ["agendar", "vender"],
   },
   {
     name: "crm_reschedule_appointment",
@@ -56,7 +58,7 @@ export const TOOLS_AGENDAMENTO = declararTools([
     explicacao: "Muda um agendamento já marcado pra outro dia ou horário, mantendo a mesma duração.",
     oQueToca: "Agenda",
     risco: "atencao",
-    pacotes: ["atender"],
+    pacotes: ["agendar"],
   },
   {
     name: "crm_cancel_appointment",
@@ -65,6 +67,6 @@ export const TOOLS_AGENDAMENTO = declararTools([
     explicacao: "Cancela um agendamento marcado, registrando o motivo pra quem for consultar depois.",
     oQueToca: "Agenda",
     risco: "atencao",
-    pacotes: ["atender"],
+    pacotes: ["agendar"],
   },
 ]);

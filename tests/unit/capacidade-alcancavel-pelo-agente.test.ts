@@ -109,6 +109,14 @@ const ESCRITA_QUE_E_TRABALHO_DE_ATENDENTE: ReadonlyArray<string> = [
   // `app/api/v1/conversation-tags` é leitura `viewer`; marcar conversa é trabalho
   // de atendente e o dano máximo é um filtro sujo, reversível na tela.
   "crm_manage_tags",
+  // `app/api/v1/appointments/` POST exige `agent`. Marcar horário é o trabalho
+  // do dia de quem atende — mesma trava anti-double-booking do banco que a
+  // tela usa (spec 18).
+  "crm_create_appointment",
+  // `app/api/v1/appointments/[id]/` PATCH exige `agent` (mesma rota faz
+  // remarcar e cancelar, por `status`/`starts_at` no corpo).
+  "crm_reschedule_appointment",
+  "crm_cancel_appointment",
 ];
 
 function alcancavelPeloAgente(requiresRole: Role): boolean {

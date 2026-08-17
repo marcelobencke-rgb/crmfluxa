@@ -57,6 +57,27 @@ const EXCECOES: Record<string, string> = {
   "String(lead.id)": "uuid do lead, convertido porque a origem é jsonb do webhook",
   "string | null | undefined":
     "falso positivo do parser: é uma ANOTAÇÃO DE TIPO num componente, não uma chamada de audit",
+
+  // spec 18 — integração Google Calendar: o campo `resourceId` aqui é DO
+  // GOOGLE (o id do canal de push notification da API deles), não o
+  // `api_audit_log.resource_id`. As entradas abaixo são todas ANOTAÇÃO DE
+  // TIPO ou parâmetro de função capturados pelo regex textual — nenhuma é
+  // chamada de audit. Mesma classe do "string | null | undefined" acima.
+  "string; // id de recurso do canal": "ANOTAÇÃO DE TIPO em lib/integrations/google-calendar/client.ts — resourceId é o id do canal do Google, não vai para audit",
+  "string": "ANOTAÇÃO DE TIPO (parâmetro de função) em lib/integrations/google-calendar/client.ts",
+  "string | null): string {": "ANOTAÇÃO DE TIPO (assinatura de função) em lib/integrations/google-calendar/state.ts — issueState",
+  "string | null;": "ANOTAÇÃO DE TIPO (campo de interface) em lib/integrations/google-calendar/state.ts",
+  "string | null): Promise<ConnectResult> {":
+    "ANOTAÇÃO DE TIPO (assinatura de função) em app/actions/integrations/connectGoogleCalendar.ts",
+  "string | null): Promise<void> {":
+    "ANOTAÇÃO DE TIPO (assinatura de função) em app/actions/integrations/connectGoogleCalendar.ts",
+  "string;": "ANOTAÇÃO DE TIPO (campo de props) em app/app/resources/_components/GoogleCalendarTab.tsx",
+  "string; canWrite: boolean }) {":
+    "ANOTAÇÃO DE TIPO (parâmetro desestruturado) em app/app/resources/_components/ResourceConfigSheet.tsx",
+  // `resourceId` aqui É crm_resources.id (uuid legítimo) — falso positivo só
+  // porque `|| null` (e não `?? null`) não é normalizado por `pareceId`.
+  "resourceIdRaw || null":
+    "resourceIdRaw é o crm_resources.id decodificado do state OAuth (lib/integrations/google-calendar/state.ts); equivalente a `?? null`, escrito com `||` porque a string vazia também deve virar null",
 };
 
 function arquivosDeCodigo(base: string): string[] {
