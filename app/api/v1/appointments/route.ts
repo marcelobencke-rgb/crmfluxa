@@ -1,6 +1,6 @@
 /**
- * GET  /api/v1/appointments — lista agendamentos (filtros: resource_id, lead_id, status,
- *      starts_from/starts_to).
+ * GET  /api/v1/appointments — lista agendamentos (filtros: resource_id, lead_id, contact_id,
+ *      status, starts_from/starts_to).
  * POST /api/v1/appointments — cria um agendamento. `ends_at` é SEMPRE calculado no
  *      servidor a partir da duração do serviço (nunca aceito do cliente).
  *
@@ -36,6 +36,7 @@ export async function GET(req: NextRequest): Promise<Response> {
       {
         resource_id: url.searchParams.get("resource_id") ?? undefined,
         lead_id: url.searchParams.get("lead_id") ?? undefined,
+        contact_id: url.searchParams.get("contact_id") ?? undefined,
         status: url.searchParams.get("status") ?? undefined,
         starts_from: url.searchParams.get("starts_from") ?? undefined,
         starts_to: url.searchParams.get("starts_to") ?? undefined,

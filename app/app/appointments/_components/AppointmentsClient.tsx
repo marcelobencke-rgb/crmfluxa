@@ -18,21 +18,7 @@ import { useProducts } from "@/hooks/products/useProducts";
 import { NewAppointmentDialog } from "./NewAppointmentDialog";
 import { CancelAppointmentDialog } from "./CancelAppointmentDialog";
 import { CalendarView } from "./CalendarView";
-
-const STATUS_LABEL: Record<Appointment["status"], string> = {
-  scheduled: "Agendado",
-  confirmed: "Confirmado",
-  completed: "Concluído",
-  cancelled: "Cancelado",
-  no_show: "Não compareceu",
-};
-const STATUS_VARIANT: Record<Appointment["status"], "default" | "success" | "neutral" | "destructive"> = {
-  scheduled: "default",
-  confirmed: "success",
-  completed: "neutral",
-  cancelled: "destructive",
-  no_show: "destructive",
-};
+import { STATUS_LABEL, STATUS_VARIANT } from "@/lib/appointments/status";
 
 interface Props {
   canWrite: boolean;
@@ -117,6 +103,7 @@ function ListView({ canWrite }: { canWrite: boolean }) {
                   <Badge variant={STATUS_VARIANT[a.status]}>{STATUS_LABEL[a.status]}</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
+                  {a.contact_name && <span className="text-foreground">{a.contact_name} · </span>}
                   {productName.get(a.product_id) ?? "Serviço"} · {resourceName.get(a.resource_id) ?? "Recurso"}
                 </p>
                 {a.notes && <p className="text-sm">{a.notes}</p>}

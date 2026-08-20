@@ -11316,6 +11316,112 @@ grant execute on function public.fn_crm_pull_upsert_appointment(
 
 notify pgrst, 'reload schema';
 
+-- ---- crm_appointments.contact_id derivado do lead + backfill (migration 0148) ----
+--
+-- A coluna sempre existiu mas nunca era preenchida (só lead_id, via LeadPicker). Sem ela,
+-- o agendamento não sobrevive como referência estável a um negócio depois fechado/perdido,
+-- e não dá pra montar "histórico de agendamentos do contato" sem join de lead. Trigger (não
+-- código de app) porque crm_lead_activities/crm_lead_links (migration 0146) exigem
+-- lead_id NOT NULL — um agendamento só-contato nunca ganha timeline por ali, e a tela de
+-- contato passa a consultar crm_appointments direto por contact_id; a coluna precisa estar
+-- populada em TODO caminho de escrita (REST, MCP, worker de pull do Google), não só na
+-- rota que uma sessão específica tocou. Não sobrescreve contact_id explícito.
+
+create or replace function public.fn_crm_appointment_derive_contact() returns trigger
+    language plpgsql
+    set search_path to 'public', 'pg_temp'
+    as $$
+begin
+  if new.contact_id is null and new.lead_id is not null then
+    select contact_id into new.contact_id from crm_leads where id = new.lead_id;
+  end if;
+  return new;
+end;
+$$;
+
+revoke execute on function public.fn_crm_appointment_derive_contact() from public, anon;
+
+drop trigger if exists trg_crm_appointment_derive_contact on public.crm_appointments;
+create trigger trg_crm_appointment_derive_contact
+  before insert or update of lead_id, contact_id on public.crm_appointments
+  for each row execute function fn_crm_appointment_derive_contact();
+
+update crm_appointments a
+set contact_id = l.contact_id
+from crm_leads l
+where a.lead_id = l.id
+  and a.contact_id is null
+  and l.contact_id is not null;
+
+notify pgrst, 'reload schema';
+
+-- ---- agendamento: timeline do lead com o ator correto (migration 0149) ----
+--
+-- fn_crm_appointment_activity (0146) gravava a atividade de dentro do trigger, que não
+-- tem como saber QUEM disparou o INSERT/UPDATE do lado da app — por isso a timeline
+-- mostrava "autor não registrado". createAppointmentHandler/updateAppointmentHandler
+-- passam a gravar a atividade eles mesmos (JÁ têm ctx.actor em escopo, mesma fonte do
+-- audit log). O trigger fica restrito a gravar atividade só pro único caminho que nunca
+-- passa pelos handlers TS: o worker de pull do Google Agenda, identificado pelo GUC
+-- fluxa.sync_origin — sem esse gate, app e trigger duplicariam a mesma linha pro
+-- caminho normal (REST/MCP). crm_lead_links continua gravado sempre (só associação,
+-- não precisa de autor). De carona: separa "remarcar" de "duração mudou".
+
+create or replace function public.fn_crm_appointment_activity() returns trigger
+    language plpgsql
+    set search_path to 'public', 'pg_temp'
+    as $$
+declare
+  v_activity_type text;
+  v_reason text;
+begin
+  if tg_op = 'INSERT' then
+    v_activity_type := case when new.is_external_block then null else 'appointment_scheduled' end;
+  elsif old.status <> 'cancelled' and new.status = 'cancelled' then
+    v_activity_type := 'appointment_cancelled';
+  elsif old.starts_at <> new.starts_at then
+    v_activity_type := 'appointment_rescheduled';
+  elsif old.ends_at <> new.ends_at then
+    v_activity_type := 'appointment_duration_changed';
+  else
+    return new;
+  end if;
+
+  if new.lead_id is not null and tg_op = 'INSERT' then
+    insert into crm_lead_links (organization_id, lead_id, target_kind, target_id, link_kind)
+    values (new.organization_id, new.lead_id, 'appointment', new.id, 'primary')
+    on conflict do nothing;
+  end if;
+
+  if new.lead_id is not null and v_activity_type is not null
+     and coalesce(current_setting('fluxa.sync_origin', true), '') = 'google_pull' then
+    v_reason := case v_activity_type
+      when 'appointment_scheduled' then
+        'Agendamento marcado para ' || to_char(new.starts_at at time zone 'America/Sao_Paulo', 'DD/MM/YYYY "às" HH24:MI')
+      when 'appointment_cancelled' then
+        'Agendamento de ' || to_char(new.starts_at at time zone 'America/Sao_Paulo', 'DD/MM/YYYY "às" HH24:MI') || ' cancelado'
+      when 'appointment_rescheduled' then
+        'Agendamento remarcado para ' || to_char(new.starts_at at time zone 'America/Sao_Paulo', 'DD/MM/YYYY "às" HH24:MI')
+      else
+        'Duração do agendamento de ' || to_char(new.starts_at at time zone 'America/Sao_Paulo', 'DD/MM/YYYY "às" HH24:MI') || ' alterada'
+    end;
+
+    insert into crm_lead_activities
+      (organization_id, lead_id, contact_id, source_module, source_id, type, actor_kind, reason, payload)
+    values (
+      new.organization_id, new.lead_id, new.contact_id, 'agendamento', new.id, v_activity_type, 'system', v_reason,
+      jsonb_build_object('starts_at', new.starts_at, 'ends_at', new.ends_at, 'resource_id', new.resource_id, 'sync_origin', 'google_pull')
+    );
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke execute on function public.fn_crm_appointment_activity() from public, anon;
+
+notify pgrst, 'reload schema';
+
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
 -- ⚠️ ESTE BLOCO É, DE PROPÓSITO, O ÚLTIMO DO ARQUIVO. Apêndice novo entra ANTES
