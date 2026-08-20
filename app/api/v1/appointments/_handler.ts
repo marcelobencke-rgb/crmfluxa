@@ -10,6 +10,7 @@ import { ApiError } from "@/lib/api/types";
 import type { Actor, HandlerCtx } from "@/lib/api/handlers/types";
 import { audit } from "@/lib/audit";
 import { emitLeadActivity } from "@/lib/leads/activity-emitter";
+import { rotuloDoContato, SEM_NOME, type ContatoNomeavel } from "@/lib/contacts/rotulo-do-contato";
 import { computeAvailableSlots, MAX_DATE_RANGE_DAYS, type BusyRange } from "@/lib/scheduling/slots";
 import type {
   AvailableSlotsQuery,
@@ -35,27 +36,30 @@ const APPT_COLS =
 
 /**
  * Mesmas colunas de sempre + embed pra resolver `contact_name` (spec 18 — cards da
- * agenda mostram o nome do contato). Contato pode vir direto (`crm_appointments.contact_id`)
- * ou, mais comum no fluxo atual (só o NewAppointmentDialog vincula lead, não contato
- * direto), via `lead.contact_id`. Sem nenhum dos dois, cai pro título do lead.
+ * agenda mostram o nome do contato). Contato pode vir direto (`crm_appointments.contact_id`,
+ * sempre populado pela migration 0148 quando há lead) ou, pra dado anterior a essa
+ * migration, via `lead.contact_id`. Sem nenhum dos dois, cai pro título do lead.
  */
-const APPT_JOIN_SELECT = `${APPT_COLS}, lead:crm_leads(title, contact:contacts(name, display_name)), contact:contacts(name, display_name)`;
+const APPT_JOIN_SELECT = `${APPT_COLS}, lead:crm_leads(title, contact:contacts(name, display_name, phone_number)), contact:contacts(name, display_name, phone_number)`;
 
-interface JoinedContact {
-  name: string | null;
-  display_name: string | null;
-}
 interface JoinedRow {
-  lead: { title: string; contact: JoinedContact | null } | null;
-  contact: JoinedContact | null;
+  lead: { title: string; contact: ContatoNomeavel | null } | null;
+  contact: ContatoNomeavel | null;
   [key: string]: unknown;
 }
 
-/** Achata o embed de lead/contato num único `contact_name`, removendo os objetos aninhados da resposta. */
+/**
+ * Achata o embed de lead/contato num único `contact_name`, removendo os objetos
+ * aninhados da resposta. Usa `rotuloDoContato` (não uma cadeia própria) — é a mesma
+ * regra de "como se chama esta pessoa na tela" de toda outra tela, filtro de
+ * identificador técnico incluso; reimplementar aqui seria a sétima cópia que
+ * `lib/contacts/rotulo-do-contato.ts` existe pra evitar.
+ */
 function mapAppointmentRow(row: Record<string, unknown>): Record<string, unknown> {
   const { lead, contact, ...rest } = row as unknown as JoinedRow;
-  const contact_name =
-    contact?.display_name || contact?.name || lead?.contact?.display_name || lead?.contact?.name || lead?.title || null;
+  const contatoEncontrado = contact ?? lead?.contact ?? null;
+  const rotulo = contatoEncontrado ? rotuloDoContato(contatoEncontrado) : null;
+  const contact_name = rotulo && rotulo !== SEM_NOME ? rotulo : (lead?.title ?? rotulo);
   return { ...rest, contact_name };
 }
 
