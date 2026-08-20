@@ -41,7 +41,13 @@ export type ActivityType =
   | "followup_scheduled"
   | "followup_cancelled"
   | "demand_closed"
-  | "promise_unowned";
+  | "promise_unowned"
+  // Spec 18 — agendamento vinculado a um negócio (emitido por createAppointmentHandler/
+  // updateAppointmentHandler, não pelo trigger — só a app conhece o ator de verdade).
+  | "appointment_scheduled"
+  | "appointment_cancelled"
+  | "appointment_rescheduled"
+  | "appointment_duration_changed";
 
 export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   lead_created: "Entrou pelo WhatsApp",
@@ -99,6 +105,10 @@ export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   // invisível na timeline — só existia em audit e event_log, que ninguém lê na
   // tela — e o dossiê de um negócio fechado terminava sem dizer que fechou.
   demand_closed: "Demanda encerrada",
+  appointment_scheduled: "Agendamento marcado",
+  appointment_cancelled: "Agendamento cancelado",
+  appointment_rescheduled: "Agendamento remarcado",
+  appointment_duration_changed: "Duração do agendamento alterada",
 };
 
 /** Quando o tipo é legado/desconhecido, a linha ainda é honesta — sem jargão. */

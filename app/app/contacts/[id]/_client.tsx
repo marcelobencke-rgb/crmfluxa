@@ -13,6 +13,7 @@ import { useContact } from "@/hooks/contacts/useContact";
 import { useAuth } from "@/hooks/auth/AuthProvider";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { TimelineView } from "@/components/contacts/TimelineView";
+import { ContactAppointmentsView } from "@/components/contacts/ContactAppointmentsView";
 import { EditContactDialog } from "@/components/contacts/EditContactDialog";
 import { AnonymizeDialog } from "@/components/contacts/AnonymizeDialog";
 import { UnblockContactDialog } from "@/components/contacts/UnblockContactDialog";
@@ -137,6 +138,7 @@ export function ContactDetailClient({ contactId }: Props) {
         <TabsList>
           <TabsTrigger value="overview">Visão geral</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <TabsTrigger value="appointments">Agendamentos</TabsTrigger>
           {isAdmin && <TabsTrigger value="lgpd">LGPD</TabsTrigger>}
         </TabsList>
 
@@ -198,6 +200,10 @@ export function ContactDetailClient({ contactId }: Props) {
 
         <TabsContent value="timeline" className="mt-4">
           <TimelineView contactId={contactId} />
+        </TabsContent>
+
+        <TabsContent value="appointments" className="mt-4">
+          <ContactAppointmentsView contactId={contactId} />
         </TabsContent>
 
         {isAdmin && (

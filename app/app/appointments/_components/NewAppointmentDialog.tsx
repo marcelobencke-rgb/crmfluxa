@@ -23,6 +23,7 @@ import { useResources } from "@/hooks/resources/useResources";
 import { useResourceServices } from "@/hooks/resources/useResourceServices";
 import { useAvailableSlots } from "@/hooks/appointments/useAvailableSlots";
 import { cn } from "@/lib/utils";
+import { ContactSelector } from "@/components/contacts/ContactSelector";
 import { LeadPicker } from "./LeadPicker";
 
 interface Props {
@@ -41,6 +42,7 @@ export function NewAppointmentDialog({ open, onOpenChange }: Props) {
   const [date, setDate] = React.useState(todayDateStr());
   const [selectedSlot, setSelectedSlot] = React.useState<string | null>(null);
   const [lead, setLead] = React.useState<{ id: string; title: string } | null>(null);
+  const [contactId, setContactId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!open) return;
@@ -49,6 +51,7 @@ export function NewAppointmentDialog({ open, onOpenChange }: Props) {
     setDate(todayDateStr());
     setSelectedSlot(null);
     setLead(null);
+    setContactId(null);
   }, [open]);
 
   const { data: resourceServices, isLoading: loadingServices } = useResourceServices(resourceId);
@@ -69,6 +72,7 @@ export function NewAppointmentDialog({ open, onOpenChange }: Props) {
         product_id: productId,
         starts_at: selectedSlot,
         lead_id: lead?.id,
+        contact_id: !lead ? contactId : undefined,
       }),
     onError: showApiError,
     onSuccess: () => {
@@ -191,12 +195,30 @@ export function NewAppointmentDialog({ open, onOpenChange }: Props) {
           )}
 
           <div className="space-y-2">
-            <Label>Lead</Label>
-            <LeadPicker value={lead} onChange={setLead} />
+            <Label>Negócio (lead)</Label>
+            <LeadPicker
+              value={lead}
+              onChange={(l) => {
+                setLead(l);
+                if (l) setContactId(null);
+              }}
+            />
             <p className="text-xs text-muted-foreground">
-              Vincular a um lead faz o agendamento aparecer na timeline dele.
+              Vincular a um negócio faz o agendamento aparecer na timeline dele — o contato é
+              preenchido sozinho a partir do negócio.
             </p>
           </div>
+
+          {!lead && (
+            <div className="space-y-2">
+              <Label>Ou só o contato (sem negócio)</Label>
+              <ContactSelector value={contactId} onChange={setContactId} />
+              <p className="text-xs text-muted-foreground">
+                Pra quando o agendamento não faz parte de um funil de vendas — ainda assim
+                aparece no histórico do contato.
+              </p>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

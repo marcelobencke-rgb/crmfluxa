@@ -260,6 +260,8 @@ export type AuditAction =
   // Spec 18 — agendamento (crm_appointments).
   | "appointment.created"
   | "appointment.rescheduled"
+  | "appointment.duration_changed"
+  | "appointment.notes_updated"
   | "appointment.cancelled"
   | "appointment.status_changed"
   // Spec 18 §4 — sync Google Agenda (crm_calendar_connections).

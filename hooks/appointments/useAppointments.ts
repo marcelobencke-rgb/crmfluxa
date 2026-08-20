@@ -17,6 +17,8 @@ export interface Appointment {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  /** Resolvido no backend (contato direto, ou do lead vinculado, ou o título do lead). */
+  contact_name: string | null;
 }
 
 export const APPOINTMENTS_KEY = ["crm-appointments"];

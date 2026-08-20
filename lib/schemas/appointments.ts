@@ -20,14 +20,26 @@ export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
 export const updateAppointmentSchema = z
   .object({
     starts_at: isoInstant,
+    /** Redimensionar (mudar duração) manda só `ends_at` — sem `starts_at` junto. */
+    ends_at: isoInstant,
     status: z.enum(["confirmed", "completed", "cancelled", "no_show"]),
     cancel_reason: z.string().trim().min(1).max(500),
+    /**
+     * Único campo de "conteúdo" editável no diálogo de edição — resource_id, product_id,
+     * lead_id e contact_id são deliberadamente imutáveis por aqui. Ver comentário em
+     * updateAppointmentHandler (_handler.ts) pro porquê.
+     */
+    notes: z.string().trim().max(2000).nullable(),
   })
   .partial()
   .refine((d) => Object.keys(d).length > 0, { message: "Informe ao menos um campo." })
   .refine((d) => d.status !== "cancelled" || !!d.cancel_reason, {
     message: "Cancelamento exige motivo (cancel_reason).",
     path: ["cancel_reason"],
+  })
+  .refine((d) => !d.starts_at || !d.ends_at || Date.parse(d.ends_at) > Date.parse(d.starts_at), {
+    message: "ends_at precisa ser depois de starts_at.",
+    path: ["ends_at"],
   });
 export type UpdateAppointmentInput = z.infer<typeof updateAppointmentSchema>;
 
