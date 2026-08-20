@@ -15,11 +15,11 @@
  *
  * Não é gate: é observação, e o resultado é uma captura para olhar.
  */
-import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { test, expect, type Page } from "@playwright/test";
+import pg from "pg";
 
 const APP_URL = `http://localhost:${process.env.E2E_PORT ?? "3001"}`;
 const CREDS_PATH = path.join(process.cwd(), ".e2e-creds.json");
@@ -31,13 +31,17 @@ interface Creds {
 }
 const creds = JSON.parse(fs.readFileSync(CREDS_PATH, "utf8")) as Creds;
 
-/** Escreve no banco pelo container — é simulação de ESTADO, não de comportamento. */
-function sql(query: string): string {
-  return execFileSync(
-    "docker",
-    ["exec", "-i", "supabase_db_deskcomm-crm", "psql", "-U", "postgres", "-d", "postgres", "-t", "-c", query],
-    { encoding: "utf8" },
-  );
+/**
+ * Escreve no banco direto — é simulação de ESTADO, não de comportamento.
+ *
+ * Via `pg.Pool`/`SUPABASE_DB_URL`, não `docker exec` num nome de container
+ * fixo: o nome do container segue `project_id` (`supabase/config.toml`), que
+ * já mudou uma vez (`deskcomm-crm` → `fluxa-crm`) e quebrava esse spec toda
+ * vez que alguém renomeasse o projeto de novo.
+ */
+const pool = new pg.Pool({ connectionString: process.env.SUPABASE_DB_URL });
+async function sql(query: string): Promise<void> {
+  await pool.query(query);
 }
 
 async function login(page: Page): Promise<void> {
@@ -54,7 +58,7 @@ test.describe("QA — o selo de autoria com o funil já vivido", () => {
     fs.mkdirSync(SAIDA, { recursive: true });
 
     // Um mês de uso normal: o dono mexeu nas etapas em momentos diferentes.
-    sql(`
+    await sql(`
       update crm_stages s set last_change_actor_kind='user',
              last_change_at = now() - (random()*30 || ' days')::interval
         from crm_pipelines p, organizations o
@@ -62,7 +66,7 @@ test.describe("QA — o selo de autoria com o funil já vivido", () => {
          and s.is_archived=false;
     `);
     // E o assistente mexeu em UMA, agora há pouco. É esta que precisa saltar.
-    sql(`
+    await sql(`
       update crm_stages s set last_change_actor_kind='ai', last_change_at = now()
         from crm_pipelines p, organizations o
        where s.pipeline_id=p.id and p.organization_id=o.id and o.slug='e2e-test-org'
@@ -112,5 +116,9 @@ test.describe("QA — o selo de autoria com o funil já vivido", () => {
     // Depois da correção: pessoa não gera selo. Se isto voltar a ser > 0, o ruído
     // que a medição de 13% expôs está de volta.
     expect(nHumano, "mudança feita por pessoa não deve gerar selo").toBe(0);
+  });
+
+  test.afterAll(async () => {
+    await pool.end();
   });
 });

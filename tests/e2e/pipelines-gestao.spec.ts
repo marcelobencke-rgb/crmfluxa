@@ -12,7 +12,10 @@
  * filtro de `organization_id` apagado da página — mediria o seed, não o código.
  *
  * O teste devolve o estado como encontrou (o funil criado termina arquivado, e o
- * padrão volta para onde estava), então roda quantas vezes for preciso.
+ * padrão volta para onde estava) — garantido por `try/finally` no segundo caso,
+ * não só pela sequência feliz: a organização usada aqui (`e2e-test-org`) é
+ * compartilhada com outros specs no mesmo CI, e um assert que estoura no meio
+ * não pode deixar "Pedidos" sem ser padrão para quem rodar depois.
  *
  * Pré-requisito: seed de credenciais + seed de funis (rodados aqui se faltarem).
  */
@@ -95,65 +98,107 @@ test.describe("gestão de funis", () => {
   });
 
   test("cria funil com colunas, edita, e as recusas aparecem explicadas", async ({ page }) => {
-    // ---- criar ----
-    await page.getByTestId("novo-funil").click();
-    await page.getByTestId("nome-do-novo-funil").fill(NOME);
-    await page.getByTestId("confirmar-novo-funil").click();
-    await expect(linhaDoFunil(page, NOME)).toBeVisible();
-    await page.screenshot({ path: path.join(EVIDENCIA, "funis-01-criado.png"), fullPage: true });
-
-    // ---- o funil nasce com as quatro colunas (senão o quadro é morto) ----
-    await linhaDoFunil(page, NOME).getByRole("link").click();
-    await page.waitForURL(/\/app\/pipelines\//);
-    for (const coluna of ["Novo", "Em andamento", "Ganho", "Perdido"]) {
-      await expect(page.getByText(coluna, { exact: true }).first()).toBeVisible();
-    }
-    await page.screenshot({ path: path.join(EVIDENCIA, "funis-02-quadro-novo.png"), fullPage: true });
-
-    await page.goto("/app/kanban");
-
-    // ---- renomear ----
-    const id = await idDoFunil(page, NOME);
-    await page.getByTestId(`renomear-${id}`).click();
-    await page.getByTestId(`nome-${id}`).fill(RENOMEADO);
-    await page.getByTestId(`salvar-nome-${id}`).click();
-    await expect(linhaDoFunil(page, RENOMEADO)).toBeVisible();
-
-    // ---- reordenar: sobe para o topo ----
-    await page.getByTestId(`subir-${id}`).click();
-    await expect(page.locator('li[data-testid^="funil-"]').first()).toContainText(RENOMEADO);
-
-    // ---- tornar padrão ----
-    await page.getByTestId(`padrao-${id}`).click();
-    await expect(linhaDoFunil(page, RENOMEADO).getByText("Padrão")).toBeVisible();
-    await page.screenshot({ path: path.join(EVIDENCIA, "funis-03-padrao.png"), fullPage: true });
-
-    // ---- recusa: arquivar o funil padrão ----
-    await page.getByTestId(`arquivar-${id}`).click();
-    await page.getByTestId(`arquivar-confirmar-${id}`).click();
-    await expect(page.getByTestId(`arquivar-erro-${id}`)).toContainText(/padrão/i);
-    await page.screenshot({
-      path: path.join(EVIDENCIA, "funis-04-recusa-padrao.png"),
-      fullPage: true,
-    });
-
-    // ---- devolve o padrão e arquiva de verdade ----
+    // Capturado ANTES da mutação começar: se algo estourar mais adiante, o
+    // `finally` precisa saber a quem devolver o "Padrão" mesmo sem ter chegado
+    // até lá pela sequência feliz.
     const idPedidos = await idDoFunil(page, "Pedidos");
-    await page.getByTestId(`padrao-${idPedidos}`).click();
-    await expect(linhaDoFunil(page, "Pedidos").getByText("Padrão")).toBeVisible();
+    let id: string | undefined;
 
-    await page.getByTestId(`arquivar-${id}`).click();
-    await page.getByTestId(`arquivar-confirmar-${id}`).click();
-    await expect(linhaDoFunil(page, RENOMEADO)).toHaveCount(0);
+    try {
+      // ---- criar ----
+      await page.getByTestId("novo-funil").click();
+      await page.getByTestId("nome-do-novo-funil").fill(NOME);
+      await page.getByTestId("confirmar-novo-funil").click();
+      await expect(linhaDoFunil(page, NOME)).toBeVisible();
+      id = await idDoFunil(page, NOME);
+      await page.screenshot({ path: path.join(EVIDENCIA, "funis-01-criado.png"), fullPage: true });
 
-    // ---- recusa: arquivar o último funil ----
-    await page.getByTestId(`arquivar-${idPedidos}`).click();
-    await page.getByTestId(`arquivar-confirmar-${idPedidos}`).click();
-    await expect(page.getByTestId(`arquivar-erro-${idPedidos}`)).toContainText(/único/i);
-    await page.screenshot({
-      path: path.join(EVIDENCIA, "funis-05-recusa-ultimo.png"),
-      fullPage: true,
-    });
+      // ---- o funil nasce com as quatro colunas (senão o quadro é morto) ----
+      await linhaDoFunil(page, NOME).getByRole("link").click();
+      await page.waitForURL(/\/app\/pipelines\//);
+      for (const coluna of ["Novo", "Em andamento", "Ganho", "Perdido"]) {
+        await expect(page.getByText(coluna, { exact: true }).first()).toBeVisible();
+      }
+      await page.screenshot({ path: path.join(EVIDENCIA, "funis-02-quadro-novo.png"), fullPage: true });
+
+      await page.goto("/app/kanban");
+
+      // ---- renomear ----
+      await page.getByTestId(`renomear-${id}`).click();
+      await page.getByTestId(`nome-${id}`).fill(RENOMEADO);
+      await page.getByTestId(`salvar-nome-${id}`).click();
+      await expect(linhaDoFunil(page, RENOMEADO)).toBeVisible();
+
+      // ---- reordenar: sobe para o topo ----
+      await page.getByTestId(`subir-${id}`).click();
+      await expect(page.locator('li[data-testid^="funil-"]').first()).toContainText(RENOMEADO);
+
+      // ---- tornar padrão ----
+      await page.getByTestId(`padrao-${id}`).click();
+      await expect(linhaDoFunil(page, RENOMEADO).getByText("Padrão")).toBeVisible();
+      await page.screenshot({ path: path.join(EVIDENCIA, "funis-03-padrao.png"), fullPage: true });
+
+      // ---- recusa: arquivar o funil padrão ----
+      await page.getByTestId(`arquivar-${id}`).click();
+      await page.getByTestId(`arquivar-confirmar-${id}`).click();
+      await expect(page.getByTestId(`arquivar-erro-${id}`)).toContainText(/padrão/i);
+      await page.screenshot({
+        path: path.join(EVIDENCIA, "funis-04-recusa-padrao.png"),
+        fullPage: true,
+      });
+
+      // ---- devolve o padrão e arquiva de verdade ----
+      await page.getByTestId(`padrao-${idPedidos}`).click();
+      await expect(linhaDoFunil(page, "Pedidos").getByText("Padrão")).toBeVisible();
+
+      await page.getByTestId(`arquivar-${id}`).click();
+      await page.getByTestId(`arquivar-confirmar-${id}`).click();
+      await expect(linhaDoFunil(page, RENOMEADO)).toHaveCount(0);
+
+      // ---- recusa: arquivar o último funil ----
+      await page.getByTestId(`arquivar-${idPedidos}`).click();
+      await page.getByTestId(`arquivar-confirmar-${idPedidos}`).click();
+      await expect(page.getByTestId(`arquivar-erro-${idPedidos}`)).toContainText(/único/i);
+      await page.screenshot({
+        path: path.join(EVIDENCIA, "funis-05-recusa-ultimo.png"),
+        fullPage: true,
+      });
+    } finally {
+      // Limpeza pelo caminho do produto — a organização é compartilhada com
+      // outros specs (e outras sessões de CI), e um rerun tem que encontrar a
+      // casa como a deixou mesmo que um assert acima tenha estourado no meio.
+      // Cada passo em seu próprio try/catch: falha na limpeza não pode mascarar
+      // o erro original do teste nem impedir o resto da limpeza de rodar.
+      await page.goto("/app/kanban").catch(() => {});
+
+      try {
+        const pedidosEhPadrao = await linhaDoFunil(page, "Pedidos")
+          .getByText("Padrão")
+          .isVisible()
+          .catch(() => false);
+        if (!pedidosEhPadrao) {
+          await page.getByTestId(`padrao-${idPedidos}`).click();
+          await expect(linhaDoFunil(page, "Pedidos").getByText("Padrão")).toBeVisible();
+        }
+      } catch {
+        // melhor esforço
+      }
+
+      try {
+        if (id) {
+          const aindaExiste = await page
+            .getByTestId(`arquivar-${id}`)
+            .isVisible()
+            .catch(() => false);
+          if (aindaExiste) {
+            await page.getByTestId(`arquivar-${id}`).click();
+            await page.getByTestId(`arquivar-confirmar-${id}`).click();
+          }
+        }
+      } catch {
+        // melhor esforço
+      }
+    }
   });
 
 });
