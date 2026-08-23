@@ -51,4 +51,16 @@ describe("NavHub", () => {
     expect(within(ensinar).getByRole("link", { name: /Memória/ })).toBeTruthy();
     expect(within(ensinar).queryByRole("link", { name: /Credenciais/ })).toBeNull();
   });
+
+  it("Canais e as duas telas de Análise voltaram pra Configurações em 23/08/2026", () => {
+    render(<NavHub group="organizacao" isPlatformAdmin role="admin" title="Org" subtitle="" />);
+    const canais = screen.getByRole("region", { name: "Canais" });
+    expect(within(canais).getByRole("link", { name: /Conexões/ })).toBeTruthy();
+    expect(within(canais).getByRole("link", { name: /Nuvemshop/ })).toBeTruthy();
+    expect(within(canais).getByRole("link", { name: /Webhooks/ })).toBeTruthy();
+
+    const dados = screen.getByRole("region", { name: "Dados e acesso" });
+    expect(within(dados).getByRole("link", { name: /Evolução da IA/ })).toBeTruthy();
+    expect(within(dados).getByRole("link", { name: /Audit Log/ })).toBeTruthy();
+  });
 });

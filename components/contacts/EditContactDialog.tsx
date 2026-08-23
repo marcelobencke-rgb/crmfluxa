@@ -21,6 +21,9 @@ interface FormShape {
   name?: string;
   email?: string;
   phone_number?: string;
+  site?: string;
+  instagram?: string;
+  facebook?: string;
   tagsRaw?: string;
 }
 
@@ -39,6 +42,9 @@ export function EditContactDialog({ contact, open, onOpenChange }: Props) {
       name: contact.name ?? "",
       email: contact.email ?? "",
       phone_number: contact.phone_number ?? "",
+      site: contact.site ?? "",
+      instagram: contact.instagram ?? "",
+      facebook: contact.facebook ?? "",
       tagsRaw: contact.tags.join(", "),
     },
   });
@@ -49,6 +55,9 @@ export function EditContactDialog({ contact, open, onOpenChange }: Props) {
         name: contact.name ?? "",
         email: contact.email ?? "",
         phone_number: contact.phone_number ?? "",
+        site: contact.site ?? "",
+        instagram: contact.instagram ?? "",
+        facebook: contact.facebook ?? "",
         tagsRaw: contact.tags.join(", "),
       });
     }
@@ -65,6 +74,9 @@ export function EditContactDialog({ contact, open, onOpenChange }: Props) {
     if (values.name?.trim()) payload.name = values.name.trim();
     if (values.email?.trim()) payload.email = values.email.trim();
     if (values.phone_number?.trim()) payload.phone_number = values.phone_number.trim();
+    if (values.site?.trim()) payload.site = values.site.trim();
+    if (values.instagram?.trim()) payload.instagram = values.instagram.trim();
+    if (values.facebook?.trim()) payload.facebook = values.facebook.trim();
     payload.tags = tags;
 
     const parsed = contactPatchSchema.safeParse(payload);
@@ -100,6 +112,18 @@ export function EditContactDialog({ contact, open, onOpenChange }: Props) {
           <div className="space-y-2">
             <Label htmlFor="ec-phone">Telefone (E.164)</Label>
             <Input id="ec-phone" {...form.register("phone_number")} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ec-site">Site</Label>
+            <Input id="ec-site" placeholder="empresa.com.br" {...form.register("site")} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ec-instagram">Instagram</Label>
+            <Input id="ec-instagram" placeholder="@nomedaempresa" {...form.register("instagram")} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ec-facebook">Facebook</Label>
+            <Input id="ec-facebook" placeholder="nomedaempresa" {...form.register("facebook")} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="ec-tags">Tags</Label>

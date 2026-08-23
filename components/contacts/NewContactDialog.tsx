@@ -21,6 +21,9 @@ interface FormShape {
   email?: string;
   phone_number?: string;
   cpf?: string;
+  site?: string;
+  instagram?: string;
+  facebook?: string;
   tagsRaw?: string;
 }
 
@@ -34,7 +37,16 @@ export function NewContactDialog({ open, onOpenChange }: Props) {
   const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm<FormShape>({
-    defaultValues: { name: "", email: "", phone_number: "", cpf: "", tagsRaw: "" },
+    defaultValues: {
+      name: "",
+      email: "",
+      phone_number: "",
+      cpf: "",
+      site: "",
+      instagram: "",
+      facebook: "",
+      tagsRaw: "",
+    },
   });
 
   async function onSubmit(values: FormShape) {
@@ -49,6 +61,9 @@ export function NewContactDialog({ open, onOpenChange }: Props) {
     if (values.email?.trim()) payload.email = values.email.trim();
     if (values.phone_number?.trim()) payload.phone_number = values.phone_number.trim();
     if (values.cpf?.trim()) payload.cpf = values.cpf.trim();
+    if (values.site?.trim()) payload.site = values.site.trim();
+    if (values.instagram?.trim()) payload.instagram = values.instagram.trim();
+    if (values.facebook?.trim()) payload.facebook = values.facebook.trim();
     if (tags.length) payload.tags = tags;
 
     const parsed = contactCreateSchema.safeParse(payload);
@@ -97,6 +112,18 @@ export function NewContactDialog({ open, onOpenChange }: Props) {
           <div className="space-y-2">
             <Label htmlFor="cpf">CPF (opcional)</Label>
             <Input id="cpf" placeholder="00000000000" {...form.register("cpf")} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="site">Site</Label>
+            <Input id="site" placeholder="empresa.com.br" {...form.register("site")} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="instagram">Instagram</Label>
+            <Input id="instagram" placeholder="@nomedaempresa" {...form.register("instagram")} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="facebook">Facebook</Label>
+            <Input id="facebook" placeholder="nomedaempresa" {...form.register("facebook")} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="tagsRaw">Tags (separadas por vírgula)</Label>

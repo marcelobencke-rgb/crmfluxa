@@ -3,7 +3,8 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ShieldCheck, PencilSimple } from "@/lib/ui/icons";
+import { ShieldCheck, PencilSimple, Globe, InstagramLogo, FacebookLogo } from "@/lib/ui/icons";
+import { urlDoSite, urlDoInstagram, urlDoFacebook } from "@/lib/contacts/social-links";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +68,9 @@ export function ContactDetailClient({ contactId }: Props) {
   // aparecia como "Sem nome" aqui e com o número no inbox.
   const displayName = rotuloDoContato(contact);
   const origem = origemAmigavel(contact.source_metadata);
+  const linkSite = urlDoSite(contact.site);
+  const linkInstagram = urlDoInstagram(contact.instagram);
+  const linkFacebook = urlDoFacebook(contact.facebook);
 
   return (
     <div className="space-y-4 p-6">
@@ -93,6 +97,34 @@ export function ContactDetailClient({ contactId }: Props) {
             {contact.email && contact.phone_number && <span>•</span>}
             {contact.phone_number && <span>{contact.phone_number}</span>}
           </div>
+          {(linkSite || linkInstagram || linkFacebook) && (
+            <div className="mt-2 flex items-center gap-1">
+              {linkSite && (
+                <Button variant="ghost" size="icon" asChild>
+                  <a href={linkSite} target="_blank" rel="noreferrer" title="Site">
+                    <Globe size={18} weight="bold" aria-hidden />
+                    <span className="sr-only">Site</span>
+                  </a>
+                </Button>
+              )}
+              {linkInstagram && (
+                <Button variant="ghost" size="icon" asChild>
+                  <a href={linkInstagram} target="_blank" rel="noreferrer" title="Instagram">
+                    <InstagramLogo size={18} weight="bold" aria-hidden />
+                    <span className="sr-only">Instagram</span>
+                  </a>
+                </Button>
+              )}
+              {linkFacebook && (
+                <Button variant="ghost" size="icon" asChild>
+                  <a href={linkFacebook} target="_blank" rel="noreferrer" title="Facebook">
+                    <FacebookLogo size={18} weight="bold" aria-hidden />
+                    <span className="sr-only">Facebook</span>
+                  </a>
+                </Button>
+              )}
+            </div>
+          )}
           <div className="mt-2 flex flex-wrap gap-1">
             {contact.tags.map((t) => (
               <Badge key={t} variant="neutral">{t}</Badge>
@@ -160,6 +192,18 @@ export function ContactDetailClient({ contactId }: Props) {
               <div>
                 <dt className="text-xs uppercase text-muted-foreground">Telefone</dt>
                 <dd className="mt-1">{contact.phone_number ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase text-muted-foreground">Site</dt>
+                <dd className="mt-1">{contact.site ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase text-muted-foreground">Instagram</dt>
+                <dd className="mt-1">{contact.instagram ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase text-muted-foreground">Facebook</dt>
+                <dd className="mt-1">{contact.facebook ?? "—"}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase text-muted-foreground">Origem</dt>
