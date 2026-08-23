@@ -11422,6 +11422,24 @@ revoke execute on function public.fn_crm_appointment_activity() from public, ano
 
 notify pgrst, 'reload schema';
 
+-- ---- site, Instagram e Facebook do contato (migration 0150) ----
+-- Guardam o identificador (domínio/handle), não a URL — montada na exibição
+-- em lib/contacts/social-links.ts. Ver a migration 0150 para o raciocínio
+-- completo (por que coluna e não custom_fields, por que handle e não URL).
+alter table public.contacts
+  add column if not exists site      text,
+  add column if not exists instagram text,
+  add column if not exists facebook  text;
+
+comment on column public.contacts.site is
+  'Domínio/site do contato, como digitado (ex.: empresa.com.br). NULL = sem site. URL clicável é montada em lib/contacts/social-links.ts, nunca gravada aqui.';
+comment on column public.contacts.instagram is
+  'Handle do Instagram, sem @ (ex.: nomedaempresa). NULL = sem Instagram. URL é https://instagram.com/<handle>, montada na exibição.';
+comment on column public.contacts.facebook is
+  'Identificador do Facebook: vanity name (ex.: fluxaautomacao) OU número puro de página sem vanity name (profile.php?id=). NULL = sem Facebook. URL montada na exibição conforme o valor for texto ou só dígitos.';
+
+notify pgrst, 'reload schema';
+
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
 -- ⚠️ ESTE BLOCO É, DE PROPÓSITO, O ÚLTIMO DO ARQUIVO. Apêndice novo entra ANTES

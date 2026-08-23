@@ -122,4 +122,8 @@ export {
   User,
   // spec 18 — agendamento
   CalendarCheck,
+  // redes sociais do contato (migration 0150)
+  Globe,
+  InstagramLogo,
+  FacebookLogo,
 } from "@phosphor-icons/react/dist/ssr";

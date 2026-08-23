@@ -2003,8 +2003,10 @@ export type Database = {
           display_name: string | null
           email: string | null
           email_normalized: string | null
+          facebook: string | null
           force_human: boolean
           id: string
+          instagram: string | null
           is_anonymized: boolean
           is_blocked: boolean
           is_merged_into: string | null
@@ -2014,6 +2016,7 @@ export type Database = {
           name: string | null
           organization_id: string
           phone_number: string | null
+          site: string | null
           source: string
           source_metadata: Json
           tags: string[]
@@ -2035,8 +2038,10 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           email_normalized?: string | null
+          facebook?: string | null
           force_human?: boolean
           id?: string
+          instagram?: string | null
           is_anonymized?: boolean
           is_blocked?: boolean
           is_merged_into?: string | null
@@ -2046,6 +2051,7 @@ export type Database = {
           name?: string | null
           organization_id: string
           phone_number?: string | null
+          site?: string | null
           source?: string
           source_metadata?: Json
           tags?: string[]
@@ -2067,8 +2073,10 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           email_normalized?: string | null
+          facebook?: string | null
           force_human?: boolean
           id?: string
+          instagram?: string | null
           is_anonymized?: boolean
           is_blocked?: boolean
           is_merged_into?: string | null
@@ -2078,6 +2086,7 @@ export type Database = {
           name?: string | null
           organization_id?: string
           phone_number?: string | null
+          site?: string | null
           source?: string
           source_metadata?: Json
           tags?: string[]

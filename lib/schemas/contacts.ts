@@ -13,6 +13,44 @@ const PHONE_REGEX = /^\+\d{8,15}$/;
 const CPF_DIGITS = /^\d{11}$/;
 
 /**
+ * Normalizações de entrada pra `site`/`instagram`/`facebook` (migration 0150).
+ * O banco guarda IDENTIFICADOR (domínio/handle), nunca URL — quem digita pode
+ * colar a URL inteira, com ou sem `@`/`www.`/protocolo, e sai reduzido ao
+ * identificador puro antes de gravar. A URL clicável é montada só na exibição
+ * (`lib/contacts/social-links.ts`).
+ */
+export function normalizarSite(v: string): string {
+  return v.trim().replace(/\/+$/, "");
+}
+
+export function normalizarInstagram(v: string): string {
+  return v
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .replace(/^instagram\.com\//i, "")
+    .replace(/^@/, "")
+    .split(/[?/]/)[0]!;
+}
+
+/**
+ * Facebook não tem uma regra única de handle: página sem vanity name só tem
+ * `profile.php?id=<numero>`. Reduz pro número puro nesse caso; senão, pro
+ * vanity name — quem exibe decide qual URL montar olhando se é só dígito.
+ */
+export function normalizarFacebook(v: string): string {
+  const semPrefixo = v
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .replace(/^facebook\.com\//i, "")
+    .replace(/^@/, "");
+  const comoId = /^profile\.php\?id=(\d+)/i.exec(semPrefixo);
+  if (comoId) return comoId[1]!;
+  return semPrefixo.split(/[?/]/)[0]!;
+}
+
+/**
  * CPF check-digit validator (algoritmo oficial Receita Federal).
  * Rejeita repetidos (00000000000, 11111111111, ...) e dígitos verificadores inválidos.
  */
@@ -40,6 +78,9 @@ export const contactCreateSchema = z.object({
     .regex(PHONE_REGEX, "Telefone deve estar em formato E.164 (+5511999998888)")
     .optional(),
   cpf: z.string().refine(isValidCpf, "CPF inválido").optional(),
+  site: z.string().trim().max(200).transform(normalizarSite).optional(),
+  instagram: z.string().trim().max(120).transform(normalizarInstagram).optional(),
+  facebook: z.string().trim().max(120).transform(normalizarFacebook).optional(),
   birthdate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)

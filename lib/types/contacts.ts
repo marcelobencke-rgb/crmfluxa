@@ -10,6 +10,14 @@ export interface Contact {
   email: string | null;
   email_normalized: string | null;
   phone_number: string | null;
+  /**
+   * Guardam IDENTIFICADOR (domínio/handle), não URL — a URL clicável é
+   * montada em `lib/contacts/social-links.ts` na hora de exibir (migration
+   * 0150). `instagram` sem `@`; `facebook` aceita vanity name ou número puro.
+   */
+  site: string | null;
+  instagram: string | null;
+  facebook: string | null;
   cpf_hash: string | null;
   birthdate: string | null;
   is_blocked: boolean;

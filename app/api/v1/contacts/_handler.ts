@@ -22,7 +22,7 @@ import type {
 type SB = SupabaseClient;
 
 const SELECT_COLS =
-  "id, organization_id, name, display_name, email, email_normalized, phone_number, cpf_hash, birthdate, is_blocked, blocked_reason, is_anonymized, anonymized_at, is_merged_into, merged_at, consent, tags, source, source_metadata, created_at, updated_at, last_activity_at";
+  "id, organization_id, name, display_name, email, email_normalized, phone_number, site, instagram, facebook, cpf_hash, birthdate, is_blocked, blocked_reason, is_anonymized, anonymized_at, is_merged_into, merged_at, consent, tags, source, source_metadata, created_at, updated_at, last_activity_at";
 
 const ROLE_RANK: Record<string, number> = {
   viewer: 1,
@@ -264,6 +264,9 @@ export async function createContactHandler(
     display_name: input.display_name ?? null,
     email: input.email ?? null,
     phone_number: input.phone_number ?? null,
+    site: input.site ?? null,
+    instagram: input.instagram ?? null,
+    facebook: input.facebook ?? null,
     birthdate: input.birthdate ?? null,
     tags: input.tags ?? [],
     source: input.source,
@@ -371,6 +374,9 @@ export async function patchContactHandler(
   // O banco deriva a coluna sozinho — era só não escrever nela.
   if (input.email !== undefined) patch.email = input.email;
   if (input.phone_number !== undefined) patch.phone_number = input.phone_number;
+  if (input.site !== undefined) patch.site = input.site;
+  if (input.instagram !== undefined) patch.instagram = input.instagram;
+  if (input.facebook !== undefined) patch.facebook = input.facebook;
   if (input.birthdate !== undefined) patch.birthdate = input.birthdate;
   if (input.tags !== undefined) patch.tags = input.tags;
   if (input.source !== undefined) patch.source = input.source;
