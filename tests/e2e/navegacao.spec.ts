@@ -35,7 +35,7 @@ async function login(page: Page, email: string): Promise<void> {
   await page.waitForURL(/\/app\//);
 }
 
-/** MFA é obrigatório para admin (CLAUDE.md), e Canais exige admin. */
+/** MFA é obrigatório para admin (CLAUDE.md), e Conexões exige admin. */
 async function loginAdmin(page: Page): Promise<void> {
   const secret = creds.admin_totp?.secret;
   expect(secret, "seed deve gravar admin_totp em .e2e-creds.json").toBeTruthy();
@@ -72,13 +72,7 @@ test.describe("navegação agrupada", () => {
     // Organização não aparece como título aqui: seu hub (Configurações) vive no
     // rodapé fixo — ver o teste de dobra abaixo.
     const titulos = sidebar(page).getByRole("heading");
-    await expect(titulos).toHaveText([
-      "Atendimento",
-      "CRM",
-      "Agente de IA",
-      "Canais",
-      "Análise",
-    ]);
+    await expect(titulos).toHaveText(["Atendimento", "CRM", "Agente de IA", "Análise"]);
 
     await page.screenshot({
       path: path.join(EVIDENCE, "nav-sidebar-agrupado.png"),
@@ -114,13 +108,19 @@ test.describe("navegação agrupada", () => {
 
   /**
    * O canal oficial saiu de Configurações no PR #105 e virou aba de Conexões.
-   * A porta, portanto, é Conexões — que agora vive no grupo CANAIS do sidebar,
-   * e não mais como um card perdido em Configurações.
+   * Conexões passou por um grupo "Canais" próprio no sidebar por um tempo, mas
+   * em 23/08/2026 voltou pra dentro de Configurações (a pedido do dono do
+   * produto) — a porta agora é o hub, seção "Canais", não mais o sidebar.
    */
-  test("chega ao canal oficial pelo grupo Canais, não por Configurações", async ({ page }) => {
+  test("chega ao canal oficial por Configurações, seção Canais", async ({ page }) => {
     await loginAdmin(page);
 
-    await sidebar(page).getByRole("link", { name: "Conexões" }).click();
+    await page.getByRole("link", { name: "Configurações" }).click();
+    await page.waitForURL(/\/app\/settings$/);
+    await page
+      .getByRole("region", { name: "Canais" })
+      .getByRole("link", { name: "Conexões" })
+      .click();
     await page.waitForURL(/\/app\/connections/);
     await expect(page.getByRole("tab", { name: /oficial/i })).toBeVisible();
   });
@@ -199,8 +199,8 @@ test.describe("navegação agrupada", () => {
   test("um agent não vê o cabeçalho de um grupo que a permissão esvaziou", async ({ page }) => {
     await login(page, creds.users.agent!.email);
 
-    // CANAIS é todo manager+/admin: o título não pode sobrar sozinho.
-    await expect(sidebar(page).getByRole("heading", { name: "Canais" })).toHaveCount(0);
+    // AGENTE DE IA é todo manager+/admin: o título não pode sobrar sozinho.
+    await expect(sidebar(page).getByRole("heading", { name: "Agente de IA" })).toHaveCount(0);
     await expect(sidebar(page).getByRole("heading", { name: "Atendimento" })).toBeVisible();
   });
 });

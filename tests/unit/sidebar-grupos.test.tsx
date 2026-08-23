@@ -56,7 +56,7 @@ describe("Sidebar agrupado", () => {
       .filter(Boolean);
     // Organização não tem título aqui: seu hub (Configurações) vive no rodapé
     // fixo, fora da área que rola — medido, ele caía fora da dobra até em 1080px.
-    expect(titulos).toEqual(["Visão Geral", "Atendimento", "CRM", "Agente de IA", "Canais", "Análise"]);
+    expect(titulos).toEqual(["Visão Geral", "Atendimento", "CRM", "Agente de IA", "Análise"]);
   });
 
   it("leva a Funis sem passar por Configurações", () => {
@@ -66,14 +66,13 @@ describe("Sidebar agrupado", () => {
     expect(funis).toHaveAttribute("href", "/app/settings/tenant/pipelines");
   });
 
-  it("desenterra Nuvemshop e Audit Log", () => {
+  it("Nuvemshop e Audit Log não vivem mais no sidebar — voltaram pra Configurações", () => {
     comoPapel("admin");
     render(<Sidebar collapsed={false} />);
-    // Nuvemshop não tinha link nenhum no app; Audit Log só existia via card em
-    // Configurações. Canal oficial não está aqui de propósito: virou aba de
-    // Conexões no PR #105, e Conexões é a porta.
-    expect(screen.getByRole("link", { name: /Nuvemshop/ })).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Audit Log/ })).toBeTruthy();
+    // Em 23/08/2026 esses itens (e Conexões, Webhooks, Evolução da IA) voltaram
+    // pra dentro de Configurações — só o hub do rodapé leva até eles agora.
+    expect(screen.queryByRole("link", { name: /Nuvemshop/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Audit Log/ })).toBeNull();
   });
 
   it("Configurações fica no rodapé, nunca dependendo de scroll", () => {
@@ -87,11 +86,12 @@ describe("Sidebar agrupado", () => {
   });
 
   it("não deixa cabeçalho órfão quando a permissão esvazia o grupo", () => {
-    // CANAIS é todo manager+/admin. Um agent não pode ver o título sozinho.
+    // AGENTE DE IA é todo manager+/admin (Agentes, Follow-ups, Roteadores). Um
+    // agent não pode ver o título sozinho.
     comoPapel("agent");
     render(<Sidebar collapsed={false} />);
     const titulos = screen.getAllByRole("heading").map((el) => el.textContent?.trim());
-    expect(titulos).not.toContain("Canais");
+    expect(titulos).not.toContain("Agente de IA");
     expect(titulos).toContain("Atendimento");
   });
 

@@ -56,7 +56,7 @@ import {
  * Doutrina: docs/doctrine/sistema-vivo.md — "por qual porta se chega até mim?"
  */
 
-export type NavGroupId = "visao_geral" | "atendimento" | "crm" | "ia" | "canais" | "analise" | "organizacao";
+export type NavGroupId = "visao_geral" | "atendimento" | "crm" | "ia" | "analise" | "organizacao";
 
 export interface NavGroup {
   id: NavGroupId;
@@ -91,9 +91,15 @@ export interface NavDestination {
  * se ajusta uma vez por mês por último.
  *
  * "Análise" e não "Observabilidade": quem instala isto numa VPS é dono de PME,
- * não engenheiro. E configurar o sistema (grupo IA) é atividade diferente de
- * observar o sistema funcionando (grupo Análise) — por isso Evolução da IA mora
- * aqui, e não junto dos agentes.
+ * não engenheiro.
+ *
+ * Canais (Conexões, Nuvemshop, Webhooks) e duas telas de Análise (Evolução da
+ * IA, Audit Log) voltaram para dentro de Configurações em 23/08/2026, a pedido
+ * do dono do produto: são configuração/auditoria de baixa frequência — conectar
+ * um número, olhar quem fez o quê — não algo que se abre todo dia, e o hub de
+ * Configurações (seções "Canais" e "Dados e acesso") é onde quem administra o
+ * tenant já vai procurar. Análise ficou só com Desempenho, que é olhado com
+ * frequência real (funil, últimos 30 dias).
  *
  * Hub só onde o grupo passa de 4 telas. Abaixo disso ele cabe inteiro no
  * sidebar, e um hub de 3 itens seria só um clique a mais para chegar onde já
@@ -104,7 +110,6 @@ export const NAV_GROUPS: NavGroup[] = [
   { id: "atendimento", label: "Atendimento" },
   { id: "crm", label: "CRM" },
   { id: "ia", label: "Agente de IA", hub: { href: "/app/ai", label: "Ver tudo em IA" } },
-  { id: "canais", label: "Canais" },
   { id: "analise", label: "Análise" },
   {
     id: "organizacao",
@@ -379,44 +384,6 @@ export const NAV_DESTINATIONS: NavDestination[] = [
     minRole: "manager",
   },
 
-  // ---- Canais — por onde as mensagens entram e saem ----
-  {
-    href: "/app/connections",
-    label: "Conexões",
-    // Cobre os DOIS caminhos desde o PR #105: número por QR e canal oficial da
-    // Meta (com os templates dele), cada um numa aba. A descrição cita "oficial"
-    // e "Meta" de propósito — é por esses nomes que se procura no ⌘K, e a busca
-    // varre a descrição além do rótulo.
-    description:
-      "Seus números de WhatsApp: por QR ou canal oficial da Meta, com saúde, reconexão e templates.",
-    icon: PlugsConnected,
-    group: "canais",
-    minRole: "admin",
-    healthDot: true,
-    sidebar: true,
-  },
-  {
-    // Não tinha link nenhum no app inteiro: só se chegava digitando a URL.
-    href: "/app/integrations/nuvemshop",
-    label: "Nuvemshop",
-    description: "Conecte a loja para trazer pedidos e clientes para dentro do CRM.",
-    icon: Storefront,
-    group: "canais",
-    // A página não filtra por papel, mas as Server Actions de conectar e
-    // desconectar exigem admin — mostrar a um viewer seria oferecer botão morto.
-    minRole: "admin",
-    sidebar: true,
-  },
-  {
-    href: "/app/webhooks",
-    label: "Webhooks",
-    description: "Avise outros sistemas quando algo acontecer aqui dentro.",
-    icon: WebhooksLogo,
-    group: "canais",
-    minRole: "manager",
-    sidebar: true,
-  },
-
   // ---- Análise — olhar o sistema funcionando ----
   {
     href: "/app/metrics",
@@ -424,25 +391,6 @@ export const NAV_DESTINATIONS: NavDestination[] = [
     description: "Funil e performance por atendente nos últimos 30 dias.",
     icon: ChartBar,
     group: "analise",
-    sidebar: true,
-  },
-  {
-    // Observabilidade, não configuração: por isso não fica junto dos agentes.
-    href: "/app/ai/evolution",
-    label: "Evolução da IA",
-    description: "Se o agente está melhorando, onde ele erra e o que falta ensinar.",
-    icon: ChartLineUp,
-    group: "analise",
-    minRole: "manager",
-    sidebar: true,
-  },
-  {
-    href: "/app/audit",
-    label: "Audit Log",
-    description: "Quem fez o quê, quando — o histórico que não se apaga.",
-    icon: ClockCounterClockwise,
-    group: "analise",
-    minRole: "manager",
     sidebar: true,
   },
 
@@ -509,6 +457,47 @@ export const NAV_DESTINATIONS: NavDestination[] = [
     section: "Sua empresa",
     minRole: "admin",
   },
+
+  // ---- Canais — voltou pra dentro de Configurações em 23/08/2026: é
+  // configuração de baixa frequência (conectar um número, uma loja, um
+  // webhook), não uso diário — não precisa de peso de grupo próprio no
+  // sidebar. ----
+  {
+    href: "/app/connections",
+    label: "Conexões",
+    // Cobre os DOIS caminhos desde o PR #105: número por QR e canal oficial da
+    // Meta (com os templates dele), cada um numa aba. A descrição cita "oficial"
+    // e "Meta" de propósito — é por esses nomes que se procura no ⌘K, e a busca
+    // varre a descrição além do rótulo.
+    description:
+      "Seus números de WhatsApp: por QR ou canal oficial da Meta, com saúde, reconexão e templates.",
+    icon: PlugsConnected,
+    group: "organizacao",
+    section: "Canais",
+    minRole: "admin",
+  },
+  {
+    // Não tinha link nenhum no app inteiro: só se chegava digitando a URL.
+    href: "/app/integrations/nuvemshop",
+    label: "Nuvemshop",
+    description: "Conecte a loja para trazer pedidos e clientes para dentro do CRM.",
+    icon: Storefront,
+    group: "organizacao",
+    section: "Canais",
+    // A página não filtra por papel, mas as Server Actions de conectar e
+    // desconectar exigem admin — mostrar a um viewer seria oferecer botão morto.
+    minRole: "admin",
+  },
+  {
+    href: "/app/webhooks",
+    label: "Webhooks",
+    description: "Avise outros sistemas quando algo acontecer aqui dentro.",
+    icon: WebhooksLogo,
+    group: "organizacao",
+    section: "Canais",
+    minRole: "manager",
+  },
+
   {
     href: "/app/lgpd/requests",
     label: "LGPD",
@@ -526,6 +515,27 @@ export const NAV_DESTINATIONS: NavDestination[] = [
     group: "organizacao",
     section: "Dados e acesso",
     minRole: "admin",
+  },
+  {
+    // Observabilidade que virou auditoria de baixa frequência — voltou pra
+    // Configurações em 23/08/2026 junto de LGPD e API Tokens (ver doutrina dos
+    // grupos, acima).
+    href: "/app/ai/evolution",
+    label: "Evolução da IA",
+    description: "Se o agente está melhorando, onde ele erra e o que falta ensinar.",
+    icon: ChartLineUp,
+    group: "organizacao",
+    section: "Dados e acesso",
+    minRole: "manager",
+  },
+  {
+    href: "/app/audit",
+    label: "Audit Log",
+    description: "Quem fez o quê, quando — o histórico que não se apaga.",
+    icon: ClockCounterClockwise,
+    group: "organizacao",
+    section: "Dados e acesso",
+    minRole: "manager",
   },
 ];
 

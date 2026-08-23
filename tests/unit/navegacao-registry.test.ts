@@ -94,9 +94,10 @@ describe("sidebarGroups", () => {
   });
 
   it("omite o grupo inteiro quando o papel não vê nenhum item dele", () => {
-    // CANAIS é todo manager+/admin: um agent não deve ver o título órfão.
+    // Agente de IA é todo manager+/admin (Agentes, Follow-ups, Roteadores):
+    // um agent não deve ver o título órfão.
     const ids = sidebarGroups(AGENT.platform, AGENT.role).map((g) => g.group.id);
-    expect(ids).not.toContain("canais");
+    expect(ids).not.toContain("ia");
     expect(ids).toContain("atendimento");
   });
 
@@ -137,6 +138,24 @@ describe("hubSections", () => {
   it("some com a seção que ficou vazia pela permissão", () => {
     const secoes = hubSections("organizacao", VIEWER.platform, VIEWER.role).map((s) => s.section);
     expect(secoes).not.toContain("Dados e acesso");
+  });
+
+  it("Canais voltou pra dentro de Configurações em 23/08/2026", () => {
+    const secoes = hubSections("organizacao", true, null);
+    const canais = secoes.find((s) => s.section === "Canais");
+    expect(canais?.items.map((i) => i.href)).toEqual([
+      "/app/connections",
+      "/app/integrations/nuvemshop",
+      "/app/webhooks",
+    ]);
+  });
+
+  it("Evolução da IA e Audit Log viraram parte de Dados e acesso", () => {
+    const secoes = hubSections("organizacao", true, null);
+    const dados = secoes.find((s) => s.section === "Dados e acesso");
+    expect(dados?.items.map((i) => i.href)).toEqual(
+      expect.arrayContaining(["/app/ai/evolution", "/app/audit"]),
+    );
   });
 });
 
