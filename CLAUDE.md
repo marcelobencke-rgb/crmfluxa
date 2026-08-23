@@ -192,10 +192,10 @@ conhecido, não como "já está resolvido porque o CI publica a imagem".
 
 ```bash
 nvm use                    # node 22
-npm install
+pnpm install                # projeto usa pnpm (packageManager em package.json) — nunca npm/yarn, mistura o node_modules
 cp .env.example .env.local  # preencher
 docker compose up -d        # WAHA local
-npm run dev                 # http://localhost:3000
+pnpm dev                    # http://localhost:3000
 ```
 
 Ver `README.md` pra detalhes de setup.

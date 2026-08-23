@@ -58,7 +58,13 @@ function lerArquivo(arquivo: string): Record<string, string> {
   const caminho = path.join(process.cwd(), arquivo);
   if (!fs.existsSync(caminho)) return {};
   const env: Record<string, string> = {};
-  for (const linha of fs.readFileSync(caminho, "utf8").split("\n")) {
+  // `\r?\n`, não só `\n`: um `.env.local` com quebra de linha CRLF (comum em
+  // checkout Windows) deixava um `\r` sobrando no fim de cada linha. Como `.`
+  // não casa `\r` em regex JS, `(.*)$` nunca fechava o match e a linha inteira
+  // era descartada em silêncio — as credenciais saíam vazias sem nenhum erro
+  // (medido em 21/08/2026, rodando um script novo pela primeira vez neste
+  // checkout: URL e service role vinham "" mesmo com o arquivo preenchido).
+  for (const linha of fs.readFileSync(caminho, "utf8").split(/\r?\n/)) {
     const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)$/.exec(linha);
     if (m) env[m[1]!] = (m[2] ?? "").replace(/^"(.*)"$/, "$1").trim();
   }
