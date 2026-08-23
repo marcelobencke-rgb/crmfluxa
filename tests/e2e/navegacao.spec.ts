@@ -72,7 +72,13 @@ test.describe("navegação agrupada", () => {
     // Organização não aparece como título aqui: seu hub (Configurações) vive no
     // rodapé fixo — ver o teste de dobra abaixo.
     const titulos = sidebar(page).getByRole("heading");
-    await expect(titulos).toHaveText(["Atendimento", "CRM", "Agente de IA", "Análise"]);
+    await expect(titulos).toHaveText([
+      "Visão Geral",
+      "Atendimento",
+      "CRM",
+      "Agente de IA",
+      "Análise",
+    ]);
 
     await page.screenshot({
       path: path.join(EVIDENCE, "nav-sidebar-agrupado.png"),
