@@ -26,7 +26,9 @@ type Linha = { response_body: unknown; status_code: number | null; request_hash:
 
 /** Supabase de mentira com o encadeamento que o helper usa. */
 function fakeSupabase(linha: Linha | null, erro: { message: string } | null = null) {
-  const insert = vi.fn(() => ({ then: (cb: (r: { error: null }) => void) => cb({ error: null }) }));
+  const insert = vi.fn((_linha: Record<string, unknown>) => ({
+    then: (cb: (r: { error: null }) => void) => cb({ error: null }),
+  }));
   const sb = {
     from: vi.fn(() => ({
       select: () => ({
@@ -130,7 +132,7 @@ describe("guardar a resposta", () => {
   it("grava a chave, o hash e o TTL", () => {
     const { sb, insert } = fakeSupabase(null);
     guardarResposta(sb, { ...BASE, requestHash: "h", body: { id: "m" }, statusCode: 201 });
-    const gravado = insert.mock.calls[0]?.[0] as unknown as Record<string, unknown>;
+    const gravado = insert.mock.calls[0]![0];
     expect(gravado.key).toBe("chave-1");
     expect(gravado.request_hash).toBe("h");
     expect(gravado.organization_id).toBe(BASE.organizationId);

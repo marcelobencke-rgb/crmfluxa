@@ -18,6 +18,7 @@ import { audit } from "@/lib/audit";
 import { ARCHIVED_AT, queryTolerantToMissingArchived } from "@/lib/channels/archived";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { dispatchWahaEvent, type WahaEnvelope } from "@/lib/waha/ingest";
+import { segredoDoWebhook } from "@/lib/waha/segredo-do-webhook";
 import { authenticateWahaWebhook } from "@/lib/waha/webhook-auth";
 
 export const dynamic = "force-dynamic";
@@ -72,15 +73,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // Autenticação fail-closed — regras e o porquê em lib/waha/webhook-auth.ts.
   const sigHeader = req.headers.get("x-webhook-hmac") ?? req.headers.get("X-Webhook-Hmac");
-  let sessionSecret: string | null = null;
-  try {
-    const dec = await admin.rpc("fn_decrypt_oauth", {
-      ciphertext: session.webhook_secret_encrypted,
-    });
-    if (!dec.error && typeof dec.data === "string") sessionSecret = dec.data;
-  } catch {
-    sessionSecret = null;
-  }
+  // Decifrado no máximo uma vez por valor de segredo — ver o porquê (e por que a
+  // chave do cache é o próprio cifrado) em lib/waha/segredo-do-webhook.ts.
+  const sessionSecret = await segredoDoWebhook(admin, session.webhook_secret_encrypted);
 
   const auth = authenticateWahaWebhook({ rawBody, signatureHeader: sigHeader, sessionSecret });
   if (!auth.ok) {
@@ -108,7 +103,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (key.toLowerCase() === "cookie") return;
     headersJson[key] = value;
   });
-  await admin.from("webhook_events_log").insert({
+  // NÃO ESPERA — mesmo motivo da rota per-tenant: log forense, ninguém o
+  // atualiza depois, e esperá-lo adiava o INSERT da mensagem, que é o que
+  // dispara o realtime na tela do atendente.
+  void admin.from("webhook_events_log").insert({
     organization_id: session.organization_id,
     channel_session_id: session.id,
     provider: "waha",

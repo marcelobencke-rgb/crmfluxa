@@ -125,7 +125,13 @@ services:
       - |
         apk add --no-cache curl tzdata >/dev/null 2>&1
         cat > /etc/crontabs/root <<EOF
-        * * * * * curl -fsS -m25 -H "Authorization: Bearer $$INTERNAL_SECRET" http://app:3000/api/v1/cron/agent-dispatcher >/dev/null 2>&1
+        # agent-dispatcher SAIU daqui: a rota e um NO-OP deprecado desde a Fase 0
+        # (ver o cabecalho de app/api/v1/cron/agent-dispatcher/route.ts) e batia
+        # de minuto em minuto so para responder {skipped:true}. Quem realmente
+        # consome ai_agent.dispatch_requested e o processo agent-worker
+        # (workers/agent-worker/main.ts), que roda em drain continuo. A ROTA
+        # continua existindo de proposito, para nao quebrar cron config de
+        # self-hoster que ainda a chame.
         * * * * * curl -fsS -m25 -H "Authorization: Bearer $$INTERNAL_SECRET" http://app:3000/api/v1/cron/followup-flow-worker >/dev/null 2>&1
         * * * * * curl -fsS -m45 -H "Authorization: Bearer $$INTERNAL_SECRET" http://app:3000/api/v1/cron/event-log-drain >/dev/null 2>&1
         * * * * * curl -fsS -m25 -H "Authorization: Bearer $$INTERNAL_SECRET" http://app:3000/api/v1/cron/routing-worker >/dev/null 2>&1
