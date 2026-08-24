@@ -535,7 +535,7 @@ async function handleInbound(
       created_by_user_id: null,
       created_by_name: "Sistema",
     });
-    await audit({
+    void audit({
       action: "contact.blocked",
       organizationId: session.organization_id,
       resourceType: "contact",
@@ -544,7 +544,9 @@ async function handleInbound(
     });
   }
 
-  await audit({
+  // Não esperado: `lib/audit` é fire-and-forget por doutrina, e esperá-lo aqui
+  // atrasava o 200 ao WAHA sem que nada na resposta dependesse dele.
+  void audit({
     action: "message.received",
     organizationId: session.organization_id,
     resourceType: "message",

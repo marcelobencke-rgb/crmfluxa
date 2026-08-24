@@ -36,24 +36,39 @@ export async function loadAuthUser(): Promise<AuthUser | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  // Platform admin? (active = no revoked_at). RLS returns null for non-admins.
+  // AS DUAS QUERIES SÃO INDEPENDENTES — vão juntas, não em fila.
   //
-  // ⚠️ O erro é capturado de propósito: aqui `data: null` é AMBÍGUO — significa tanto
-  // "não é platform admin" (RLS filtrou, estado normal) quanto "a query falhou".
-  // Sem separar os dois, um banco instável rebaixa silenciosamente um super-admin.
-  const { data: paRow, error: paErro } = await supabase
-    .from("platform_admins")
-    .select("user_id, revoked_at")
-    .eq("user_id", user.id)
-    .is("revoked_at", null)
-    .maybeSingle();
-
-  // Org memberships (only active = not revoked, accepted)
-  const { data: rawMemberships, error: membErro } = await supabase
-    .from("user_organizations")
-    .select("organization_id, role, organizations(display_name)")
-    .eq("user_id", user.id)
-    .is("revoked_at", null);
+  // Uma não usa o resultado da outra: as duas filtram pelo mesmo `user.id` já
+  // conhecido. Em série custavam dois round-trips completos, e este é o caminho
+  // de TODA rota autenticada do sistema, não só do envio de mensagem. Medido na
+  // produção em 2026-08-24, uma ida ao Supabase custa ~150ms daqui — encadear
+  // as duas era jogar fora 150ms em cada request que o CRM atende.
+  //
+  // ⚠️ O erro continua sendo capturado por query, e isso é essencial: em
+  // `platform_admins`, `data: null` é AMBÍGUO — significa tanto "não é platform
+  // admin" (RLS filtrou, estado normal) quanto "a query falhou". Sem separar os
+  // dois, um banco instável rebaixa silenciosamente um super-admin. `Promise.all`
+  // preserva isso porque cada ramo devolve seu próprio `{ data, error }`; o que
+  // NÃO se pode fazer aqui é deixar uma rejeição derrubar a outra, e não deixa:
+  // o client do Supabase resolve com `error` preenchido em vez de rejeitar.
+  const [
+    { data: paRow, error: paErro },
+    { data: rawMemberships, error: membErro },
+  ] = await Promise.all([
+    // Platform admin? (active = no revoked_at). RLS returns null for non-admins.
+    supabase
+      .from("platform_admins")
+      .select("user_id, revoked_at")
+      .eq("user_id", user.id)
+      .is("revoked_at", null)
+      .maybeSingle(),
+    // Org memberships (only active = not revoked, accepted)
+    supabase
+      .from("user_organizations")
+      .select("organization_id, role, organizations(display_name)")
+      .eq("user_id", user.id)
+      .is("revoked_at", null),
+  ]);
 
   /**
    * FALHA ALTO, não baixo.

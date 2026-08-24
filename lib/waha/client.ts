@@ -10,6 +10,30 @@
  */
 import { classificarFalhaDeAlcance, explicarFalhaDeAlcance } from "@/lib/net/alcance";
 
+/**
+ * Teto para as chamadas de ENVIO ao WAHA.
+ *
+ * `sendText`/`sendImage`/... rodavam em `fetch` sem `AbortController` e sem
+ * timeout: se o WAHA parasse de responder sem fechar a conexão, o handler de
+ * envio ficava pendurado sem teto nenhum de código — o atendente via a bolha
+ * "enviando" indefinidamente e a request ocupava o servidor.
+ *
+ * 15s é folgado de propósito. O WAHA roda ao lado da app (~5ms de latência,
+ * medido na produção em 2026-08-24): qualquer coisa que passe disto não é
+ * lentidão, é travamento. O prazo existe para transformar "pendura para
+ * sempre" em erro tratável — o `catch` do handler marca a mensagem como
+ * `failed` com o código do canal, que é um desfecho que o atendente enxerga.
+ *
+ * NÃO vale para `startSession`/`getSessionQr`/`getProfilePictureUrl`: aquelas
+ * são de onboarding e varredura, com perfis de espera próprios (parear um
+ * número demora), e não estão no caminho de uma mensagem saindo.
+ */
+const ENVIO_TIMEOUT_MS = 15_000;
+
+function prazoDeEnvio(): AbortSignal {
+  return AbortSignal.timeout(ENVIO_TIMEOUT_MS);
+}
+
 export class WahaClient {
   constructor(
     private readonly baseUrl: string,
@@ -162,6 +186,7 @@ export class WahaClient {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ session, chatId, text }),
+      signal: prazoDeEnvio(),
     });
     if (!res.ok) throw new Error(`waha_${res.status}`);
     return res.json();
@@ -176,6 +201,10 @@ export class WahaClient {
       method: "POST",
       headers: { "X-Api-Key": this.apiKey, "Content-Type": "application/json" },
       body: JSON.stringify({ session, chatId, ...plan.payload }),
+      // Mídia sobe pelo mesmo prazo: o WAHA recebe uma URL (o binário não passa
+      // por aqui — ver `wahaSendPlanFor`), então não é upload, é a mesma
+      // chamada JSON curta do texto.
+      signal: prazoDeEnvio(),
     });
     if (!res.ok) {
       const body = await res.text().catch(() => "");

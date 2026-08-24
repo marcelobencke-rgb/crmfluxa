@@ -80,7 +80,45 @@ export function useSendMessage() {
       qc.invalidateQueries({ queryKey: ["messages", args.conversation_id] });
       showApiError(err);
     },
-    onSuccess: (res) => {
+    onSuccess: (res, args, ctx) => {
+      /**
+       * A LINHA REAL ENTRA AQUI, vinda da própria resposta do POST.
+       *
+       * Antes, quem trocava a bolha otimista pela mensagem de verdade era o
+       * `invalidateQueries` do `onSettled` — um refetch inteiro para buscar o
+       * que a resposta já trazia. Com aquele invalidate removido, deixar a
+       * troca por conta do realtime seria apostar a corretude da tela num
+       * canal que sabidamente morre calado (é o bug que a Fase 1 consertou):
+       * se o evento não chegasse, a bolha ficaria "enviando" com id `temp-`
+       * até a rede de segurança rodar.
+       *
+       * Usar a resposta não depende de nada: ela já está na mão, é a mesma
+       * linha que o servidor gravou, e o realtime que chegar depois casa por
+       * `id` e só substitui (ver `aplicarEvento` em useMessagesRealtime).
+       */
+      const tempId = (ctx as { tempId?: string } | undefined)?.tempId;
+      qc.setQueryData<InfiniteData<MessagesPage>>(
+        ["messages", args.conversation_id],
+        (old) => {
+          if (!old) return old;
+          let jaExiste = false;
+          const pages = old.pages.map((p) => ({
+            ...p,
+            data: p.data
+              .filter((m) => m.id !== tempId)
+              .map((m) => {
+                if (m.id !== res.data.id) return m;
+                jaExiste = true;
+                return res.data;
+              }),
+          }));
+          if (!jaExiste && pages[0]) {
+            pages[0] = { ...pages[0], data: [...pages[0].data, res.data] };
+          }
+          return { ...old, pages };
+        },
+      );
+
       // O handler NUNCA derruba um envio com o canal fora — ele segura a
       // mensagem como "queued" e reagenda. Sem este aviso o atendente via a
       // bolha "enviando" e só descobria que o WhatsApp caiu quando o cliente
@@ -89,8 +127,22 @@ export function useSendMessage() {
         toast.warning("O WhatsApp deste número está desconectado — a mensagem vai sair quando ele reconectar.");
       }
     },
-    onSettled: (_data, _err, args) => {
-      qc.invalidateQueries({ queryKey: ["messages", args.conversation_id] });
+    onSettled: () => {
+      // A THREAD NÃO É MAIS INVALIDADA NO SUCESSO.
+      //
+      // Era um refetch garantido logo depois de cada envio — e, sendo infinite
+      // query, refazia TODAS as páginas já carregadas — para buscar um estado
+      // que o cache já tinha: a bolha otimista de `onMutate` e, desde o
+      // conserto do realtime, o merge do próprio evento do canal (que troca o
+      // gêmeo otimista pela linha real e aplica o `sent`).
+      //
+      // O `onError` acima continua invalidando: aí o cache está mesmo errado
+      // (a bolha otimista descreve um envio que não aconteceu) e reler o
+      // servidor é o certo.
+      //
+      // `["conversations"]` continua: é outra query (a lista da esquerda, com
+      // prévia e ordenação por última mensagem), que nenhum dos dois caminhos
+      // acima atualiza.
       qc.invalidateQueries({ queryKey: ["conversations"] });
     },
   });
