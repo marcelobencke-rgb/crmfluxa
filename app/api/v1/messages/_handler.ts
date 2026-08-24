@@ -451,7 +451,16 @@ export async function sendMessageHandler(
           body: input.body ?? "",
         }));
       }
-      await removerEcoDoProprioEnvio(
+      // NÃO ESPERA: a mensagem já saiu, e esta é uma limpeza de corrida que já
+      // nasceu best-effort ("o pior caso aceitável é não conseguir remover",
+      // no bloco de doutrina da própria função, que também é blindada por
+      // try/catch interno — nada aqui pode subir e virar `failed`).
+      //
+      // Esperá-la só adiava a resposta ao atendente em um round-trip (~150ms
+      // na produção medida) para fazer algo que o usuário não vê acontecer. Se
+      // o eco já tiver chegado, a remoção dele volta pelo realtime como DELETE
+      // e sai da tela por lá.
+      void removerEcoDoProprioEnvio(
         supabase,
         ctx.organization_id,
         c.id,
@@ -510,8 +519,21 @@ export async function sendMessageHandler(
     })
     .eq("id", c.id);
 
+  // AUDIT E EVENTO SAEM DO CAMINHO CRÍTICO — os dois eram esperados, e nenhum
+  // dos dois produz nada que a resposta carregue.
+  //
+  // `lib/audit/index.ts` se declara "fire-and-forget: failure must NEVER block",
+  // e `lib/auth/require-role.ts:97` já a chama com `void`. Aqui ela estava com
+  // `await`: a doutrina cobria a FALHA (não derrubar o envio) mas não a
+  // LATÊNCIA — o INSERT em `api_audit_log` estava no caminho da resposta HTTP,
+  // custando um round-trip inteiro (~150ms) por mensagem enviada.
+  //
+  // O `emit_event` abaixo parecia solto por causa do `.then`, mas o `await` na
+  // frente da chamada o mantinha bloqueante do mesmo jeito — o `.then` só
+  // tratava o erro. Sai também: quem consome o evento é worker, não esta
+  // resposta.
   const a = actorAuditPayload(ctx.actor);
-  await audit({
+  void audit({
     action: "message.sent",
     actorUserId: a.actorUserId,
     organizationId: c.organization_id,
@@ -521,7 +543,7 @@ export async function sendMessageHandler(
     metadata: { ...a.metadataActor, status: message.status, type: message.type },
   });
 
-  await supabase
+  void supabase
     .rpc("emit_event", {
       p_event_type: "message.sent",
       p_entity_kind: "message",

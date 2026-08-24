@@ -4,6 +4,12 @@
 import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
 
+import {
+  chaveDoHeader,
+  guardarResposta,
+  hashDaRequisicao,
+  respostaJaDada,
+} from "@/lib/api/idempotencia";
 import { ApiError } from "@/lib/api/types";
 import { fail, ok } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
@@ -13,6 +19,10 @@ import { createClient } from "@/lib/supabase/server";
 import { sendMessageHandler } from "./_handler";
 
 export const dynamic = "force-dynamic";
+
+/** Namespace da chave — o MCP usa o seu (`mcp:crm_send_whatsapp_message`), e as
+ *  duas portas não devem se deduplicar entre si. */
+const ENDPOINT_TAG = "http:post:/api/v1/messages";
 
 export async function POST(req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
@@ -37,6 +47,29 @@ export async function POST(req: NextRequest): Promise<Response> {
     throw err;
   }
 
+  // IDEMPOTÊNCIA — sem isto, o retry do próprio client duplica a mensagem no
+  // WhatsApp do contato. `lib/api/client.ts` já manda a chave (a MESMA nas 3
+  // tentativas de um envio); esta rota é que não a lia. Detalhe e custo em
+  // `lib/api/idempotencia.ts`.
+  const chave = chaveDoHeader(req);
+  const requestHash = hashDaRequisicao(input);
+  if (chave) {
+    const jaDada = await respostaJaDada<unknown>(supabase, {
+      organizationId: activeOrg.orgId,
+      endpoint: ENDPOINT_TAG,
+      chave,
+      requestHash,
+    });
+    if (jaDada) {
+      // Repete o 201 do envio original: para o cliente, a retentativa tem de
+      // ser indistinguível da primeira resposta. O `status_code` guardado é
+      // conferido em vez de repassado cru — a coluna é `int` genérica e o
+      // wrapper `ok()` só admite 200/201/204; um valor inesperado ali viraria
+      // resposta inválida em vez de erro visível.
+      return ok(jaDada.body, { status: jaDada.statusCode === 200 ? 200 : 201, requestId });
+    }
+  }
+
   try {
     const message = await sendMessageHandler(
       supabase,
@@ -47,6 +80,16 @@ export async function POST(req: NextRequest): Promise<Response> {
       },
       input as SendMessageInput,
     );
+    if (chave) {
+      guardarResposta(supabase, {
+        organizationId: activeOrg.orgId,
+        endpoint: ENDPOINT_TAG,
+        chave,
+        requestHash,
+        body: message,
+        statusCode: 201,
+      });
+    }
     return ok(message, { status: 201, requestId });
   } catch (err) {
     if (err instanceof ApiError) {
