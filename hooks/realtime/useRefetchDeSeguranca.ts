@@ -90,12 +90,39 @@ export function useRefetchDeSeguranca<T>({
     assinaturaRef.current = assinatura;
   }, [assinatura]);
 
+  /**
+   * A CHAVE TAMBÉM MORA NUMA REF, e pelo mesmo motivo do `assinatura` — mas o
+   * defeito que isto conserta era pior, porque o intervalo simplesmente NUNCA
+   * disparava.
+   *
+   * `queryKey` chega como array literal (`["messages", id]`), recriado a cada
+   * render de quem chama. Entrando direto nas dependências do `useCallback`
+   * abaixo, `verificar` ganhava identidade nova a cada render; o efeito do
+   * intervalo depende de `verificar`, então ele rodava de novo, dava
+   * `clearInterval` e `setInterval` outra vez — a contagem para os 45s
+   * recomeçava do zero. Numa tela que redesenha mais rápido que o intervalo
+   * (o inbox redesenha a cada mensagem, a cada scroll, a cada foco), a
+   * verificação era adiada para sempre: a rede de segurança existia, era
+   * montada, e não checava nada nunca.
+   *
+   * A dependência passa a ser a chave SERIALIZADA — valor, não identidade.
+   * `queryKey` do React Query é obrigatoriamente serializável, então isto é
+   * seguro por contrato, e duas chaves iguais em conteúdo param de ser
+   * "diferentes" só por serem dois arrays distintos.
+   */
+  const chaveSerializada = JSON.stringify(queryKey);
+  const queryKeyRef = useRef(queryKey);
+  useEffect(() => {
+    queryKeyRef.current = queryKey;
+  }, [queryKey]);
+
   const verificar = useCallback(async () => {
-    const antes = assinaturaRef.current(qc.getQueryData<T>(queryKey));
+    const chave = queryKeyRef.current;
+    const antes = assinaturaRef.current(qc.getQueryData<T>(chave));
 
-    await qc.refetchQueries({ queryKey, exact: true });
+    await qc.refetchQueries({ queryKey: chave, exact: true });
 
-    const depois = assinaturaRef.current(qc.getQueryData<T>(queryKey));
+    const depois = assinaturaRef.current(qc.getQueryData<T>(chave));
 
     setEstado((prev) => {
       // O CRITÉRIO, em duas perguntas:
@@ -121,8 +148,18 @@ export function useRefetchDeSeguranca<T>({
       };
     });
     // `ultimaEntrega` é ref (identidade estável): entra na lista por higiene,
-    // sem recriar o callback nem reiniciar o intervalo.
-  }, [qc, queryKey, ultimaEntrega]);
+    // sem recriar o callback nem reiniciar o intervalo. `chaveSerializada`
+    // entra no lugar de `queryKey` (ver o bloco acima): é o VALOR da chave, e
+    // só muda quando a chave muda de verdade — trocar de conversa, por
+    // exemplo, que é exatamente quando reiniciar o intervalo está certo.
+    //
+    // O lint chama `chaveSerializada` de dependência desnecessária porque não
+    // enxerga a indireção pela ref: para a análise estática, o corpo lê
+    // `queryKeyRef` e nunca a chave. A dependência é DELIBERADA — é ela que faz
+    // a janela de verificação recomeçar quando o alvo muda. Removê-la deixaria
+    // uma conversa recém-aberta herdando a contagem da anterior.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qc, chaveSerializada, ultimaEntrega]);
 
   useEffect(() => {
     if (!enabled) return;

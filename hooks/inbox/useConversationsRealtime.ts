@@ -1,7 +1,8 @@
 "use client";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useRealtimeChannel } from "@/hooks/realtime/useRealtimeChannel";
+import { useRefetchDeSeguranca } from "@/hooks/realtime/useRefetchDeSeguranca";
 import { apiClient } from "@/lib/api/client";
 import { showApiError } from "@/components/feedback/ApiErrorToast";
 import type { Conversation } from "@/lib/types/messaging";
@@ -94,7 +95,10 @@ export function useConversationsRealtime(
   // com o filtro amplo `organization_id=eq.<org>` abaixo. Prova do filtro em
   // tests/invariants/gov-5-visibility-scope.test.ts (SELECT sob role agent = 0 rows
   // para conversa de outro atendente — o mesmo SELECT que o Realtime executa).
-  useRealtimeChannel({
+  // O retorno não é descartado: `ultimaEntrega` alimenta a rede de segurança
+  // abaixo, e sem ele ela não consegue distinguir "nada aconteceu" de "o canal
+  // parou de entregar".
+  const { status: realtimeStatus, ultimaEntrega } = useRealtimeChannel({
     name: orgId ? `inbox-${orgId}` : "inbox-disabled",
     postgresChanges: orgId
       ? {
@@ -108,5 +112,32 @@ export function useConversationsRealtime(
     enabled: !!orgId,
   });
 
-  return query;
+  /**
+   * Mesma rede de segurança da thread, pelo mesmo motivo: canal SUBSCRIBED que
+   * para de entregar deixa a LISTA congelada — conversa nova não aparece e o
+   * contador de não-lidas não anda, sem nenhum sinal de erro.
+   *
+   * A assinatura é contagem + o `last_message_at` mais recente: é o que muda
+   * quando chega mensagem em qualquer conversa, que é justamente o evento que
+   * o canal deveria ter entregue.
+   */
+  const seguranca = useRefetchDeSeguranca<InfiniteData<ListResponse>>({
+    queryKey,
+    assinatura: (d) => {
+      let total = 0;
+      let maior = "";
+      for (const p of d?.pages ?? []) {
+        total += p.data.length;
+        for (const c of p.data) {
+          const t = c.last_message_at ?? "";
+          if (t > maior) maior = t;
+        }
+      }
+      return `${total}:${maior}`;
+    },
+    ultimaEntrega,
+    enabled: !!orgId,
+  });
+
+  return { ...query, realtimeStatus, seguranca };
 }
