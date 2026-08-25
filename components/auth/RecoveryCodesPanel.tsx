@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { branding } from "@/lib/branding";
 import { copyToClipboard } from "@/lib/clipboard";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +32,21 @@ export function RecoveryCodesPanel({ codes, onAcknowledge }: RecoveryCodesPanelP
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "deskcommcrm-recovery-codes.txt";
+    // NOME DO ARQUIVO SEGUE A MARCA DA INSTALAÇÃO, não a de quem escreveu o CRM.
+    //
+    // Era `deskcommcrm-recovery-codes.txt` fixo — marca anterior do produto,
+    // baixada na máquina de todo usuário de todo clone. Numa agência que instala
+    // sob a própria marca (o caso que `lib/branding.ts` existe para atender), o
+    // arquivo mais sensível que o produto entrega chegava carimbado com o nome
+    // de outra empresa.
+    //
+    // Fallback `crm`: nome só com emoji ou acento composto pode esvaziar o slug,
+    // e arquivo começando com `-` confunde shell.
+    const marca = branding()
+      .name.toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    a.download = `${marca || "crm"}-codigos-de-recuperacao.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="CRM">
+  <rect width="32" height="32" rx="7" fill="#41573b"/>
+  <g fill="none" stroke="#e4ebe0" stroke-width="3.4" stroke-linecap="round">
+    <path d="M8 11h16"/>
+    <path d="M11 16.5h13"/>
+    <path d="M8 22h9"/>
+  </g>
+</svg>
