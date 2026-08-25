@@ -40,19 +40,48 @@ const RAIZ = join(__dirname, "..", "..");
  */
 const MODULOS_PUROS = ["@/lib/leads/timeline-query"] as const;
 
+/**
+ * O `dist/cli.mjs` do `tsx` por caminho, não pelo PATH — ver o porquê no bloco
+ * de `execFileSync` abaixo. Com pnpm, `node_modules/tsx` é junction para o
+ * store; o Node segue junction no Windows sem ajuda.
+ */
+const CLI_TSX = join(RAIZ, "node_modules", "tsx", "dist", "cli.mjs");
+
 /** Importa o módulo num processo filho SEM as variáveis do app. */
 function importaComAmbienteLimpo(modulo: string): { ok: boolean; erro: string } {
   const script = `import(${JSON.stringify(modulo)}).then(()=>{console.log("OK")},(e)=>{console.log("ERRO:"+String(e && e.message).split("\\n")[0]);});`;
-  // Só PATH e HOME: PATH para achar o `npx`, HOME para o cache dele. Nenhuma
-  // variável do app — é justamente a ausência delas que o teste mede.
-  // `NODE_ENV` fica de fora de propósito; o cast existe porque o tipo do Node o
-  // exige e aqui a omissão é o ponto.
+  // Só o mínimo do SISTEMA operacional — nenhuma variável do APP, que é
+  // justamente a ausência que o teste mede. `NODE_ENV` fica de fora de
+  // propósito; o cast existe porque o tipo do Node o exige e aqui a omissão é
+  // o ponto.
+  //
+  // As três últimas são do Windows e não são do app: sem `SystemRoot` o Node
+  // filho nem inicializa a stack de rede, e sem `ComSpec`/`USERPROFILE` a
+  // resolução de caminho do runtime falha. Incluí-las não afrouxa a medição —
+  // o que o teste proíbe é `NEXT_PUBLIC_SUPABASE_URL` e companhia, não a
+  // existência de um sistema operacional embaixo.
   const limpo = {
     PATH: process.env.PATH ?? "",
     HOME: process.env.HOME ?? "",
+    SystemRoot: process.env.SystemRoot ?? "",
+    ComSpec: process.env.ComSpec ?? "",
+    USERPROFILE: process.env.USERPROFILE ?? "",
   } as unknown as NodeJS.ProcessEnv;
   try {
-    const saida = execFileSync("npx", ["tsx", "--eval", script], {
+    // RODA O `tsx` PELO NODE DESTE PROCESSO, não pelo `npx` do PATH.
+    //
+    // `execFileSync("npx", ...)` é ENOENT no Windows fora do Git Bash: o
+    // executável se chama `npx.cmd` e só é resolvido por quem consulta
+    // `PATHEXT` — que o `env` limpo acima, corretamente, não repassa. O
+    // sintoma era cruel porque o CONTROLE POSITIVO deste arquivo continuava
+    // verde: ele afirma `ok === false`, e um aparato quebrado devolve
+    // exatamente `ok:false`. Ou seja, a guarda que existe para detectar
+    // aparato quebrado era satisfeita PELO aparato quebrado.
+    //
+    // `process.execPath` é o binário do Node que já está rodando a suíte, e o
+    // caminho do `tsx` sai do `require.resolve` em vez do PATH. Sem shell, sem
+    // `.cmd`, sem depender de como a suíte foi invocada.
+    const saida = execFileSync(process.execPath, [CLI_TSX, "--eval", script], {
       cwd: RAIZ,
       env: limpo,
       encoding: "utf8",
@@ -80,6 +109,22 @@ describe("módulo de função pura importa sem ambiente", () => {
     // `@/lib/env` DEVE falhar sem ambiente: é literalmente o trabalho dele.
     const controle = importaComAmbienteLimpo("@/lib/env");
     expect(controle.ok, `esperava @/lib/env FALHAR sem env, veio: ${controle.erro}`).toBe(false);
+
+    // E DEVE FALHAR PELO MOTIVO CERTO — `ok:false` sozinho não prova nada.
+    //
+    // Este controle ficou verde durante todo o tempo em que o aparato estava
+    // quebrado no Windows (`execFileSync("npx")` → ENOENT), porque processo que
+    // nem nasce também devolve `ok:false`. A guarda contra aparato quebrado era
+    // satisfeita pelo aparato quebrado — vacuidade com aparência de rigor.
+    //
+    // O prefixo `ERRO:` só existe se o filho REALMENTE rodou e o `import`
+    // rejeitou: é o `.then(_, e => console.log("ERRO:"+...))` do script. Falha
+    // de spawn devolve a mensagem do Node, sem esse prefixo.
+    expect(
+      controle.erro.startsWith("ERRO:"),
+      "o processo filho não chegou a executar o import — isto é APARATO QUEBRADO, " +
+        `não medição. Saída: ${controle.erro}`,
+    ).toBe(true);
   });
 
   it.each(MODULOS_PUROS)("%s importa com ambiente vazio", { timeout: 60_000 }, (modulo) => {

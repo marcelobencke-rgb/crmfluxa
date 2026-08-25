@@ -55,6 +55,22 @@ const DIR_SPECS = path.join(RAIZ, "tests", "e2e");
  * de YAML de verdade aceitaria formas que ninguém escreveu e esconderia uma
  * reescrita do bloco — aqui, se a forma mudar, o controle positivo abaixo estoura
  * em vez de devolver lista vazia.
+ *
+ * ESTREITO QUANTO À FORMA DO BLOCO, NUNCA QUANTO AO FIM DE LINHA. A versão
+ * anterior exigia `\n` literal, e em `.` do JavaScript o `\r` NÃO é consumido
+ * (`.` exclui todos os terminadores de linha). Num checkout Windows com
+ * `core.autocrlf=true` — o padrão do Git for Windows, e o que a máquina do
+ * mantenedor usa — o arquivo chega em CRLF, o grupo de continuação não casa
+ * nenhuma linha, `exec` devolve `null`, e as TRÊS listas voltam vazias.
+ *
+ * O resultado é o pior desfecho possível para este arquivo em particular: o
+ * controle positivo abaixo existe para gritar quando o parser morre, e ele
+ * gritava — mas por causa do sistema operacional de quem rodou, não por causa
+ * do workflow. Teste que reprova por onde foi executado ensina a ignorar o
+ * teste, e este aqui é a única prova de que a cobertura de e2e é real.
+ *
+ * Normalizar na entrada (e não espalhar `\r?` por cada regex) mantém o parser
+ * com uma forma só para raciocinar sobre.
  */
 function listaDoWorkflow(yml: string, chave: string): string[] {
   const re = new RegExp(`^\\s*${chave}:\\s*>-\\s*\\n((?:\\s{8,}\\S.*\\n)+)`, "m");
@@ -66,7 +82,13 @@ function listaDoWorkflow(yml: string, chave: string): string[] {
     .filter((s) => s.endsWith(".spec.ts"));
 }
 
-const yml = readFileSync(WORKFLOW, "utf8");
+/**
+ * CRLF vira LF ANTES de qualquer regex — ver o porquê no cabeçalho de
+ * `listaDoWorkflow`. O workflow é lido do disco, e o disco de um checkout
+ * Windows entrega o que o `core.autocrlf` mandou gravar, não o que está no
+ * objeto do Git.
+ */
+const yml = readFileSync(WORKFLOW, "utf8").replace(/\r\n/g, "\n");
 const parte1 = listaDoWorkflow(yml, "SPECS_PARTE_1");
 const parte2 = listaDoWorkflow(yml, "SPECS_PARTE_2");
 const foraDoCi = listaDoWorkflow(yml, "FORA_DO_CI");
