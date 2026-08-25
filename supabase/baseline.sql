@@ -11523,3 +11523,37 @@ grant execute on function public.fn_lgpd_cascade_redact_contact(uuid, uuid, uuid
 grant execute on function public.fn_update_budget_consumption() to service_role;
 
 notify pgrst, 'reload schema';
+
+-- ---- cron_heartbeat: o sistema sabe que parou de rodar (migration 0152) ----
+--
+-- Os 16 crons eram disparados por um crond batendo curl com `>/dev/null 2>&1`:
+-- nenhum batimento, nenhum alerta de atraso. Scheduler morto = produto parado em
+-- silencio (follow-up, drain do event_log, roteamento, recuperacao de travado).
+-- Platform-level e sem policy: RLS ligada sem policy = so o service role le, que
+-- e o alcance certo (mesmo desenho de watchdog_cursors). O revoke cobre anon E
+-- authenticated porque o ALTER DEFAULT PRIVILEGES do baseline alcanca toda
+-- tabela criada depois dele.
+create table if not exists public.cron_heartbeat (
+  -- O nome do segmento da rota (`app/api/v1/cron/<job_name>`), não um id: é o
+  -- que o crontab escreve e o que o operador procura no log.
+  job_name text primary key,
+
+  last_run_at timestamptz not null default now(),
+  last_status text not null default 'ok' check (last_status in ('ok', 'error')),
+  last_duration_ms integer,
+  last_error text,
+
+  -- Separa "parou de rodar" de "roda e falha" — são dois problemas com duas
+  -- ações diferentes, e sem este contador os dois chegam como o mesmo silêncio.
+  consecutive_errors integer not null default 0,
+  run_count bigint not null default 0,
+
+  updated_at timestamptz not null default now()
+);
+
+alter table public.cron_heartbeat enable row level security;
+
+revoke all on public.cron_heartbeat from anon;
+revoke all on public.cron_heartbeat from authenticated;
+
+notify pgrst, 'reload schema';

@@ -23,6 +23,7 @@ import { audit } from "@/lib/audit";
 import { triggerSlaAlarm } from "@/lib/lgpd/sla-alarm";
 import type { LgpdRequest } from "@/lib/lgpd/types";
 import type { AlarmThreshold } from "@/lib/lgpd/sla-alarm";
+import { comBatimento } from "@/lib/cron/com-batimento";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ interface OrgRow {
 
 type RequestWithOrg = LgpdRequest & OrgRow;
 
-export async function GET(req: NextRequest): Promise<Response> {
+async function getInterno(req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
   const startedAt = Date.now();
 
@@ -179,3 +180,7 @@ export async function GET(req: NextRequest): Promise<Response> {
     { requestId },
   );
 }
+
+// Batimento de cron — ver lib/cron/com-batimento.ts. O nome vem do segmento
+// da rota, que é o mesmo que o crontab do docker-compose.prod.yml escreve.
+export const GET = comBatimento("lgpd-sla-watcher", getInterno);

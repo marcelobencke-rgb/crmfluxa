@@ -10,6 +10,7 @@ const KIND_LABELS: Record<AlertKind, string> = {
   lgpd_at_risk: "Prazo LGPD",
   ai_budget: "Budget IA",
   tenant_pending_overflow: "Overflow de conversas",
+  cron_atrasado: "Automação parada",
 };
 
 interface AlertBroadcast {
