@@ -19,6 +19,7 @@ import { ARCHIVED_AT, queryTolerantToMissingArchived } from "@/lib/channels/arch
 import { createAdminClient } from "@/lib/supabase/admin";
 import { dispatchWahaEvent, type WahaEnvelope } from "@/lib/waha/ingest";
 import { registrarFalhaDeIngestao } from "@/lib/waha/falha-de-ingestao";
+import { ingressoLimitado, TETOS } from "@/lib/webhooks/limite-de-ingresso";
 import { segredoDoWebhook } from "@/lib/waha/segredo-do-webhook";
 import { authenticateWahaWebhook } from "@/lib/waha/webhook-auth";
 
@@ -40,6 +41,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!sessionName) {
     return fail("invalid_request", "missing session field", 400, { requestId });
   }
+
+  // Balde por SESSÃO: nesta rota (legada, sem token no caminho) é o que
+  // identifica quem chama. Vem do corpo, então o JSON já foi lido — é barato e
+  // limitado, e ainda assim corta antes da consulta ao banco.
+  const barrado = await ingressoLimitado(`waha-sessao:${sessionName}`, TETOS.waha(), 60, requestId);
+  if (barrado) return barrado as NextResponse;
 
   const admin = createAdminClient();
 

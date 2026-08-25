@@ -18,6 +18,7 @@ import { ARCHIVED_AT, queryTolerantToMissingArchived } from "@/lib/channels/arch
 import { createAdminClient } from "@/lib/supabase/admin";
 import { dispatchWahaEvent, type WahaEnvelope } from "@/lib/waha/ingest";
 import { registrarFalhaDeIngestao } from "@/lib/waha/falha-de-ingestao";
+import { ingressoLimitado, TETOS } from "@/lib/webhooks/limite-de-ingresso";
 import { segredoDoWebhook } from "@/lib/waha/segredo-do-webhook";
 import { authenticateWahaWebhook } from "@/lib/waha/webhook-auth";
 
@@ -35,6 +36,16 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
   if (!token || token.length < 8) {
     return fail("not_found", "unknown webhook token", 404, { requestId });
   }
+
+  // TETO ANTES DE LER O CORPO E ANTES DE IR AO BANCO.
+  //
+  // A consulta da sessão por `webhook_path_token` acontece logo abaixo, e as
+  // respostas distinguem 404 (token inexistente) de 401 (token existe, HMAC
+  // errado): um oráculo de enumeração em que cada tentativa custava uma query e
+  // um decrypt, sem teto nenhum. Barrar aqui tira o custo por tentativa E o
+  // volume — e nem o `req.text()` é pago.
+  const barrado = await ingressoLimitado(`waha:${token}`, TETOS.waha(), 60, requestId);
+  if (barrado) return barrado as NextResponse;
 
   const rawBody = await req.text();
   let envelope: WahaEnvelope;
