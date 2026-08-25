@@ -9130,6 +9130,14 @@ alter table public.agent_inbox_items
     -- ignorar os avisos que são falha de verdade. Entra NESTA lista pela mesma
     -- razão das de cima (bloco único por constraint, #159).
     'contact_proposal_expired',
+    -- (migration 0151) O despacho do evento do webhook do WAHA falhou. Era o
+    -- único dos avisos desta lista cujo defeito não deixava marca NENHUMA: o
+    -- handler engolia a exceção num `console.error` e devolvia 200, então o WAHA
+    -- não reentregava, a mensagem não entrava no inbox e nada no sistema
+    -- registrava a perda. `critical`, porque do lado de lá existe uma pessoa que
+    -- escreveu e não foi respondida. Entra NESTA lista pela mesma razão das de
+    -- cima (bloco único por constraint, #159).
+    'webhook_ingest_failed',
     'other'
   ));
 

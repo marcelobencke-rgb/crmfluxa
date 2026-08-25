@@ -40,6 +40,7 @@ export type InboxKind =
   | 'midia_nao_lida'
   | 'promise_unfulfilled'
   | 'contact_proposal_expired'
+  | 'webhook_ingest_failed'
   | 'other';
 
 export interface InboxItemRow {

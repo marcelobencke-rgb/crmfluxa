@@ -49,6 +49,11 @@ export const KIND_LABEL = {
   promise_unfulfilled: "O assistente prometeu algo a um cliente e ninguém ficou responsável",
   contact_proposal_expired:
     "Uma informação que o assistente ouviu de um cliente venceu sem ninguém conferir",
+  // Diz o que o CLIENTE fez, não o que o webhook devolveu. "Falha no despacho
+  // do evento" é verdade e não faz ninguém agir; "mensagem que não chegou" é a
+  // única frase que descreve o que existe do lado de lá — uma pessoa que
+  // escreveu e está esperando. O motivo técnico fica no corpo do aviso.
+  webhook_ingest_failed: "Mensagem de cliente não chegou ao sistema",
   other: "Aviso do assistente",
 } as const satisfies Record<InboxKind, string>;
 
