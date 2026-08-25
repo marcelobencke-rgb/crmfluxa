@@ -44,7 +44,6 @@ function dayLabel(d: Date): string {
 
 export function ChatThread({ conversationId }: Props) {
   const q = useMessagesRealtime(conversationId);
-  useMarkAsRead(conversationId);
   const notes = useConversationNotes(conversationId);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -64,6 +63,24 @@ export function ChatThread({ conversationId }: Props) {
     () => mergeThreadItems(messages, notes),
     [messages, notes],
   );
+
+  /**
+   * O id da última mensagem RECEBIDA — o sinal que faz a conversa ser remarcada
+   * como lida quando chega algo novo com ela aberta.
+   *
+   * Só inbound: outbound não incrementa `unread_count_for_assignee` (ver
+   * `fn_mark_conversation_message`), então mandar mensagem não deve disparar
+   * um mark-read. E é o ID, não a contagem: a contagem também muda ao carregar
+   * páginas antigas, que não é "chegou mensagem nova".
+   */
+  const ultimaRecebida = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i]!.direction === "inbound") return messages[i]!.id;
+    }
+    return null;
+  }, [messages]);
+
+  useMarkAsRead(conversationId, ultimaRecebida);
 
   const paginas = q.data?.pages.length ?? 0;
 
