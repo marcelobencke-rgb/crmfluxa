@@ -92,13 +92,36 @@ export async function baterPonto(
 }
 
 /**
+ * Linha reservada gravada pela migration 0153: quando esta instalação passou a
+ * medir batimento. Não é job — `cronsAtrasados` itera a AGENDA, então ela nunca
+ * aparece como item de painel.
+ */
+const REFERENCIA_DE_INSTALACAO = "__referencia_de_instalacao";
+
+/**
  * Quem deveria ter rodado e não rodou — derivado, nunca armazenado.
  *
- * Um job sem linha nenhuma conta como `nunca_rodou`, e isso é deliberado: numa
- * instalação recém-atualizada é o estado legítimo por uma rodada, mas numa
- * instalação em que o `scheduler` nunca subiu é O defeito — e é justamente o que
- * o self-hoster não descobre sozinho. Deixar de reportar por ser ambíguo seria
- * escolher o silêncio de novo.
+ * ## Job sem linha: reportado, mas não na estreia
+ *
+ * Um job sem batimento nenhum é ambíguo, e as duas leituras importam. Numa
+ * instalação em que o `scheduler` nunca subiu, é O defeito — e é justamente o
+ * que o self-hoster não descobre sozinho. Logo depois de uma atualização, é o
+ * estado normal por uma rodada.
+ *
+ * A primeira versão resolvia isso reportando sempre, e estava errada de um jeito
+ * que só apareceria em produção: os quatro crons DIÁRIOS ficariam como alerta
+ * crítico por até 24h depois do deploy, sem nada quebrado. Alarme que toca sem
+ * defeito é desligado, e leva junto o verdadeiro — a feature estrearia ensinando
+ * a ignorá-la.
+ *
+ * A desambiguação vem do marco da 0153: job sem linha só vira alerta depois de
+ * vencida a tolerância DELE contada a partir do momento em que a instalação
+ * passou a medir. Três minutos para os de minuto, três dias para os diários —
+ * a mesma régua de sempre, aplicada ao instante certo.
+ *
+ * Sem o marco (instalação que aplicou a 0152 e não a 0153), volta a reportar
+ * imediatamente: é o comportamento anterior, e preferir o alarme falso ao
+ * silêncio é a escolha certa quando não se sabe desde quando se está medindo.
  */
 export async function cronsAtrasados(admin: Admin): Promise<CronAtrasado[]> {
   const { data, error } = await admin
@@ -117,15 +140,26 @@ export async function cronsAtrasados(admin: Admin): Promise<CronAtrasado[]> {
   const agora = Date.now();
   const atrasados: CronAtrasado[] = [];
 
+  // Desde quando esta instalação mede. `null` = marco ausente (0152 sem 0153).
+  const marco = porNome.get(REFERENCIA_DE_INSTALACAO);
+  const medindoHaSeg =
+    marco === undefined
+      ? null
+      : Math.round((agora - new Date(marco.last_run_at).getTime()) / 1000);
+
   for (const [jobName, intervaloSeg] of Object.entries(AGENDA)) {
     const linha = porNome.get(jobName);
 
     if (!linha) {
+      // Ainda dentro da janela em que este job legitimamente não rodaria:
+      // silêncio, sem alarme. Ver o cabeçalho.
+      if (medindoHaSeg !== null && medindoHaSeg <= limiteDeAtraso(intervaloSeg)) continue;
+
       atrasados.push({
         job_name: jobName,
         intervalo_seg: intervaloSeg,
         ultimo_batimento: null,
-        atrasado_ha_seg: null,
+        atrasado_ha_seg: medindoHaSeg,
         motivo: "nunca_rodou",
         consecutive_errors: 0,
       });

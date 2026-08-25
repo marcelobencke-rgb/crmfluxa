@@ -11557,3 +11557,21 @@ revoke all on public.cron_heartbeat from anon;
 revoke all on public.cron_heartbeat from authenticated;
 
 notify pgrst, 'reload schema';
+
+-- ---- marco zero do batimento de cron (migration 0153) ----
+--
+-- cron_heartbeat nasce vazia, e job sem linha era reportado como atrasado na
+-- hora: os quatro crons DIARIOS acenderiam alerta critico por ate 24h depois do
+-- deploy, sem nada quebrado. Alarme que toca sem defeito e desligado, e leva
+-- junto o verdadeiro.
+--
+-- UMA linha de referencia, e nao um seed por job: semear os 15 criaria uma
+-- TERCEIRA copia da lista de jobs (crontab manda, lib/cron/agenda.ts projeta) sem
+-- vigia nenhum, e apagaria o sinal "este job nunca deu sinal de vida".
+--
+-- cronsAtrasados() itera a AGENDA, entao esta linha nunca vira item de painel.
+-- on conflict do nothing: reaplicar (update.sh do clone) NAO reseta o marco —
+-- se resetasse, cada atualizacao daria anistia nova a um scheduler morto.
+insert into public.cron_heartbeat (job_name, last_run_at, last_status, run_count)
+values ('__referencia_de_instalacao', now(), 'ok', 0)
+on conflict (job_name) do nothing;
