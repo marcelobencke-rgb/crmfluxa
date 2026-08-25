@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Central de Conexões — o que a tela PROMETE antes de uma ação irreversível.
  *

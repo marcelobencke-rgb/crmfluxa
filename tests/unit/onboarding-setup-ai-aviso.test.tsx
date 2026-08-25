@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A tela do passo "Configurar IA" quando o agente é criado mas NÃO publicado.
  *

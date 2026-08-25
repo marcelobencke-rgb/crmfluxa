@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * TenantOverview — o cartão que o admin de plataforma lê sobre um tenant.
  *

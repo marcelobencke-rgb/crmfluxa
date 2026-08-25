@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * ⌘K. Até aqui a barra "Buscar…" do topo era um `console.info` com o comentário
  * "UI not yet implemented" — a única saída de emergência para quem não achava

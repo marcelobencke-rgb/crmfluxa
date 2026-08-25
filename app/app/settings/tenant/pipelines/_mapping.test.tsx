@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A tela do funil do agente — o que ela OFERECE e o que ela ENVIA.
  *

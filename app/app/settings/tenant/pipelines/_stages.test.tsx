@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A tela das etapas do funil — o que ela OFERECE, o que ela ENVIA e o que ela
  * pergunta ANTES de mandar.

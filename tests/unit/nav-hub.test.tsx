@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * O hub é a vitrine de um grupo: mostra TUDO que ele tem, com descrição,
  * organizado pela jornada de quem usa. É onde as sete telas que só existiam
