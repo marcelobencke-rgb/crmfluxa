@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A casca do /admin provê o `TooltipProvider`. O que estes testes protegem:
  *

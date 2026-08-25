@@ -24,6 +24,7 @@ import { parseMetaWebhook, verificationChallenge, verifyMetaSignature } from "@/
 import { ingestMetaInbound } from "@/lib/channels/meta/ingest";
 import { metaSessionByWebhookToken } from "@/lib/channels/meta/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ingressoLimitado, TETOS } from "@/lib/webhooks/limite-de-ingresso";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -53,6 +54,12 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<NextResponse
 export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextResponse> {
   const requestId = randomUUID();
   const { token } = await ctx.params;
+
+  // Antes da consulta, pelo mesmo motivo do outro canal: 404 aqui e 401 na assinatura
+  // logo abaixo formam um oráculo de enumeração de token, e cada tentativa
+  // custava uma ida ao banco.
+  const barrado = await ingressoLimitado(`meta:${token}`, TETOS.mensageria(), 60, requestId);
+  if (barrado) return barrado as NextResponse;
 
   const session = await metaSessionByWebhookToken(token);
   if (!session) return fail("not_found", "unknown webhook token", 404, { requestId });

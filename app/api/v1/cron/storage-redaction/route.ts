@@ -14,13 +14,14 @@ import type { NextRequest } from "next/server";
 import { ok, fail } from "@/lib/api/wrappers";
 import { env } from "@/lib/env";
 import { drainStorageRedactionQueue } from "@/lib/lgpd/storage-redaction-queue";
+import { comBatimento } from "@/lib/cron/com-batimento";
 
 export const dynamic = "force-dynamic";
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
 
-export async function GET(req: NextRequest): Promise<Response> {
+async function getInterno(req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
 
   const auth = req.headers.get("authorization") ?? "";
@@ -47,3 +48,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   return ok(stats, { requestId });
 }
+
+// Batimento de cron — ver lib/cron/com-batimento.ts. O nome vem do segmento
+// da rota, que é o mesmo que o crontab do docker-compose.prod.yml escreve.
+export const GET = comBatimento("storage-redaction", getInterno);

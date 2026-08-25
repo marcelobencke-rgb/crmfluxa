@@ -28,3 +28,38 @@ export function supportWhatsappLink(): string | null {
   }
   return resolveSupportWhatsappLink(process.env.SUPPORT_WHATSAPP_NUMBER);
 }
+
+/**
+ * E-mail de suporte — MESMA regra do WhatsApp, e pela mesma razão medida.
+ *
+ * As duas telas em que o usuário está trancado do lado de fora (`/account-suspended`
+ * e o cartão de Billing) traziam endereços fixos no código: `support@deskcomm.com.br`
+ * e `suporte@deskcomm.app`. Os dois são da marca ANTERIOR do produto e não recebem
+ * mensagem. Ou seja, a tela que existe para dizer "fale com alguém" mandava o usuário
+ * escrever para o vazio — e é a tela em que ele tem menos alternativas, porque não
+ * consegue nem entrar para procurar outro caminho.
+ *
+ * Endereço fixo no código está errado duas vezes num produto self-host: quem instala
+ * para o próprio cliente precisa do suporte DELE ali, e um patch local se perderia no
+ * `update.sh` (é a dor nº 1 de quem hospeda, e o motivo de `lib/branding.ts` existir).
+ *
+ * Sem configurar, devolve `null` e a tela não mostra contato nenhum. Isso é
+ * deliberado: não ter para onde escrever é ruim, mas escrever para um endereço morto
+ * é pior — some a mensagem e o usuário fica esperando resposta que não vem.
+ *
+ * Validação mínima de propósito (tem `@` com algo dos dois lados, sem espaço): o alvo
+ * é pegar `.env` preenchido errado, não recusar endereço exótico porém válido.
+ */
+export function resolveSupportEmail(rawEmail: string | undefined | null): string | null {
+  const email = (rawEmail ?? "").trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+  return email;
+}
+
+/** Lê o e-mail da fonte correta em cada lado da fronteira servidor/navegador. */
+export function supportEmail(): string | null {
+  if (typeof window !== "undefined") {
+    return resolveSupportEmail(window.__PUBLIC_ENV__?.SUPPORT_EMAIL);
+  }
+  return resolveSupportEmail(process.env.SUPPORT_EMAIL);
+}

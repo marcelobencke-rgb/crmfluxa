@@ -1,5 +1,4 @@
-import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -47,25 +46,44 @@ const PASTAS = ["lib", "app", "hooks", "components"];
  */
 const MARCAS = ["crm_lead_activities", "emitLeadActivity", "buildLeadActivityRow"];
 
+/**
+ * A VARREDURA É NODE PURO — não existe mais `grep` aqui, e a razão é dura.
+ *
+ * A versão anterior chamava `execFileSync("grep", ...)` com um `catch` que
+ * engolia tudo e devolvia string vazia. O comentário daquele `catch` explicava
+ * o caso certo (grep sai com 1 quando não acha nada) e cobria em silêncio um
+ * segundo caso, muito pior: **`grep` não existir no PATH**.
+ *
+ * Fora do Git Bash — no PowerShell, que é como o mantenedor roda a suíte, e em
+ * qualquer runner Windows — `grep` é ENOENT. O `catch` transformava "não tenho
+ * a ferramenta" em "não achei nada", a lista voltava vazia, e o teste seguinte
+ * (o que de fato guarda o invariante) passaria por VACUIDADE. Só não passou
+ * porque a guarda de instrumento existe e reprovou — mas ela reprovava sem
+ * dizer a causa real, e a causa real não é o código de produção.
+ *
+ * Varrer em Node resolve os dois problemas de uma vez: some a dependência de
+ * binário externo (o teste passa a rodar igual em qualquer SO) e some a
+ * ambiguidade entre "ferramenta ausente" e "resultado vazio" — se a pasta não
+ * existir, `readdirSync` LANÇA, e é isso que se quer de um instrumento.
+ */
 function arquivosQueEscrevemAtividade(): string[] {
   const achados = new Set<string>();
-  for (const marca of MARCAS) {
-    let saida = "";
-    try {
-      saida = execFileSync(
-        "grep",
-        ["-rl", "--include=*.ts", "--include=*.tsx", marca, ...PASTAS],
-        { cwd: RAIZ, encoding: "utf8" },
-      );
-    } catch {
-      // `grep` sai com 1 quando não acha nada, e o `execFileSync` LANÇA. Sem
-      // este catch, a sabotagem da varredura vazia derrubava o arquivo inteiro
-      // com "Command failed" e nem chegava na guarda — o teste não passava por
-      // vacuidade, ele simplesmente NÃO RODAVA, que é igualmente cego.
-      saida = "";
+
+  function varrer(dirRel: string): void {
+    for (const entrada of readdirSync(path.join(RAIZ, dirRel), { withFileTypes: true })) {
+      const rel = `${dirRel}/${entrada.name}`;
+      if (entrada.isDirectory()) {
+        if (entrada.name === "node_modules" || entrada.name.startsWith(".")) continue;
+        varrer(rel);
+        continue;
+      }
+      if (!/\.tsx?$/.test(entrada.name)) continue;
+      const fonte = readFileSync(path.join(RAIZ, rel), "utf8");
+      if (MARCAS.some((marca) => fonte.includes(marca))) achados.add(rel);
     }
-    for (const a of saida.split("\n").filter(Boolean)) achados.add(a);
   }
+
+  for (const pasta of PASTAS) varrer(pasta);
   return [...achados].sort();
 }
 

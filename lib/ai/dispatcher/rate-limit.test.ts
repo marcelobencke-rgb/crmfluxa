@@ -26,8 +26,36 @@
  *
  * O que se guarda aqui é o INVARIANTE, não o número: o tamanho do mapa acompanha as
  * janelas VIVAS, não o histórico.
+ *
+ * ## Por que o `vi.mock` do env abaixo é OBRIGATÓRIO
+ *
+ * Sem ele, este arquivo testava um ramo que ele não descreve — e ninguém via.
+ *
+ * `tests/setup/vitest.setup.ts` carrega `.env` e `.env.local` para dentro de
+ * `process.env` antes de qualquer import. Numa máquina de dev com Upstash de verdade
+ * configurado (o caso do mantenedor), `getRedis()` devolvia um cliente REAL e as cinco
+ * asserções abaixo passavam a medir o caminho do REDIS — que não guarda nada no `Map`.
+ * `__chavesEmMemoriaParaTeste()` respondia 0, o teto não barrava, e o arquivo ficava
+ * vermelho por estar exercitando o ramo errado, não por defeito no limitador.
+ *
+ * No CI é pior, porque lá ele fica VERDE: sem `.env.local`, o caminho em memória é
+ * escolhido por acidente de ambiente e não por decisão do teste. Verde por acidente e
+ * vermelho por acidente são o mesmo defeito — o teste não controla o que testa.
+ *
+ * Medido em 2026-08-25: com `.env.local` presente, 5 falhas; renomeando o arquivo,
+ * 5 passes. Nada no `rate-limit.ts` mudou entre as duas execuções.
+ *
+ * O mock fixa as duas variáveis como ausentes, que é a definição de "cair para a
+ * memória", independentemente do que a máquina de quem roda tenha no `.env.local`.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/env", () => ({
+  env: {
+    UPSTASH_REDIS_REST_URL: undefined,
+    UPSTASH_REDIS_REST_TOKEN: undefined,
+  },
+}));
 
 describe("contador em memória", () => {
   beforeEach(() => {
@@ -38,6 +66,22 @@ describe("contador em memória", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("CONTROLE POSITIVO: é o caminho em memória que está sendo exercitado", async () => {
+    // Sem esta guarda, todos os casos abaixo podem estar medindo o Redis e ninguém
+    // percebe: eles falham de um jeito que parece defeito do limitador. Uma chamada
+    // que NÃO deixa chave no mapa significa que o `getRedis()` devolveu cliente —
+    // e aí o resto deste arquivo não está testando o que o cabeçalho promete.
+    const { checkRateLimit, __chavesEmMemoriaParaTeste } = await import("./rate-limit");
+
+    expect(__chavesEmMemoriaParaTeste()).toBe(0);
+    await checkRateLimit("bucket:controle", 10, 60);
+    expect(
+      __chavesEmMemoriaParaTeste(),
+      "a chamada não deixou chave em memória: getRedis() devolveu um cliente e este " +
+        "arquivo está exercitando o ramo do Redis, não o do fallback que ele descreve",
+    ).toBe(1);
   });
 
   it("não acumula uma chave por janela vencida", async () => {

@@ -50,6 +50,7 @@ import {
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { comBatimento } from "@/lib/cron/com-batimento";
 
 export const dynamic = "force-dynamic";
 
@@ -162,5 +163,7 @@ async function handler(req: NextRequest): Promise<Response> {
   }
 }
 
-export const GET = handler;
-export const POST = handler;
+// Batimento de cron — ver lib/cron/com-batimento.ts. O nome vem do segmento
+// da rota, que é o mesmo que o crontab do docker-compose.prod.yml escreve.
+export const GET = comBatimento("sync-model-catalog", handler);
+export const POST = comBatimento("sync-model-catalog", handler);

@@ -19,6 +19,7 @@ import { audit } from "@/lib/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugToEvent } from "@/lib/nuvemshop/config";
 import { verifyHmac } from "@/lib/nuvemshop/oauth";
+import { ingressoLimitado, TETOS } from "@/lib/webhooks/limite-de-ingresso";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -56,6 +57,16 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
   }
 
   const storeId = body.store_id !== undefined ? String(body.store_id) : "";
+
+  // Balde pela LOJA, não pelo slug do evento: o slug é um vocabulário fechado e
+  // curto, então seria um balde compartilhado por todos os lojistas — uma loja
+  // ruidosa trancaria as outras. `store_id` vem do corpo (já lido), e loja sem
+  // id cai num balde próprio de anônimos em vez de se misturar às identificadas.
+  const barradoNS = await ingressoLimitado(
+    `nuvemshop:${storeId || "sem-loja"}`,
+    TETOS.loja(),
+  );
+  if (barradoNS) return barradoNS as NextResponse;
   if (!storeId) {
     return fail("invalid_request", "missing store_id", 400);
   }

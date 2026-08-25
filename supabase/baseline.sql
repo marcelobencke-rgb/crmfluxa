@@ -9130,6 +9130,14 @@ alter table public.agent_inbox_items
     -- ignorar os avisos que são falha de verdade. Entra NESTA lista pela mesma
     -- razão das de cima (bloco único por constraint, #159).
     'contact_proposal_expired',
+    -- (migration 0151) O despacho do evento do webhook do WAHA falhou. Era o
+    -- único dos avisos desta lista cujo defeito não deixava marca NENHUMA: o
+    -- handler engolia a exceção num `console.error` e devolvia 200, então o WAHA
+    -- não reentregava, a mensagem não entrava no inbox e nada no sistema
+    -- registrava a perda. `critical`, porque do lado de lá existe uma pessoa que
+    -- escreveu e não foi respondida. Entra NESTA lista pela mesma razão das de
+    -- cima (bloco único por constraint, #159).
+    'webhook_ingest_failed',
     'other'
   ));
 
@@ -11515,3 +11523,55 @@ grant execute on function public.fn_lgpd_cascade_redact_contact(uuid, uuid, uuid
 grant execute on function public.fn_update_budget_consumption() to service_role;
 
 notify pgrst, 'reload schema';
+
+-- ---- cron_heartbeat: o sistema sabe que parou de rodar (migration 0152) ----
+--
+-- Os 16 crons eram disparados por um crond batendo curl com `>/dev/null 2>&1`:
+-- nenhum batimento, nenhum alerta de atraso. Scheduler morto = produto parado em
+-- silencio (follow-up, drain do event_log, roteamento, recuperacao de travado).
+-- Platform-level e sem policy: RLS ligada sem policy = so o service role le, que
+-- e o alcance certo (mesmo desenho de watchdog_cursors). O revoke cobre anon E
+-- authenticated porque o ALTER DEFAULT PRIVILEGES do baseline alcanca toda
+-- tabela criada depois dele.
+create table if not exists public.cron_heartbeat (
+  -- O nome do segmento da rota (`app/api/v1/cron/<job_name>`), não um id: é o
+  -- que o crontab escreve e o que o operador procura no log.
+  job_name text primary key,
+
+  last_run_at timestamptz not null default now(),
+  last_status text not null default 'ok' check (last_status in ('ok', 'error')),
+  last_duration_ms integer,
+  last_error text,
+
+  -- Separa "parou de rodar" de "roda e falha" — são dois problemas com duas
+  -- ações diferentes, e sem este contador os dois chegam como o mesmo silêncio.
+  consecutive_errors integer not null default 0,
+  run_count bigint not null default 0,
+
+  updated_at timestamptz not null default now()
+);
+
+alter table public.cron_heartbeat enable row level security;
+
+revoke all on public.cron_heartbeat from anon;
+revoke all on public.cron_heartbeat from authenticated;
+
+notify pgrst, 'reload schema';
+
+-- ---- marco zero do batimento de cron (migration 0153) ----
+--
+-- cron_heartbeat nasce vazia, e job sem linha era reportado como atrasado na
+-- hora: os quatro crons DIARIOS acenderiam alerta critico por ate 24h depois do
+-- deploy, sem nada quebrado. Alarme que toca sem defeito e desligado, e leva
+-- junto o verdadeiro.
+--
+-- UMA linha de referencia, e nao um seed por job: semear os 15 criaria uma
+-- TERCEIRA copia da lista de jobs (crontab manda, lib/cron/agenda.ts projeta) sem
+-- vigia nenhum, e apagaria o sinal "este job nunca deu sinal de vida".
+--
+-- cronsAtrasados() itera a AGENDA, entao esta linha nunca vira item de painel.
+-- on conflict do nothing: reaplicar (update.sh do clone) NAO reseta o marco —
+-- se resetasse, cada atualizacao daria anistia nova a um scheduler morto.
+insert into public.cron_heartbeat (job_name, last_run_at, last_status, run_count)
+values ('__referencia_de_instalacao', now(), 'ok', 0)
+on conflict (job_name) do nothing;

@@ -24,6 +24,7 @@ import { audit } from "@/lib/audit";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { comBatimento } from "@/lib/cron/com-batimento";
 
 export const dynamic = "force-dynamic";
 
@@ -120,10 +121,15 @@ async function handle(req: NextRequest): Promise<Response> {
   return ok({ scanned: conversations.length, reopened }, { requestId });
 }
 
-export async function GET(req: NextRequest): Promise<Response> {
+async function getInterno(req: NextRequest): Promise<Response> {
   return handle(req);
 }
 
-export async function POST(req: NextRequest): Promise<Response> {
+async function postInterno(req: NextRequest): Promise<Response> {
   return handle(req);
 }
+
+// Batimento de cron — ver lib/cron/com-batimento.ts. O nome vem do segmento
+// da rota, que é o mesmo que o crontab do docker-compose.prod.yml escreve.
+export const GET = comBatimento("snooze-watcher", getInterno);
+export const POST = comBatimento("snooze-watcher", postInterno);

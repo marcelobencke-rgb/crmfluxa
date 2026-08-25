@@ -1,0 +1,44 @@
+-- 0153: marco zero do batimento — o painel para de acender vermelho sem defeito
+--
+-- Defeito de desenho da 0152, encontrado antes de subir: `cron_heartbeat` nasce
+-- VAZIA, e `cronsAtrasados()` reporta job sem linha como `nunca_rodou`. No
+-- primeiro minuto depois do deploy isso está certo para os crons de minuto (eles
+-- rodam em segundos e a linha aparece), mas os QUATRO diários — lgpd-sla-watcher,
+-- kb-conversations-batch, sync-model-catalog, scheduled-reports — ficariam como
+-- alerta CRÍTICO no painel do admin de plataforma por até 24 horas, sem que nada
+-- estivesse quebrado.
+--
+-- É exatamente o que os comentários da 0152 avisam contra: alarme que toca sem
+-- defeito é desligado, e leva junto o alarme verdadeiro. A feature estrearia
+-- ensinando a ignorá-la.
+--
+-- ## Por que UMA linha de referência, e não semear os 15 jobs
+--
+-- Semear um `last_run_at = now()` por job resolveria a estreia e criaria um
+-- problema pior: a lista de jobs passaria a existir também em SQL, virando a
+-- TERCEIRA cópia (o crontab do compose manda, `lib/cron/agenda.ts` projeta, e
+-- `tests/unit/cron-agenda-bate-com-o-compose.test.ts` vigia as duas). Uma cópia
+-- em SQL não teria vigia nenhum e envelheceria calada — que é o anti-pattern nº 2
+-- do CLAUDE.md.
+--
+-- Pior ainda: um job semeado com `now()` que NUNCA rodasse ficaria indistinguível
+-- de um que rodou. O sinal "este job nunca deu sinal de vida" some.
+--
+-- A linha única guarda outra coisa: QUANDO esta instalação passou a medir. Com
+-- ela, job sem batimento só vira alerta depois de vencida a tolerância DELE
+-- contada a partir daí — 3 min para os de minuto, 3 dias para os diários. É a
+-- mesma régua que já existe, aplicada ao marco certo.
+--
+-- ## Por que dentro de `cron_heartbeat`
+--
+-- `cronsAtrasados()` itera `Object.entries(AGENDA)`, então qualquer linha cujo
+-- `job_name` não esteja na agenda é ignorada de graça — a referência não vira
+-- item de painel nem entra em contagem. O prefixo `__` marca reservado.
+--
+-- Idempotente: `on conflict do nothing`. Reaplicar (o `update.sh` do clone faz)
+-- NÃO reseta o marco — se resetasse, cada atualização daria anistia nova a um
+-- scheduler que está morto há semanas.
+
+insert into public.cron_heartbeat (job_name, last_run_at, last_status, run_count)
+values ('__referencia_de_instalacao', now(), 'ok', 0)
+on conflict (job_name) do nothing;

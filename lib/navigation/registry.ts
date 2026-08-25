@@ -448,15 +448,20 @@ export const NAV_DESTINATIONS: NavDestination[] = [
     section: "Sua empresa",
     minRole: "admin",
   },
-  {
-    href: "/app/settings/billing",
-    label: "Billing",
-    description: "Plano e cobrança.",
-    icon: Receipt,
-    group: "organizacao",
-    section: "Sua empresa",
-    minRole: "admin",
-  },
+  // ---- Billing SAIU DO MENU enquanto for promessa, não recurso.
+  //
+  // A tela existe, mas o conteúdo dela é um cartão dizendo "Em breve — Fase 2".
+  // Item de menu é um contrato com quem clica: ele diz "aqui tem uma coisa que
+  // faz algo". Levar um admin até um aviso de que o recurso não existe gasta a
+  // confiança dele numa tela que não tinha como entregar nada — e era a única
+  // porta do grupo "Sua empresa" que terminava em beco.
+  //
+  // A rota continua de pé, com o gate de papel intacto (admin-only), porque os
+  // e2e de RBAC entram nela por URL e provam o 403 do `agent`. O que sai é a
+  // porta, não a tela — ver a justificativa correspondente na NAV_ALLOWLIST de
+  // tests/unit/navegacao-completude.test.ts.
+  //
+  // Volta ao registro no mesmo commit em que Billing passar a cobrar de verdade.
 
   // ---- Canais — voltou pra dentro de Configurações em 23/08/2026: é
   // configuração de baixa frequência (conectar um número, uma loja, um

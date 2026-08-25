@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { requirePlatformAdmin } from "@/lib/auth/requirePlatformAdmin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { cronsAtrasados } from "@/lib/cron/heartbeat";
 import { ok, fail } from "@/lib/api/wrappers";
 
 export type AlertSeverity = "critical" | "warning" | "info";
@@ -8,7 +9,8 @@ export type AlertKind =
   | "waha_ban"
   | "lgpd_at_risk"
   | "ai_budget"
-  | "tenant_pending_overflow";
+  | "tenant_pending_overflow"
+  | "cron_atrasado";
 
 export interface AlertItem {
   id: string;
@@ -247,6 +249,44 @@ export async function GET(_req: NextRequest) {
         created_at: new Date().toISOString(),
       });
     }
+  }
+
+  // AUTOMAÇÃO PARADA — o único alerta desta lista que não é de um tenant.
+  //
+  // Cron atrasado é problema do servidor inteiro, então `tenant_name` vira
+  // "Plataforma" (é texto puro no `AlertItem`, não vira link) e `tenant_id` fica
+  // vazio. O link vai para Incidentes porque é onde o admin de plataforma já
+  // olha quando algo operacional quebra — a mensagem carrega o que fazer.
+  //
+  // Derivado em tempo de leitura, e é aqui que ele APARECE PARA UM HUMANO: o
+  // `/api/v1/health` responde a máquina, esta tela responde a pessoa. Nenhum dos
+  // dois é um cron, de propósito — um vigia agendado morreria junto com o
+  // `scheduler` que ele vigiaria (ver lib/cron/heartbeat.ts).
+  //
+  // Falha na leitura não derruba o painel inteiro: sem batimento legível, o
+  // resto dos KPIs continua valendo, e o defeito de banco já aparece por outro
+  // caminho.
+  try {
+    for (const cron of await cronsAtrasados(admin)) {
+      const minutos = cron.atrasado_ha_seg === null ? null : Math.round(cron.atrasado_ha_seg / 60);
+      alerts.push({
+        id: `cron-${cron.job_name}`,
+        severity: "critical",
+        kind: "cron_atrasado",
+        tenant_id: "",
+        tenant_name: "Plataforma",
+        message:
+          cron.motivo === "nunca_rodou"
+            ? `${cron.job_name} nunca rodou — o agendador (serviço "scheduler") pode não ter subido`
+            : cron.motivo === "falhando"
+              ? `${cron.job_name} falhou ${cron.consecutive_errors} vezes seguidas`
+              : `${cron.job_name} parou há ${minutos} min — deveria rodar a cada ${Math.round(cron.intervalo_seg / 60)} min`,
+        link: "/admin/incidents",
+        created_at: cron.ultimo_batimento ?? new Date().toISOString(),
+      });
+    }
+  } catch {
+    // Silêncio deliberado: ver o bloco acima.
   }
 
   // Sort: critical first, then by created_at desc

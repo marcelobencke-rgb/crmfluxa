@@ -26,6 +26,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { env } from "@/lib/env";
 import { alvoDe, classificarFalhaDeAlcance, type FalhaDeAlcance } from "@/lib/net/alcance";
+import { cronsAtrasados, type CronAtrasado } from "@/lib/cron/heartbeat";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -175,6 +177,49 @@ async function checkWaha(): Promise<Check> {
 }
 
 /**
+ * OS CRONS ESTÃO RODANDO? — derivado em tempo de leitura, nunca armazenado.
+ *
+ * Este check existe porque um monitor de FORA é a única coisa que continua
+ * funcionando quando o de dentro para. Um cron-vigia morreria junto com o
+ * `scheduler` que ele vigiaria, e o silêncio dele seria idêntico a "tudo bem" —
+ * ver o cabeçalho de lib/cron/heartbeat.ts.
+ *
+ * ⚠️ NUNCA `down`, no máximo `degraded`. O rollup lá embaixo transforma `down`
+ * em HTTP 503, e 503 nesta rota faz um load balancer tirar o contêiner de
+ * rotação. Cron atrasado é problema do `scheduler`, não do app: derrubar o app
+ * saudável por causa dele trocaria uma fila parada por um site fora do ar.
+ */
+async function checkCrons(): Promise<{ check: Check; atrasados: CronAtrasado[] }> {
+  const t0 = Date.now();
+  try {
+    const atrasados = await withTimeout(cronsAtrasados(createAdminClient()));
+    if (atrasados.length === 0) {
+      return { check: { status: "ok", latency_ms: Date.now() - t0 }, atrasados };
+    }
+    return {
+      check: {
+        status: "degraded",
+        latency_ms: Date.now() - t0,
+        error: atrasados.map((c) => `${c.job_name}:${c.motivo}`).join(","),
+      },
+      atrasados,
+    };
+  } catch (e) {
+    // Falha ao LER o batimento não é cron atrasado — é banco fora, e o check do
+    // Supabase já reporta isso. Dizer "degraded" aqui duplicaria o mesmo defeito
+    // em dois lugares e mandaria o operador procurar o scheduler.
+    return {
+      check: {
+        status: "ok",
+        latency_ms: Date.now() - t0,
+        error: e instanceof Error ? e.message : String(e),
+      },
+      atrasados: [],
+    };
+  }
+}
+
+/**
  * O segredo interno dos crons também abre o modo verboso. Mesmo contrato de
  * `/api/v1/system/agent`: Bearer, comparação em tempo constante, e segredo vazio
  * nunca vira credencial válida.
@@ -200,15 +245,21 @@ function semAlvo(check: Check): Check {
 }
 
 export async function GET(req: NextRequest) {
-  const [supabase, redis, waha] = await Promise.all([
+  const [supabase, redis, waha, crons] = await Promise.all([
     checkSupabase(),
     checkRedis(),
     checkWaha(),
+    checkCrons(),
   ]);
 
   const verboso = req.nextUrl.searchParams.get("verbose") === "1" && segredoInternoConfere(req);
   const filtrar = verboso ? (c: Check) => c : semAlvo;
-  const checks = { supabase: filtrar(supabase), redis: filtrar(redis), waha: filtrar(waha) };
+  const checks = {
+    supabase: filtrar(supabase),
+    redis: filtrar(redis),
+    waha: filtrar(waha),
+    crons: crons.check,
+  };
 
   const anyDown = Object.values(checks).some((c) => c.status === "down");
   const anyDegraded = Object.values(checks).some((c) => c.status === "degraded");
@@ -227,6 +278,9 @@ export async function GET(req: NextRequest) {
         version: process.env.npm_package_version ?? "0.1.0",
         timestamp: new Date().toISOString(),
         checks,
+        // Detalhe só autenticado, pelo mesmo motivo do `target`: a lista diz a
+        // um observador anônimo exatamente qual automação parou de rodar.
+        ...(verboso ? { crons_atrasados: crons.atrasados } : {}),
       },
     },
     { status: httpStatus },

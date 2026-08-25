@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * G3-03 — badge de responsável do lead no kanban.
  * Cobre owner humano (nome + iniciais), owner AGENTE (0070: anel + mono +

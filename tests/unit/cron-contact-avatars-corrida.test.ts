@@ -87,6 +87,18 @@ vi.mock("@/lib/supabase/admin", () => ({
         return proxy;
       },
       upsert: async (payload: Record<string, unknown>) => {
+        // O COLETOR É DA FILA DE REDAÇÃO, não de todo upsert que passar.
+        //
+        // Sem o filtro por tabela ele contava qualquer escrita: o wrapper de
+        // batimento de cron (`lib/cron/com-batimento.ts`) faz upsert em
+        // `cron_heartbeat` a cada chamada autenticada, e `toHaveLength(1)`
+        // passou a medir 2 — reprovando por causa de uma tabela que este teste
+        // não tem opinião nenhuma sobre.
+        //
+        // O nome da tabela sempre esteve em escopo (`from(tabela)`); o coletor é
+        // que era largo demais. Filtrar aqui mantém a asserção falando do que o
+        // título promete.
+        if (tabela !== "storage_redaction_queue") return { error: null };
         upsertsFila.push(payload);
         return { error: null };
       },

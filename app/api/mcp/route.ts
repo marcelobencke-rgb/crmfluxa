@@ -15,6 +15,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 
 import { createMcpServer } from "@/lib/mcp/server";
 import { McpAuthError, validateBearerToken } from "@/lib/mcp/auth";
+import { baldeOpaco, ingressoLimitado, TETOS } from "@/lib/webhooks/limite-de-ingresso";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -36,6 +37,29 @@ function jsonRpcError(code: number, message: string, status: number): Response {
 
 async function handle(req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
+
+  // TETO ANTES DE VALIDAR O BEARER — os dois motivos são diferentes.
+  //
+  // 1. Sem teto antes da validação, este endpoint é um balcão de força bruta de
+  //    token: cada tentativa custa um hash SHA256 e uma consulta, e nada limita
+  //    quantas cabem por minuto.
+  // 2. Depois de autenticado, cada chamada MCP pode acionar o agente e QUEIMAR
+  //    ORÇAMENTO DE IA. O teto por credencial impede que um cliente mal
+  //    configurado (ou um laço de retry) gaste o mês da organização numa tarde.
+  //
+  // O balde é o header inteiro, hasheado: sem validar ainda não se sabe a qual
+  // organização ele pertence, e o hash isola igual sem levar a credencial em
+  // claro para o Redis. Header ausente cai num balde só de anônimos, que é o
+  // comportamento certo — quem nem manda credencial não merece um balde privado.
+  const credencial = req.headers.get("authorization");
+  const barrado = await ingressoLimitado(
+    `mcp:${credencial ? baldeOpaco(credencial) : "sem-credencial"}`,
+    TETOS.mcp(),
+    60,
+    requestId,
+  );
+  if (barrado) return barrado;
+
   let auth;
   try {
     auth = await validateBearerToken(req.headers.get("authorization"));

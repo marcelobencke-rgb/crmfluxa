@@ -52,35 +52,60 @@ export default async function DashboardPage() {
   const orgId = activeOrg.orgId;
   const agora = new Date();
 
-  // 1. Conversas em aberto
-  const { count: openConversations } = await supabase
-    .from("conversations")
-    .select("*", { count: "exact", head: true })
-    .eq("organization_id", orgId)
-    .eq("status", "open");
-
-  // 2. Aguardando Atribuição
-  const { count: unassignedConversations } = await supabase
-    .from("conversations")
-    .select("*", { count: "exact", head: true })
-    .eq("organization_id", orgId)
-    .eq("status", "open")
-    .is("assigned_to_user_id", null)
-    .neq("assignee_kind", "ai");
-
-  // 3. Atendimento por IA
-  const { count: aiConversations } = await supabase
-    .from("conversations")
-    .select("*", { count: "exact", head: true })
-    .eq("organization_id", orgId)
-    .eq("status", "open")
-    .eq("assignee_kind", "ai");
-
-  // 4. Contatos Novos (hoje), comparado com o MESMO horário ontem — não com o
-  // dia inteiro de ontem, que sempre perderia de manhã.
+  // TODA A LEITURA DO PAINEL NUMA ONDA SÓ.
+  //
+  // Os 8 blocos abaixo respondem perguntas diferentes sobre o MESMO instante, e
+  // nenhum usa o resultado do outro — o que os ligava era só a ordem em que
+  // foram escritos. Em série eram SEIS idas à rede encadeadas (~150ms cada,
+  // medido em produção em 2026-08-24) antes de a tela pintar o primeiro card,
+  // porque um Server Component não renderiza nada enquanto tem `await` pendente.
+  //
+  // Juntos, o custo passa a ser o da consulta mais lenta, não a soma de todas.
+  // As janelas de tempo são calculadas ANTES da onda: são puras (derivam só de
+  // `agora`) e precisam ser as mesmas para todos os recortes, senão dois cards
+  // da mesma tela responderiam sobre instantes ligeiramente diferentes.
   const hoje = janelaHoje(agora);
   const ontemEquivalente = janelaOntemEquivalente(agora);
-  const [{ count: newContacts }, { count: newContactsOntem }] = await Promise.all([
+  const mesAtual = janelaMesAtual(agora);
+  const mesAnteriorEquivalente = janelaMesAnteriorEquivalente(agora);
+
+  const [
+    { count: openConversations },
+    { count: unassignedConversations },
+    { count: aiConversations },
+    { count: newContacts },
+    { count: newContactsOntem },
+    { data: wonLeads },
+    { data: wonLeadsMesAnterior },
+    metaCents,
+    canaisSelecionaveis,
+    atividadesHoje,
+    movimentacoes,
+    previsao,
+  ] = await Promise.all([
+    // 1. Conversas em aberto
+    supabase
+      .from("conversations")
+      .select("*", { count: "exact", head: true })
+      .eq("organization_id", orgId)
+      .eq("status", "open"),
+    // 2. Aguardando Atribuição
+    supabase
+      .from("conversations")
+      .select("*", { count: "exact", head: true })
+      .eq("organization_id", orgId)
+      .eq("status", "open")
+      .is("assigned_to_user_id", null)
+      .neq("assignee_kind", "ai"),
+    // 3. Atendimento por IA
+    supabase
+      .from("conversations")
+      .select("*", { count: "exact", head: true })
+      .eq("organization_id", orgId)
+      .eq("status", "open")
+      .eq("assignee_kind", "ai"),
+    // 4. Contatos Novos (hoje), comparado com o MESMO horário ontem — não com o
+    // dia inteiro de ontem, que sempre perderia de manhã.
     supabase
       .from("contacts")
       .select("*", { count: "exact", head: true })
@@ -92,18 +117,12 @@ export default async function DashboardPage() {
       .eq("organization_id", orgId)
       .gte("created_at", ontemEquivalente.from.toISOString())
       .lt("created_at", ontemEquivalente.to.toISOString()),
-  ]);
-  const deltaContatos = variacaoPct(newContacts ?? 0, newContactsOntem ?? 0);
-
-  // 5. Valor Ganho (mês até aqui), comparado com o MESMO corte de dia no mês
-  // anterior — não o mês anterior inteiro, que sempre perderia no início do mês.
-  // BUG CORRIGIDO: a coluna é `value_cents`, não `value` — a query antiga
-  // (`.select("value")`) era recusada pelo PostgREST em silêncio (o `error` era
-  // descartado), `wonLeads` vinha sempre `null`, e o card mostrava R$ 0,00 pra
-  // sempre, com dinheiro de verdade ganho no mês.
-  const mesAtual = janelaMesAtual(agora);
-  const mesAnteriorEquivalente = janelaMesAnteriorEquivalente(agora);
-  const [{ data: wonLeads }, { data: wonLeadsMesAnterior }, metaCents] = await Promise.all([
+    // 5. Valor Ganho (mês até aqui), comparado com o MESMO corte de dia no mês
+    // anterior — não o mês anterior inteiro, que sempre perderia no início do mês.
+    // BUG CORRIGIDO: a coluna é `value_cents`, não `value` — a query antiga
+    // (`.select("value")`) era recusada pelo PostgREST em silêncio (o `error` era
+    // descartado), `wonLeads` vinha sempre `null`, e o card mostrava R$ 0,00 pra
+    // sempre, com dinheiro de verdade ganho no mês.
     supabase
       .from("crm_leads")
       .select("value_cents")
@@ -118,7 +137,30 @@ export default async function DashboardPage() {
       .gte("won_at", mesAnteriorEquivalente.from.toISOString())
       .lt("won_at", mesAnteriorEquivalente.to.toISOString()),
     metaMensal(supabase, orgId),
+    // 6. Canais de Atendimento.
+    // BUG CORRIGIDO: o CHECK de `channel_sessions.status` só aceita STARTING |
+    // SCAN_QR_CODE | WORKING | STOPPED | FAILED — 'connected' nunca foi um
+    // valor válido, então este card também sempre mostrou 0. Mesma classe de
+    // bug corrigida hoje mais cedo em ConnectionsClient.tsx.
+    // Via listSelectableChannels (não select à mão): senão o card conta canal
+    // arquivado como "online" se o status dele ainda estiver WORKING.
+    listSelectableChannels(supabase, orgId),
+    // 7. Atividades de hoje e movimentação de funil da semana — os 2 cards que
+    // eram mock fixo, agora com dado real.
+    demandasDeHoje(supabase, orgId, janelaDiaCheio(agora)),
+    movimentacoesDaSemana(supabase, orgId, janelaSemanaAtual(agora)),
+    // 8. Previsão do mês — soma dos negócios abertos com fechamento previsto
+    // dentro do mês inteiro (não só até hoje: um fechamento previsto pro dia 25
+    // conta mesmo se hoje é dia 5). Sem ponderar por placar de risco — ver o
+    // porquê em lib/dashboard/queries.ts.
+    previsaoDoMes(supabase, orgId, janelaMesCheio(agora)),
   ]);
+
+  // --- daqui pra baixo é derivação pura do que a onda trouxe: sem rede. ---
+
+  const deltaContatos = variacaoPct(newContacts ?? 0, newContactsOntem ?? 0);
+
+  const activeChannels = canaisSelecionaveis.filter((c) => c.status === "WORKING").length;
 
   const totalValue = (wonLeads ?? []).reduce((acc, lead) => acc + (lead.value_cents ?? 0), 0);
   const totalValueMesAnterior = (wonLeadsMesAnterior ?? []).reduce(
@@ -146,29 +188,6 @@ export default async function DashboardPage() {
         )
       : null;
 
-  // 6. Canais de Atendimento.
-  // BUG CORRIGIDO: o CHECK de `channel_sessions.status` só aceita STARTING |
-  // SCAN_QR_CODE | WORKING | STOPPED | FAILED — 'connected' nunca foi um
-  // valor válido, então este card também sempre mostrou 0. Mesma classe de
-  // bug corrigida hoje mais cedo em ConnectionsClient.tsx.
-  // Via listSelectableChannels (não select à mão): senão o card conta canal
-  // arquivado como "online" se o status dele ainda estiver WORKING.
-  const activeChannels = (await listSelectableChannels(supabase, orgId)).filter(
-    (c) => c.status === "WORKING",
-  ).length;
-
-  // 7. Atividades de hoje e movimentação de funil da semana — os 2 cards que
-  // eram mock fixo, agora com dado real.
-  const [atividadesHoje, movimentacoes] = await Promise.all([
-    demandasDeHoje(supabase, orgId, janelaDiaCheio(agora)),
-    movimentacoesDaSemana(supabase, orgId, janelaSemanaAtual(agora)),
-  ]);
-
-  // 8. Previsão do mês — soma dos negócios abertos com fechamento previsto
-  // dentro do mês inteiro (não só até hoje: um fechamento previsto pro dia 25
-  // conta mesmo se hoje é dia 5). Sem ponderar por placar de risco — ver o
-  // porquê em lib/dashboard/queries.ts.
-  const previsao = await previsaoDoMes(supabase, orgId, janelaMesCheio(agora));
   const formattedPrevisao = new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",

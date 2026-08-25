@@ -168,9 +168,11 @@ const schema = z.object({
   APP_NAME: z.string().optional().default(""),
   APP_LOGO_URL: z.string().optional().default(""),
 
-  // Contato de suporte (WhatsApp) exibido nas telas de recuperação de acesso.
+  // Contato de suporte (WhatsApp e e-mail) exibido nas telas em que o usuário
+  // está trancado do lado de fora: recuperação de acesso e conta suspensa.
   // Mesmo motivo de não usar NEXT_PUBLIC_ que APP_NAME acima — ver lib/support.ts.
   SUPPORT_WHATSAPP_NUMBER: z.string().optional().default(""),
+  SUPPORT_EMAIL: z.string().optional().default(""),
 });
 
 let parsed = schema.safeParse(process.env);

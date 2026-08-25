@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Sidebar agrupado por objetivo. O que estes testes protegem:
  *

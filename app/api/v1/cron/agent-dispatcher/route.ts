@@ -16,6 +16,7 @@ import type { NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/wrappers";
 import { env } from "@/lib/env";
+import { comBatimento } from "@/lib/cron/com-batimento";
 
 export const dynamic = "force-dynamic";
 
@@ -43,10 +44,15 @@ async function handle(req: NextRequest): Promise<Response> {
   return ok({ skipped: true, deprecated: true, reason: "native dispatcher retired (Fase 0)" }, { requestId });
 }
 
-export async function GET(req: NextRequest): Promise<Response> {
+async function getInterno(req: NextRequest): Promise<Response> {
   return handle(req);
 }
 
-export async function POST(req: NextRequest): Promise<Response> {
+async function postInterno(req: NextRequest): Promise<Response> {
   return handle(req);
 }
+
+// Batimento de cron — ver lib/cron/com-batimento.ts. O nome vem do segmento
+// da rota, que é o mesmo que o crontab do docker-compose.prod.yml escreve.
+export const GET = comBatimento("agent-dispatcher", getInterno);
+export const POST = comBatimento("agent-dispatcher", postInterno);

@@ -23,6 +23,7 @@ import { fail, ok } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createLgpdRequest, findContactByExternalId } from "@/lib/lgpd/repository";
+import { ingressoLimitado, TETOS } from "@/lib/webhooks/limite-de-ingresso";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -87,6 +88,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const storeId = body.store_id !== undefined ? String(body.store_id) : "";
+
+  // Teto pela LOJA — estes três são webhooks de conformidade LGPD da Nuvemshop e
+  // não têm token no caminho, então `store_id` é o que identifica quem chama.
+  // Volume legítimo é baixíssimo (pedido de dado, redação de cliente, redação de
+  // loja); o que o teto barra é alguém descobrir o endereço e martelar operações
+  // que mexem em dado pessoal.
+  const barradoLgpd = await ingressoLimitado(
+    `nuvemshop-lgpd:${storeId || "sem-loja"}`,
+    TETOS.loja(),
+  );
+  if (barradoLgpd) return barradoLgpd as NextResponse;
   if (!storeId) {
     return fail("invalid_request", "missing store_id", 400);
   }

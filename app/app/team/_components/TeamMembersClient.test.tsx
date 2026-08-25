@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * G2-02 — seletor de papel por membro na página de team.
  *

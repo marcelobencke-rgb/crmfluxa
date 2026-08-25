@@ -6,6 +6,7 @@
  * intentional here because we resolve the user from the validated JWT first
  * and then filter by `user_id` (a trusted source).
  */
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { logger } from "@/lib/logger";
@@ -28,8 +29,10 @@ interface RawMembershipRow {
  * - user_organizations: user_id = auth.uid() (user_orgs_select)
  * - organizations: id IN fn_user_org_ids()  (orgs_select)
  * - platform_admins: only platform admins read (so non-admins get null — correct)
+ *
+ * MEMOIZADO POR REQUEST (`cache` do React) — ver o bloco logo abaixo da função.
  */
-export async function loadAuthUser(): Promise<AuthUser | null> {
+async function carregarUsuarioAutenticado(): Promise<AuthUser | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -125,6 +128,38 @@ export async function loadAuthUser(): Promise<AuthUser | null> {
     organizations: memberships,
   };
 }
+
+/**
+ * UMA RESOLUÇÃO DE IDENTIDADE POR REQUEST, não uma por componente.
+ *
+ * `carregarUsuarioAutenticado` custa três idas à rede: o `getUser()` (que NÃO é
+ * leitura de cookie — é chamada ao servidor de Auth do Supabase, ~150ms daqui,
+ * medido em produção em 2026-08-24) mais as duas queries do `Promise.all`.
+ *
+ * O problema é que ela não é chamada uma vez. Abrir `/app/dashboard` chamava
+ * `requireAuth()` no `app/app/layout.tsx` E de novo no `page.tsx` — cada um
+ * refazendo as três idas, porque são árvores de render diferentes pedindo a
+ * mesma resposta. Com 45 telas em `/app` chamando `requireAuth()` direto, e
+ * `require-role.ts` chamando por baixo em toda rota da API, o desperdício não
+ * era de uma tela: era do caminho de TODA request autenticada do sistema.
+ *
+ * `cache` do React resolve isso sem cache de verdade: a memoização vive dentro
+ * do escopo de UM request e morre com ele. Não é `unstable_cache`, não atravessa
+ * usuários, não persiste — dois requests concorrentes de pessoas diferentes têm
+ * escopos separados, que é exatamente o que um caminho de auth exige. O erro
+ * lançado pelo bloco "FALHA ALTO" também é memoizado, e isso é o desejado: a
+ * mesma falha de banco dentro do mesmo request deve dar a mesma resposta, não
+ * três tentativas com três desfechos possíveis.
+ *
+ * ⚠️ QUEM MUTA PERMISSÃO NÃO PODE RELER AQUI NO MESMO REQUEST. Um handler que
+ * altere `user_organizations`/`platform_admins` e em seguida chame
+ * `loadAuthUser()` receberia o retrato de ANTES da escrita. Medido em 2026-08-25:
+ * nenhum arquivo do repo faz isso hoje — quem muta associação (`app/actions/team/`,
+ * `app/api/v1/team/*`, `app/api/v1/admin/*`) usa `requireRole`/`requirePlatformAdmin`
+ * ANTES da escrita e não relê depois. Se um dia precisar reler pós-escrita, chame
+ * `carregarUsuarioAutenticado()` direto em vez de furar a memoização para todos.
+ */
+export const loadAuthUser = cache(carregarUsuarioAutenticado);
 
 /**
  * Resolves the active organization for the current request.

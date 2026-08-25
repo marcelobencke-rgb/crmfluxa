@@ -495,9 +495,18 @@ async function handleInbound(
     .maybeSingle();
 
   // Idempotência: 23505 = unique (organization_id, external_id) já ingerido.
+  //
+  // QUALQUER OUTRO ERRO LANÇA — não é `return` mudo. Esta é a linha em que a
+  // mensagem do cliente entra no sistema; falhar aqui e sair em silêncio (com
+  // um `console.error` que evapora no stdout do contêiner) fazia o handler lá
+  // em cima devolver `200 accepted:true`, e o WAHA nunca reentregava. O evento
+  // que sumia era justamente aquele em que nada tinha sido gravado ainda —
+  // isto é, o caso PERFEITAMENTE recuperável por reentrega.
+  //
+  // Lançar leva a falha ao `catch` do handler, que registra na Central, manda
+  // ao Sentry e devolve 500. Ver lib/waha/falha-de-ingestao.ts.
   if (insertErr && insertErr.code !== "23505") {
-    console.error("[waha.ingest] message insert failed", insertErr.message);
-    return;
+    throw new Error(`[waha.ingest] INSERT da mensagem inbound falhou: ${insertErr.message}`);
   }
   if (insertErr?.code === "23505") {
     // O `return` está certo — reingerir duplicaria a mensagem do cliente. Mas

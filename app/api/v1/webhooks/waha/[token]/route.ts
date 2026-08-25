@@ -17,6 +17,8 @@ import { audit } from "@/lib/audit";
 import { ARCHIVED_AT, queryTolerantToMissingArchived } from "@/lib/channels/archived";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { dispatchWahaEvent, type WahaEnvelope } from "@/lib/waha/ingest";
+import { registrarFalhaDeIngestao } from "@/lib/waha/falha-de-ingestao";
+import { ingressoLimitado, TETOS } from "@/lib/webhooks/limite-de-ingresso";
 import { segredoDoWebhook } from "@/lib/waha/segredo-do-webhook";
 import { authenticateWahaWebhook } from "@/lib/waha/webhook-auth";
 
@@ -34,6 +36,16 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
   if (!token || token.length < 8) {
     return fail("not_found", "unknown webhook token", 404, { requestId });
   }
+
+  // TETO ANTES DE LER O CORPO E ANTES DE IR AO BANCO.
+  //
+  // A consulta da sessão por `webhook_path_token` acontece logo abaixo, e as
+  // respostas distinguem 404 (token inexistente) de 401 (token existe, HMAC
+  // errado): um oráculo de enumeração em que cada tentativa custava uma query e
+  // um decrypt, sem teto nenhum. Barrar aqui tira o custo por tentativa E o
+  // volume — e nem o `req.text()` é pago.
+  const barrado = await ingressoLimitado(`waha:${token}`, TETOS.mensageria(), 60, requestId);
+  if (barrado) return barrado as NextResponse;
 
   const rawBody = await req.text();
   let envelope: WahaEnvelope;
@@ -122,10 +134,27 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
     attempts: 0,
   });
 
+  // FALHA AQUI NÃO PODE VIRAR 200 — ver lib/waha/falha-de-ingestao.ts.
+  //
+  // Este `catch` engolia a exceção num `console.error` e seguia para o `ok()`
+  // abaixo. Para o WAHA, 200 é confirmacao de processamento: ele nao reentrega,
+  // e a mensagem do cliente morria ali, sem entrar no inbox, sem virar evento,
+  // sem aviso e sem Sentry. O 500 devolve a chance de reentrega (a ingestao e
+  // idempotente por `unique (organization_id, external_id)`) e o helper abre o
+  // aviso na Central para a parte que a reentrega nao alcanca.
   try {
     await dispatchWahaEvent(admin, session, envelope, requestId);
   } catch (err) {
-    console.error("[waha.webhook] handler failed", err);
+    await registrarFalhaDeIngestao({
+      admin,
+      organizationId: session.organization_id,
+      sessionName: session.waha_session_name,
+      eventType,
+      externalId,
+      requestId,
+      erro: err,
+    });
+    return fail("internal_error", "waha event dispatch failed", 500, { requestId });
   }
 
   return ok({ accepted: true }, { requestId });
