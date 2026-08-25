@@ -88,13 +88,41 @@ export function useConversationsRealtime(
   // G4-01 (visibility_mode): a subscription postgres_changes HERDA a RLS de
   // SELECT de `conversations` — o Supabase Realtime avalia as policies do usuário
   // autenticado antes de entregar cada change (docs: "Realtime respects RLS
-  // policies"; requer a tabela na publication `supabase_realtime` + REPLICA
-  // IDENTITY, já configurados na migration 0025). Como a policy `conversations_select`
-  // (migration 0035) agora aplica fn_can_view_conversation(role + visibility_mode +
-  // assigned_to), um agent NÃO recebe changes de conversa fora do seu escopo, mesmo
-  // com o filtro amplo `organization_id=eq.<org>` abaixo. Prova do filtro em
+  // policies"). Como a policy `conversations_select` (migration 0035) aplica
+  // fn_can_view_conversation(role + visibility_mode + assigned_to), um agent NÃO
+  // recebe changes de conversa fora do seu escopo, mesmo com o filtro amplo
+  // `organization_id=eq.<org>` abaixo. Prova do filtro em
   // tests/invariants/gov-5-visibility-scope.test.ts (SELECT sob role agent = 0 rows
   // para conversa de outro atendente — o mesmo SELECT que o Realtime executa).
+  //
+  // ⚠️ CORREÇÃO DE UM COMENTÁRIO QUE ERA FALSO (2026-08-25). A versão anterior
+  // desta nota afirmava que a publication `supabase_realtime` E a REPLICA
+  // IDENTITY estavam "já configurados na migration 0025". Metade é verdade e
+  // metade custou horas:
+  //
+  //   • A publication existe mesmo — `supabase/baseline.sql` adiciona messages,
+  //     conversations, crm_leads, ai_agents, ai_agent_runs, ai_knowledge_sources
+  //     e crm_lead_activities. (A 0025 acrescenta só as três de IA.)
+  //   • REPLICA IDENTITY **nunca foi configurada em lugar nenhum** — não há uma
+  //     única ocorrência de `replica identity` no baseline nem em nenhuma
+  //     migration. As tabelas estão no DEFAULT (só a chave primária no registro
+  //     `old`).
+  //
+  // Isso não é pedantismo, tem consequência concreta: com REPLICA IDENTITY
+  // DEFAULT, um evento de **DELETE** carrega apenas a PK em `old`, então uma
+  // subscription filtrada por coluna que não seja a PK (como o
+  // `conversation_id=eq.<id>` de useMessagesRealtime) não consegue casar o
+  // filtro e o evento **não é entregue**. INSERT e UPDATE não sofrem: o
+  // registro `new` vem completo e o filtro casa normalmente — que é o caminho
+  // do inbox e o que sustenta a entrega em ~1-2s medida em produção.
+  //
+  // Ou seja: o tratamento de DELETE em `aplicarEvento` (useMessagesRealtime)
+  // provavelmente nunca é exercitado hoje. Ele fica porque é barato e correto
+  // se a REPLICA IDENTITY mudar; o que NÃO se pode fazer é confiar nele como
+  // se a entrega estivesse garantida. Quem for depender de DELETE via realtime
+  // precisa ANTES adicionar `alter table ... replica identity full` numa
+  // migration + apêndice do baseline — e pesar o custo de WAL que isso traz
+  // numa tabela do volume de `messages`.
   // O retorno não é descartado: `ultimaEntrega` alimenta a rede de segurança
   // abaixo, e sem ele ela não consegue distinguir "nada aconteceu" de "o canal
   // parou de entregar".

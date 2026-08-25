@@ -54,6 +54,12 @@ function linhaDoEvento(payload: unknown): { tipo: string; nova: Message | null; 
 function aplicarEvento(atual: Paginas | undefined, tipo: string, nova: Message | null, velhoId: string | null): Paginas | undefined {
   if (!atual) return atual;
 
+  // ⚠️ ESTE RAMO PROVAVELMENTE NUNCA RODA HOJE, e isso é sabido, não descuido:
+  // as tabelas estão em REPLICA IDENTITY DEFAULT (nenhuma migration a define),
+  // então um DELETE carrega só a PK em `old` — e a subscription filtrada por
+  // `conversation_id` não consegue casar o filtro, logo o evento não chega.
+  // Fica porque é barato e passa a valer sozinho se a REPLICA IDENTITY mudar.
+  // O raciocínio completo está no comentário de useConversationsRealtime.
   if (tipo === "DELETE") {
     if (!velhoId) return atual;
     return {
