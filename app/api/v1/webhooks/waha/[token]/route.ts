@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
   // errado): um oráculo de enumeração em que cada tentativa custava uma query e
   // um decrypt, sem teto nenhum. Barrar aqui tira o custo por tentativa E o
   // volume — e nem o `req.text()` é pago.
-  const barrado = await ingressoLimitado(`waha:${token}`, TETOS.waha(), 60, requestId);
+  const barrado = await ingressoLimitado(`waha:${token}`, TETOS.mensageria(), 60, requestId);
   if (barrado) return barrado as NextResponse;
 
   const rawBody = await req.text();

@@ -45,7 +45,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Balde por SESSÃO: nesta rota (legada, sem token no caminho) é o que
   // identifica quem chama. Vem do corpo, então o JSON já foi lido — é barato e
   // limitado, e ainda assim corta antes da consulta ao banco.
-  const barrado = await ingressoLimitado(`waha-sessao:${sessionName}`, TETOS.waha(), 60, requestId);
+  const barrado = await ingressoLimitado(`waha-sessao:${sessionName}`, TETOS.mensageria(), 60, requestId);
   if (barrado) return barrado as NextResponse;
 
   const admin = createAdminClient();

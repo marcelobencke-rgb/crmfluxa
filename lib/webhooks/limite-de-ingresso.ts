@@ -5,8 +5,8 @@
  *
  * `checkRateLimit` existia e era chamado em DOIS lugares: o webhook de captação
  * (`/webhooks/in/[token]`) e o dispatcher de IA. Ficavam sem teto nenhum os
- * ingressos de maior volume do produto — os webhooks do **WAHA** (por onde entra
- * tudo que o cliente manda), da **Meta**, da **Nuvemshop** e o **`/api/mcp`**.
+ * ingressos de maior volume do produto — os webhooks dos CANAIS DE MENSAGEM (por
+ * onde entra tudo que o cliente manda), os da LOJA e o **`/api/mcp`**.
  * Todos são públicos por `public-paths.ts`, ou seja, alcançáveis por qualquer um.
  *
  * ## Por que o balde é o TOKEN, e não o IP
@@ -24,7 +24,7 @@
  *
  * ## Por que ANTES de qualquer consulta ao banco
  *
- * No webhook do WAHA, a busca da sessão pelo `webhook_path_token` acontecia antes
+ * No webhook de canal, a busca da sessão pelo `webhook_path_token` acontecia antes
  * da checagem de HMAC, e as respostas distinguem 404 (token não existe) de 401
  * (token existe, assinatura errada). Isso é um oráculo de enumeração em que cada
  * tentativa custa uma query e um decrypt — de graça, sem teto. Chamar o limite
@@ -53,10 +53,15 @@ function teto(envVar: string, padrao: number): number {
 }
 
 export const TETOS = {
-  /** Ingestão do WhatsApp: o de maior volume, e o que não pode barrar cliente. */
-  waha: () => teto("WEBHOOK_RATE_LIMIT_WAHA", 600),
-  meta: () => teto("WEBHOOK_RATE_LIMIT_META", 600),
-  nuvemshop: () => teto("WEBHOOK_RATE_LIMIT_NUVEMSHOP", 300),
+  /**
+   * Ingestão de canal de mensagem: o de maior volume, e o que não pode barrar
+   * cliente. Um teto só para todos os canais — a pergunta aqui é sobre o VOLUME
+   * do ingresso, não sobre qual transporte o entregou, e nomear o transporte
+   * violaria a doutrina de restrição de canal (docs/doctrine/restricao-de-canal.md).
+   */
+  mensageria: () => teto("WEBHOOK_RATE_LIMIT_MENSAGERIA", 600),
+  /** Webhooks de loja (pedido, cliente, conformidade LGPD). */
+  loja: () => teto("WEBHOOK_RATE_LIMIT_LOJA", 300),
   /** MCP é server-to-server autenticado: volume menor, e cada chamada custa IA. */
   mcp: () => teto("MCP_RATE_LIMIT", 120),
 } as const;

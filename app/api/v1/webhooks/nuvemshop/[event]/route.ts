@@ -64,7 +64,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
   // id cai num balde próprio de anônimos em vez de se misturar às identificadas.
   const barradoNS = await ingressoLimitado(
     `nuvemshop:${storeId || "sem-loja"}`,
-    TETOS.nuvemshop(),
+    TETOS.loja(),
   );
   if (barradoNS) return barradoNS as NextResponse;
   if (!storeId) {

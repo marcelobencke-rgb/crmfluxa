@@ -55,10 +55,10 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
   const requestId = randomUUID();
   const { token } = await ctx.params;
 
-  // Antes da consulta, pelo mesmo motivo do WAHA: 404 aqui e 401 na assinatura
+  // Antes da consulta, pelo mesmo motivo do outro canal: 404 aqui e 401 na assinatura
   // logo abaixo formam um oráculo de enumeração de token, e cada tentativa
   // custava uma ida ao banco.
-  const barrado = await ingressoLimitado(`meta:${token}`, TETOS.meta(), 60, requestId);
+  const barrado = await ingressoLimitado(`meta:${token}`, TETOS.mensageria(), 60, requestId);
   if (barrado) return barrado as NextResponse;
 
   const session = await metaSessionByWebhookToken(token);

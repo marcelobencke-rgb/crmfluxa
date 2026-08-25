@@ -98,7 +98,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // que mexem em dado pessoal.
   const barradoLgpd = await ingressoLimitado(
     `nuvemshop-lgpd:${storeId || "sem-loja"}`,
-    TETOS.nuvemshop(),
+    TETOS.loja(),
   );
   if (barradoLgpd) return barradoLgpd as NextResponse;
   if (!storeId) {
