@@ -124,7 +124,14 @@ test.describe("J6.8 — anti-SSRF do outbound call_webhook (real, ponta a ponta)
       await page.keyboard.press("Escape");
 
       // --- automação: gatilho lead novo → ação "Avisar outro sistema (webhook)" ---
-      await page.getByRole("tab", { name: "Automações" }).click();
+      // A aba "Automações" não existe mais nesta tela. As abas de /app/webhooks
+      // hoje são "Receber dados", "Enviar dados" e "Atividade" — e "Enviar dados"
+      // virou um PONTEIRO: explica que o envio é gerenciado pelo motor de
+      // Automações e oferece um link para lá. As regras mudaram de casa para
+      // /app/automations, que renderiza a MESMA `RulesTab` (reusada, não
+      // duplicada) com `defaultValue="rules"` — então cair na URL já é cair na
+      // aba certa, sem clique.
+      await page.goto("/app/automations");
       await page.getByRole("button", { name: /Nova automação|Criar primeira automação/ }).click();
       const ruleSheet = page.getByRole("dialog");
       await ruleSheet.locator("#rule-name").fill(RULE_NAME);
