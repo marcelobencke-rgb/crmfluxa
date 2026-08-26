@@ -798,13 +798,41 @@ export async function avisarCapacidadesAusentes(
   }
 }
 
-export async function runAgentTurn(
+/**
+ * FASE DE PREPARO DO TURNO — tudo que acontece ANTES do estado do run existir.
+ *
+ * ## Por que esta função existe
+ *
+ * `runAgentTurn` tinha 1.633 linhas numa função só, com 65 `await`, e é o
+ * caminho por onde passa toda mensagem que entra. Cresceu 37% em um mês. Os
+ * comentários do próprio arquivo já denunciavam a dor — "os dois consumidores
+ * ficam a ~900 linhas de distância um do outro".
+ *
+ * ## Por que a costura é AQUI, e não onde desse um número redondo
+ *
+ * A linha seguinte à última daqui é, no original, `// Estado do RUN — vive só
+ * neste closure (isolamento por construção, acc 3)`. Ou seja: o próprio código
+ * declara que dali em diante o estado é deliberadamente closurado, e que isso é
+ * critério de aceite. Cortar depois desse ponto exigiria arrastar 12 variáveis
+ * MUTÁVEIS para fora do closure e desfazer um isolamento que alguém escolheu.
+ *
+ * Medido antes de mover: cortando aqui, 20 valores atravessam a fronteira;
+ * cortando 50 linhas adiante, 32 — e os 12 a mais são justamente o estado
+ * mutável. A fronteira não foi escolhida por estética, foi medida.
+ *
+ * ## O que NÃO mudou
+ *
+ * Nada de comportamento. É recorte mecânico: as 323 linhas são as mesmas, na
+ * mesma ordem. As três saídas antecipadas (`return;` — handoff humano ativo,
+ * e as duas de "sem modelo, bot silencia") viraram `{ seguir: false }`, que o
+ * chamador converte de volta em `return`. Os dois `throw` continuam `throw`.
+ */
+async function prepararTurno(
   deps: InboundTurnDeps,
   job: JobRow,
   pool: pg.Pool,
-  ctx: { workerId: string },
   input: AgentTurnInput,
-): Promise<void> {
+) {
   const tenantId = job.organization_id;
   const leadId = job.contact_id;
   if (leadId === null) {
@@ -832,7 +860,7 @@ export async function runAgentTurn(
   // do force_human do CRM) e só o humano/CRM libera — o agente nunca reassume (regra dura 2).
   if (await isLeadInHandoff(pool, tenantId, leadId)) {
     runLog.info('turno pulado — lead em handoff humano (bot silenciado)', { kind: job.kind });
-    return;
+    return { seguir: false as const };
   }
 
   // Fase 3: stickiness do router — qual agente já atende esta conversa. Leituras
@@ -1001,7 +1029,7 @@ export async function runAgentTurn(
     runLog.info('handoff humano acionado por pedido explícito do lead (detecção determinística)', {
       kind: job.kind,
     });
-    return; // bot silencia: sem modelo, sem envio neste turno
+    return { seguir: false as const }; // bot silencia: sem modelo, sem envio neste turno
   }
 
   // F4-07: STOP AMBÍGUO ("para de me mandar isso", "não quero mais receber", "me tira da
@@ -1024,7 +1052,7 @@ export async function runAgentTurn(
     runLog.info('possível opt-out detectado no inbound — bot silenciado e escalado ao humano', {
       kind: job.kind,
     });
-    return; // bot silencia: sem modelo, sem envio neste turno
+    return { seguir: false as const }; // bot silencia: sem modelo, sem envio neste turno
   }
 
   // F3-07: compaction + flush pré-compaction. Quando o histórico cresce além do limiar,
@@ -1128,6 +1156,64 @@ export async function runAgentTurn(
       runLog.info('opt-out detectado no turno — follow-ups agendados cancelados', { canceled });
     }
   }
+
+  return {
+    seguir: true as const,
+    tenantId,
+    leadId,
+    runLog,
+    camadas,
+    routed,
+    agentConfig,
+    maxSteps,
+    argsAux,
+    turnContextKnobs,
+    skills,
+    system,
+    previous,
+    leadState,
+    effectivePrevious,
+    effectiveContext,
+    notesIndexBlock,
+    channel,
+    clock,
+    optedOutThisTurn,
+    lgpd,
+  };
+}
+
+export async function runAgentTurn(
+  deps: InboundTurnDeps,
+  job: JobRow,
+  pool: pg.Pool,
+  ctx: { workerId: string },
+  input: AgentTurnInput,
+): Promise<void> {
+  // Preparo do turno — 323 linhas que viviam aqui dentro. Ver `prepararTurno`.
+  const preparo = await prepararTurno(deps, job, pool, input);
+  if (!preparo.seguir) return;
+  const {
+    tenantId,
+    leadId,
+    runLog,
+    camadas,
+    routed,
+    agentConfig,
+    maxSteps,
+    argsAux,
+    turnContextKnobs,
+    skills,
+    system,
+    previous,
+    leadState,
+    effectivePrevious,
+    effectiveContext,
+    notesIndexBlock,
+    channel,
+    clock,
+    optedOutThisTurn,
+    lgpd,
+  } = preparo;
 
   // Estado do RUN — vive só neste closure (isolamento por construção, acc 3).
   let seq = 0;
