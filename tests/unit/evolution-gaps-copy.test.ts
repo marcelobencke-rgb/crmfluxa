@@ -82,7 +82,11 @@ describe("lacuna de funil — o botão fecha o ciclo, e o ciclo tem guarda", () 
   it("aponta para a tela que conserta, não para o quadro", () => {
     const l = lacunaDe(["new"]);
     expect(l.href).toBe("/app/settings/tenant/pipelines");
-    expect(l.href).not.toBe("/app/kanban");
+    // `/app/pipelines`, não `/app/kanban`: a rota antiga foi removida junto com o
+    // diretório órfão, e negar uma rota que não existe mais não guarda nada.
+    // O que o caso protege é apontar para a tela que CONSERTA em vez da que só
+    // mostra o quadro — e o quadro hoje é `/app/pipelines`.
+    expect(l.href).not.toBe("/app/pipelines");
   });
 
   it("o verbo do botão é de ação, não de observação", () => {

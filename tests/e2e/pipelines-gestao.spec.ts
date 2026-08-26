@@ -84,7 +84,7 @@ async function idDoFunil(page: Page, nome: string): Promise<string> {
 test.describe("gestão de funis", () => {
   test.beforeEach(async ({ page }) => {
     await login(page, creds.users.manager!.email);
-    await page.goto("/app/kanban");
+    await page.goto("/app/pipelines");
     await expect(page.getByRole("heading", { name: "Pipelines" })).toBeVisible();
   });
 
@@ -121,7 +121,7 @@ test.describe("gestão de funis", () => {
       }
       await page.screenshot({ path: path.join(EVIDENCIA, "funis-02-quadro-novo.png"), fullPage: true });
 
-      await page.goto("/app/kanban");
+      await page.goto("/app/pipelines");
 
       // ---- renomear ----
       await page.getByTestId(`renomear-${id}`).click();
@@ -169,7 +169,7 @@ test.describe("gestão de funis", () => {
       // casa como a deixou mesmo que um assert acima tenha estourado no meio.
       // Cada passo em seu próprio try/catch: falha na limpeza não pode mascarar
       // o erro original do teste nem impedir o resto da limpeza de rodar.
-      await page.goto("/app/kanban").catch(() => {});
+      await page.goto("/app/pipelines").catch(() => {});
 
       try {
         const pedidosEhPadrao = await linhaDoFunil(page, "Pedidos")
@@ -212,7 +212,7 @@ test("quem não pode gerenciar vê a lista sem os controles de escrita", async (
   // Botão que o servidor recusaria é promessa que não se cumpre: `requireRole`
   // cobra manager nas rotas, então agent não vê "Novo funil" nem "Arquivar".
   await login(page, creds.users.agent!.email);
-  await page.goto("/app/kanban");
+  await page.goto("/app/pipelines");
   await expect(page.getByRole("heading", { name: "Pipelines" })).toBeVisible();
   await expect(page.getByText("Pedidos", { exact: true })).toHaveCount(1);
   await expect(page.getByTestId("novo-funil")).toHaveCount(0);

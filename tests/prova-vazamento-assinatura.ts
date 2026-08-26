@@ -90,7 +90,7 @@ async function main(): Promise<void> {
     await page.getByRole("link", { name: "Inbox", exact: true }).click();
     await page.waitForURL(/\/app\/inbox/, { timeout: 20_000 });
     await page.waitForTimeout(2500);
-    // O BOARD, não a LISTA de pipelines. `/app/kanban` é o índice — o canal do
+    // O BOARD, não a LISTA de pipelines. `/app/pipelines` é o índice — o canal do
     // kanban só nasce DENTRO do pipeline, e visitar o índice mediria uma tela
     // que não assina nada. É o mesmo erro do `goto` noutra escala: parecer que
     // se visitou a superfície sem ter entrado nela.
