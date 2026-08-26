@@ -11,6 +11,7 @@ import { z } from "zod";
 import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
 import { sendMessageSchema } from "@/lib/schemas/messaging";
 import type { McpToolDefinition } from "../types";
+import { logger } from "@/lib/logger";
 
 const ENDPOINT_TAG = "mcp:crm_send_whatsapp_message";
 
@@ -107,7 +108,7 @@ export const crmSendWhatsappMessage: McpToolDefinition<typeof inputShape> = {
         })
         .then(({ error }) => {
           if (error && error.code !== "23505") {
-            console.error("[mcp.send_whatsapp] idempotency cache failed", error.message);
+            logger.error("[mcp.send_whatsapp] idempotency cache failed", { error: error.message });
           }
         });
     }

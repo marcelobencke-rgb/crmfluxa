@@ -17,6 +17,7 @@ import { sendEmail } from "@/lib/email/resend";
 import { audit } from "@/lib/audit";
 import { env } from "@/lib/env";
 import type { LgpdRequest } from "./types";
+import { logger } from "@/lib/logger";
 
 export type AlarmThreshold = "data_request_d5" | "redact_d10";
 
@@ -84,7 +85,7 @@ export async function triggerSlaAlarm(
     });
     sentryOk = true;
   } catch (err) {
-    console.warn("[lgpd-sla-alarm] Sentry.captureMessage failed", err);
+    logger.warn("[lgpd-sla-alarm] Sentry.captureMessage failed", { error: err instanceof Error ? err.message : String(err) });
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -94,7 +95,9 @@ export async function triggerSlaAlarm(
   let emailOk = false;
 
   if (!recipientEmail) {
-    console.warn("[lgpd-sla-alarm] dpo_email_missing — skipping email for request", request.id);
+    logger.warn("[lgpd-sla-alarm] dpo_email_missing — skipping email for request", {
+      request_id: request.id,
+    });
   } else {
     try {
       const shortId = request.id.slice(0, 8);
@@ -161,10 +164,13 @@ Base legal: LGPD Lei nº 13.709/2018, Art. 18.`;
 
       emailOk = result.ok;
       if (!result.ok) {
-        console.warn("[lgpd-sla-alarm] email send failed", result.error, result.details);
+        logger.warn("[lgpd-sla-alarm] email send failed", {
+      error: result.error,
+      details: result.details,
+    });
       }
     } catch (err) {
-      console.warn("[lgpd-sla-alarm] email exception", err);
+      logger.warn("[lgpd-sla-alarm] email exception", { error: err instanceof Error ? err.message : String(err) });
     }
   }
 
@@ -192,7 +198,7 @@ Base legal: LGPD Lei nº 13.709/2018, Art. 18.`;
         .eq("organization_id", request.organization_id); // programmatic filter — never from body
     }
   } catch (err) {
-    console.warn("[lgpd-sla-alarm] failed to update last_alarm_at", err);
+    logger.warn("[lgpd-sla-alarm] failed to update last_alarm_at", { error: err instanceof Error ? err.message : String(err) });
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -214,7 +220,7 @@ Base legal: LGPD Lei nº 13.709/2018, Art. 18.`;
       },
     });
   } catch (err) {
-    console.warn("[lgpd-sla-alarm] audit write failed", err);
+    logger.warn("[lgpd-sla-alarm] audit write failed", { error: err instanceof Error ? err.message : String(err) });
   }
 
   return { alarmed, sentry: sentryOk, email: emailOk };

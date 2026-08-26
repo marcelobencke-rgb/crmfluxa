@@ -12,6 +12,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { requirePlatformAdmin } from "@/lib/auth/requirePlatformAdmin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { audit } from "@/lib/audit";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,7 @@ export async function GET(
 
   if (auditErr) {
     // Non-fatal — empty trail
-    console.error("[admin-lgpd-request-detail] audit fetch error", auditErr.message);
+    logger.error("[admin-lgpd-request-detail] audit fetch error", { error: auditErr.message });
   }
 
   // Audit — fire and forget

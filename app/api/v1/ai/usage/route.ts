@@ -18,6 +18,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { aggregateUsage, type InvocationRow } from "@/lib/ai/usage/aggregate";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -107,7 +108,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   const { data: invRowsRaw, error: invErr } = await invQ;
   if (invErr) {
-    console.warn("[ai-usage] llm_calls query failed", { error: invErr.message });
+    logger.warn("[ai-usage] llm_calls query failed", { error: invErr.message });
     return fail("internal_error", "Erro ao agregar o uso de IA.", 500, { requestId });
   }
   const invRows = ((invRowsRaw ?? []) as unknown as Array<{
@@ -134,7 +135,7 @@ export async function GET(req: NextRequest): Promise<Response> {
     .lte("created_at", toIso)
     .limit(100_000);
   if (inboundErr) {
-    console.warn("[ai-usage] inbound messages query failed", { error: inboundErr.message });
+    logger.warn("[ai-usage] inbound messages query failed", { error: inboundErr.message });
   } else {
     for (const r of inboundRows ?? []) {
       const day = (r as { created_at: string }).created_at.slice(0, 10);
@@ -153,7 +154,7 @@ export async function GET(req: NextRequest): Promise<Response> {
     .lte("created_at", toIso)
     .limit(100_000);
   if (handoffErr) {
-    console.warn("[ai-usage] handoff events query failed", { error: handoffErr.message });
+    logger.warn("[ai-usage] handoff events query failed", { error: handoffErr.message });
   } else {
     for (const r of handoffRows ?? []) {
       const day = (r as { created_at: string }).created_at.slice(0, 10);

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { audit, isServiceRoleConfigured } from "@/lib/audit";
 import { hashRecoveryCode } from "@/lib/auth/recovery-codes";
+import { logger } from "@/lib/logger";
 
 export type UseRecoveryCodeResult =
   | { ok: false; error: "invalid_or_used" }
@@ -46,7 +47,7 @@ export async function useRecoveryCode(
   }
 
   if (!isServiceRoleConfigured()) {
-    console.warn(
+    logger.warn(
       "[useRecoveryCode] SUPABASE_SERVICE_ROLE_KEY not configured — recovery flow unavailable",
     );
     return { ok: false, error: "service_unavailable" };
@@ -104,7 +105,7 @@ export async function useRecoveryCode(
       await admin.auth.admin.mfa.deleteFactor({ userId: targetUser.id, id: f.id });
     }
   } catch (err) {
-    console.error("[useRecoveryCode] failed to delete factors", err);
+    logger.error("[useRecoveryCode] failed to delete factors", { error: err instanceof Error ? err.message : String(err) });
     // Non-fatal: user still gets a recovery_used redirect; on next login the
     // residual factor would block them, but seeded user has no factor anyway.
   }

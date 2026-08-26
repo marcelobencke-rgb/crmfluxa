@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { audit } from "@/lib/audit";
 import { profileSchema, type ProfileInput } from "@/lib/schemas/settings";
 import { resolveActiveOrg, loadAuthUser } from "@/lib/auth/server";
+import { logger } from "@/lib/logger";
 
 export type UpdateProfileResult =
   | { ok: true }
@@ -68,7 +69,7 @@ export async function updateProfile(input: ProfileInput): Promise<UpdateProfileR
         p_organization_id: activeOrg.orgId,
       })
       .then(({ error: e }) => {
-        if (e) console.error("[updateProfile] emit_event failed", e.message);
+        if (e) logger.error("[updateProfile] emit_event failed", { error: e.message });
       });
   }
 

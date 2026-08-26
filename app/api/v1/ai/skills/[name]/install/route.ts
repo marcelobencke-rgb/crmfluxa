@@ -17,6 +17,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSkillsPool } from "@/lib/ai/skills/db";
 import { installPlatformSkill } from "@/lib/ai/skills/install";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +61,7 @@ export async function POST(
   try {
     result = await installPlatformSkill({ db }, { organizationId: org.orgId, name, createdBy: authUser.id });
   } catch (err) {
-    console.error("[skills-install] installPlatformSkill falhou:", err);
+    logger.error("[skills-install] installPlatformSkill falhou:", { error: err instanceof Error ? err.message : String(err) });
     return fail("internal_error", "Erro ao instalar a skill.", 500, { requestId });
   }
 

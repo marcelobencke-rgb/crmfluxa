@@ -9,7 +9,7 @@
  *     try {
  *       await dispatchWahaEvent(admin, session, envelope, requestId);
  *     } catch (err) {
- *       console.error("[waha.webhook] handler failed", err);
+ *       logger.error("[waha.webhook] handler failed", { error: err instanceof Error ? err.message : String(err) });
  *     }
  *     return ok({ accepted: true }, { requestId });
  *

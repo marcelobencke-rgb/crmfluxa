@@ -8,6 +8,7 @@
 
 import { Redis } from "@upstash/redis";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 
 // ---------------------------------------------------------------------------
 // Redis client — lazy singleton
@@ -24,7 +25,7 @@ function getRedis(): Redis | null {
 
   if (!url || !token) {
     if (!_fallbackWarned) {
-      console.warn(
+      logger.warn(
         "[rag-debounce] Redis missing — using in-memory fallback (NOT safe for multi-instance)",
       );
       _fallbackWarned = true;

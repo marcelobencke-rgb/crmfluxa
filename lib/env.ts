@@ -8,6 +8,7 @@
  */
 
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -191,8 +192,14 @@ if (!parsed.success && isBuildPhase) {
 
 if (!parsed.success) {
   // Log estruturado pra debug. Sentry capturaria via uncaught.
-  console.error("[env] Falha de validação de variáveis de ambiente:");
-  console.error(parsed.error.flatten().fieldErrors);
+  //
+  // Os campos entram como CONTEXTO da mesma linha, não num `console.error`
+  // separado. Eram duas saídas para um evento só, e a segunda não passava pelo
+  // logger — num agregador, o "quais variáveis" chegava dissociado do "falhou a
+  // validação", e é justamente o par que resolve o problema de quem instala.
+  logger.error("[env] Falha de validação de variáveis de ambiente", {
+    campos: parsed.error.flatten().fieldErrors,
+  });
   throw new Error(
     "Variáveis de ambiente inválidas. Veja o erro acima e ajuste .env.local / Vercel.",
   );
@@ -211,19 +218,19 @@ export const env = parsed.data;
 // O texto era verdadeiro enquanto a Anthropic era a única chave que o
 // instalador pedia; o menu novo o tornou falso.
 if (!env.AI_GATEWAY_API_KEY && !env.ANTHROPIC_API_KEY && !env.OPENROUTER_API_KEY) {
-  console.warn(
+  logger.warn(
     "[env] Nenhuma chave de IA configurada (AI_GATEWAY_API_KEY, ANTHROPIC_API_KEY ou OPENROUTER_API_KEY) — " +
       "o agente vai pular toda resposta com reason='ai_gateway_key_missing'.",
   );
 }
 if (!env.OPENAI_API_KEY) {
-  console.warn(
+  logger.warn(
     "[env] No OPENAI_API_KEY set — RAG embedding unavailable (bot answers without retrieved context) " +
       "AND voice-note transcription is off (the agent will ask leads to resend audio as text).",
   );
 }
 if (!env.IMPERSONATE_COOKIE_SECRET || env.IMPERSONATE_COOKIE_SECRET.length < 32) {
-  console.warn(
+  logger.warn(
     "[env] IMPERSONATE_COOKIE_SECRET not set or shorter than 32 chars — impersonate flow will return 503 at runtime.",
   );
 }

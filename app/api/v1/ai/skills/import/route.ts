@@ -19,6 +19,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getSkillsPool } from "@/lib/ai/skills/db";
 import { parseSkillPackage } from "@/lib/ai/skills/package";
 import { importSkillPackage } from "@/lib/ai/skills/install";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       { organizationId: org.orgId, pkg: parsed.pkg, createdBy: authUser.id },
     );
   } catch (err) {
-    console.error("[skills-import] importSkillPackage falhou:", err);
+    logger.error("[skills-import] importSkillPackage falhou:", { error: err instanceof Error ? err.message : String(err) });
     return fail("internal_error", "Erro ao importar o pacote de skill.", 500, { requestId });
   }
 

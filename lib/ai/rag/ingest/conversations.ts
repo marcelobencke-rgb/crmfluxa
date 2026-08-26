@@ -30,6 +30,7 @@ import {
   markVersionReady,
 } from "@/lib/ai/rag/version";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 
 const CONV_MAX_CHARS = 1600;
 const CONV_OVERLAP_CHARS = 200;
@@ -84,10 +85,9 @@ async function ensureConversationsSource(
     .single();
 
   if (error || !inserted) {
-    console.error(
-      "[kb-conversations] failed to ensure conversations source",
-      error?.message,
-    );
+    logger.error("[kb-conversations] failed to ensure conversations source", {
+      error: error?.message,
+    });
     return null;
   }
   return (inserted as { id: string }).id;
@@ -123,10 +123,9 @@ export async function ingestConversationsBatch(
   const admin = createAdminClient();
 
   if (!isEmbeddingProviderConfigured()) {
-    console.warn(
-      "[kb-conversations] embedding provider missing; skipping batch for org",
-      organizationId,
-    );
+    logger.warn("[kb-conversations] embedding provider missing; skipping batch", {
+      organization_id: organizationId,
+    });
     return { processed: 0, flaggedReview: 0, skipped: 0, embeddingSkipped: true };
   }
 
@@ -147,7 +146,7 @@ export async function ingestConversationsBatch(
     .limit(cap);
 
   if (convErr) {
-    console.error("[kb-conversations] list query failed", convErr.message);
+    logger.error("[kb-conversations] list query failed", { error: convErr.message });
     return { processed: 0, flaggedReview: 0, skipped: 0, embeddingSkipped: false };
   }
 
@@ -166,10 +165,9 @@ export async function ingestConversationsBatch(
     });
     versionId = v.versionId;
   } catch (err) {
-    console.error(
-      "[kb-conversations] createKnowledgeVersion failed",
-      err instanceof Error ? err.message : String(err),
-    );
+    logger.error("[kb-conversations] createKnowledgeVersion failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return { processed: 0, flaggedReview: 0, skipped: 0, embeddingSkipped: false };
   }
 
@@ -181,12 +179,10 @@ export async function ingestConversationsBatch(
   for (const conv of conversations) {
     // Defense in depth: re-check org id.
     if (conv.organization_id !== organizationId) {
-      console.error(
-        "[kb-conversations] org_id mismatch on conv",
-        conv.id,
-        "expected",
-        organizationId,
-      );
+      logger.error("[kb-conversations] org_id mismatch on conv", {
+        conversation_id: conv.id,
+        organization_id_esperado: organizationId,
+      });
       skipped++;
       continue;
     }
@@ -200,11 +196,10 @@ export async function ingestConversationsBatch(
       .order("sent_at", { ascending: true });
 
     if (msgErr) {
-      console.warn(
-        "[kb-conversations] messages query failed for conv",
-        conv.id,
-        msgErr.message,
-      );
+      logger.warn("[kb-conversations] messages query failed for conv", {
+        conversation_id: conv.id,
+        error: msgErr.message,
+      });
       skipped++;
       continue;
     }
@@ -247,7 +242,7 @@ export async function ingestConversationsBatch(
     for (const chunk of chunks) {
       const residual = detectResidualPii(chunk);
       if (residual) {
-        console.error(
+        logger.error(
           `[kb-conversations] PII LEAK detected (${residual}) -- skipping conversation`,
           { conv_id: conv.id, organization_id: organizationId },
         );
@@ -278,13 +273,11 @@ export async function ingestConversationsBatch(
         const embedded = await embedText(content, { organizationId });
         embedding = embedded.embedding;
       } catch (err) {
-        console.error(
-          "[kb-conversations] embed failed for conv",
-          conv.id,
-          "chunk",
-          i,
-          err instanceof Error ? err.message : String(err),
-        );
+        logger.error("[kb-conversations] embed failed for conv", {
+          conversation_id: conv.id,
+          chunk: i,
+          error: err instanceof Error ? err.message : String(err),
+        });
         convFailed = true;
         break;
       }
@@ -312,13 +305,11 @@ export async function ingestConversationsBatch(
       );
 
       if (upsertErr) {
-        console.warn(
-          "[kb-conversations] chunk upsert error conv",
-          conv.id,
-          "pos",
-          i,
-          upsertErr.message,
-        );
+        logger.warn("[kb-conversations] chunk upsert error conv", {
+          conversation_id: conv.id,
+          pos: i,
+          error: upsertErr.message,
+        });
       } else {
         convChunkInserts++;
       }
@@ -348,10 +339,9 @@ export async function ingestConversationsBatch(
       await markVersionFailed(versionId, organizationId, "no_chunks_ingested");
     }
   } catch (err) {
-    console.error(
-      "[kb-conversations] version finalize failed",
-      err instanceof Error ? err.message : String(err),
-    );
+    logger.error("[kb-conversations] version finalize failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 
   return { processed, flaggedReview, skipped, embeddingSkipped: false };

@@ -7,6 +7,7 @@
  * em prod; em dev, o log permite que o flow continue sem credenciais reais.
  */
 import { Resend } from "resend";
+import { logger } from "@/lib/logger";
 
 interface SendArgs {
   to: string | string[];
@@ -43,7 +44,7 @@ export async function sendEmail(args: SendArgs): Promise<SendResult> {
 
   if (!client) {
     if (process.env.NODE_ENV !== "production") {
-      console.warn(
+      logger.warn(
         "[email] RESEND_API_KEY não configurada — email não enviado. Payload:",
         {
           to: args.to,

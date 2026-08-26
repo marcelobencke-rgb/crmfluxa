@@ -13,6 +13,7 @@ import type { Actor } from "@/lib/api/handlers/types";
 import { audit } from "@/lib/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { SerializedStep } from "./serialize";
+import { logger } from "@/lib/logger";
 
 export type RunStatus = "completed" | "failed" | "aborted" | "handoff";
 
@@ -159,7 +160,7 @@ export async function sendFinalResponse(
     );
     return message.id;
   } catch (err) {
-    console.error("[agent-runtime] sendFinalResponse failed", err);
+    logger.error("[agent-runtime] sendFinalResponse failed", { error: err instanceof Error ? err.message : String(err) });
     return null;
   }
 }

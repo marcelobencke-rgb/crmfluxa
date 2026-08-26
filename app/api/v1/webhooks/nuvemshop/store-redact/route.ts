@@ -30,6 +30,7 @@ import { audit } from "@/lib/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createLgpdRequest } from "@/lib/lgpd/repository";
 import { ingressoLimitado, TETOS } from "@/lib/webhooks/limite-de-ingresso";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -117,7 +118,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     .maybeSingle();
 
   if (lookupErr || !integration) {
-    console.warn(`[lgpd-store-redact] tenant not found for store_id=${storeId}`);
+    logger.warn(`[lgpd-store-redact] tenant not found for store_id=${storeId}`);
     return fail("not_found", "integration_not_found", 404);
   }
 
@@ -129,7 +130,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
 
   if (dec.error || !dec.data) {
-    console.error(`[lgpd-store-redact] decrypt failed for org=${orgId}: ${dec.error?.message}`);
+    logger.error(`[lgpd-store-redact] decrypt failed for org=${orgId}: ${dec.error?.message}`);
     await audit({
       action: "webhook.hmac_invalid",
       organizationId: orgId,
@@ -149,7 +150,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       organizationId: orgId,
       metadata: { event: "store/redact", store_id: storeId },
     });
-    console.warn(`[lgpd-store-redact] HMAC invalid for org=${orgId} store_id=${storeId}`);
+    logger.warn(`[lgpd-store-redact] HMAC invalid for org=${orgId} store_id=${storeId}`);
     return fail("unauthenticated", "invalid_signature", 401);
   }
 
@@ -191,7 +192,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if ((logInsertErr as { code?: string }).code === "23505") {
       return ok({ received: true, idempotent: true });
     }
-    console.error(`[lgpd-store-redact] webhook_events_log insert error: ${logInsertErr.message}`);
+    logger.error(`[lgpd-store-redact] webhook_events_log insert error: ${logInsertErr.message}`);
     // Continue — don't block LGPD receipt on log failure
   }
 
@@ -206,7 +207,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     .eq("is_anonymized", false);
 
   if (countErr) {
-    console.warn(`[lgpd-store-redact] contacts count error for org=${orgId}: ${countErr.message}`);
+    logger.warn(`[lgpd-store-redact] contacts count error for org=${orgId}: ${countErr.message}`);
   }
 
   const expectedContactsCount = activeContactsCount ?? 0;
@@ -239,7 +240,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     requestId = result.id;
     dueAt = result.due_at;
   } catch (err) {
-    console.error(`[lgpd-store-redact] createLgpdRequest failed: ${(err as Error).message}`);
+    logger.error(`[lgpd-store-redact] createLgpdRequest failed: ${(err as Error).message}`);
     return fail("internal_error", "lgpd_request_create_failed", 500);
   }
 
@@ -260,7 +261,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
 
   if (emitErr) {
-    console.error(`[lgpd-store-redact] emit_event failed: ${emitErr.message}`);
+    logger.error(`[lgpd-store-redact] emit_event failed: ${emitErr.message}`);
     // Non-blocking — worker can be re-triggered via cron recovery
   }
 

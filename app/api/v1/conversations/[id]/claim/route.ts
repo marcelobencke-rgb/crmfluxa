@@ -19,6 +19,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { claimConversationSchema, validateRequest } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
 import type { Conversation } from "@/lib/types/messaging";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       p_organization_id: conv.organization_id,
     })
     .then(({ error: emitErr }) => {
-      if (emitErr) console.error("[conversation.claim] emit_event failed", emitErr.message);
+      if (emitErr) logger.error("[conversation.claim] emit_event failed", { error: emitErr.message });
     });
 
   return ok(conv, { requestId });

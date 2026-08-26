@@ -7,6 +7,7 @@
  * explicit admin re-enable.
  */
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 
 interface BudgetRow {
   organization_id: string;
@@ -37,7 +38,7 @@ async function emitEvent(
     p_payload: payload,
   } as never);
   if (error) {
-    console.warn("[ai-budget] emit_event failed", {
+    logger.warn("[ai-budget] emit_event failed", {
       eventType,
       orgId,
       error: error.message,
@@ -56,7 +57,7 @@ export async function runBudgetReset(): Promise<BudgetResetStats> {
     .lt("current_period_start", periodStart);
 
   if (error) {
-    console.warn("[ai-budget] reset scan failed", { error: error.message });
+    logger.warn("[ai-budget] reset scan failed", { error: error.message });
     return { reset_count: 0 };
   }
 
@@ -75,7 +76,7 @@ export async function runBudgetReset(): Promise<BudgetResetStats> {
       .eq("organization_id", b.organization_id)
       .lt("current_period_start", periodStart);
     if (updErr) {
-      console.warn("[ai-budget] reset failed", {
+      logger.warn("[ai-budget] reset failed", {
         orgId: b.organization_id,
         error: updErr.message,
       });

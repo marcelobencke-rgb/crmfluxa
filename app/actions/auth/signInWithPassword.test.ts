@@ -11,6 +11,34 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
+/**
+ * FORÇA O CONTADOR EM MEMÓRIA — o teto tem de ser medido, não herdado.
+ *
+ * `tests/setup/vitest.setup.ts` carrega `.env.local` para dentro de
+ * `process.env`. Numa máquina com Upstash de verdade configurado (a do
+ * mantenedor), estes casos passavam a contar num REDIS COMPARTILHADO E REAL —
+ * com três consequências, todas ruins:
+ *
+ *   1. o contador PERSISTE entre execuções: rodar a suíte duas vezes seguidas
+ *      estourava o teto na segunda, e o caso reprovava sem defeito nenhum;
+ *   2. a ordem dos casos passava a importar, porque dividem os mesmos baldes;
+ *   3. a suíte escrevia chaves de teste num Redis de produção.
+ *
+ * O sintoma parecia flake sob carga — foi o que eu concluí duas vezes antes de
+ * medir. Não era: renomeando `.env.local`, 9/9 passam; com ele, falham em
+ * bloco depois de algumas rodadas.
+ *
+ * É o mesmo defeito de `lib/ai/dispatcher/rate-limit.test.ts`, corrigido lá
+ * antes e não visto aqui. O mock fixa as duas variáveis como ausentes, que é a
+ * definição de "cair para a memória" — e a memória zera a cada processo.
+ */
+vi.mock("@/lib/env", () => ({
+  env: {
+    UPSTASH_REDIS_REST_URL: undefined,
+    UPSTASH_REDIS_REST_TOKEN: undefined,
+  },
+}));
+
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/audit", async (orig) => ({

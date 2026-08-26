@@ -20,6 +20,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { publishSchema, PUBLISH_ERROR_CODES } from "@/lib/ai/agents/validation";
 import { VALID_TOOL_IDS } from "@/lib/mcp/tools";
 import { publishAgentVersion } from "@/lib/ai/agents/publish";
+import { logger } from "@/lib/logger";
 
 const VALID_TOOL_IDS_RUNTIME = new Set<string>(VALID_TOOL_IDS as readonly string[]);
 
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
       },
     })
     .then(({ error }) => {
-      if (error) console.error("[ai_agents/publish] event_log error", error.message);
+      if (error) logger.error("[ai_agents/publish] event_log error", { error: error.message });
     });
 
   void audit({

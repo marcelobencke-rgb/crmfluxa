@@ -24,6 +24,7 @@ import { audit } from "@/lib/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createLgpdRequest, findContactByExternalId } from "@/lib/lgpd/repository";
 import { ingressoLimitado, TETOS } from "@/lib/webhooks/limite-de-ingresso";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     .maybeSingle();
 
   if (lookupErr || !integration) {
-    console.warn(`[lgpd-customer-data-request] tenant not found for store_id=${storeId}`);
+    logger.warn(`[lgpd-customer-data-request] tenant not found for store_id=${storeId}`);
     return fail("not_found", "integration_not_found", 404);
   }
 
@@ -133,7 +134,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
 
   if (dec.error || !dec.data) {
-    console.error(
+    logger.error(
       `[lgpd-customer-data-request] decrypt failed for org=${orgId}: ${dec.error?.message}`,
     );
     await audit({
@@ -159,7 +160,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       organizationId: orgId,
       metadata: { event: "customer/data_request", store_id: storeId },
     });
-    console.warn(
+    logger.warn(
       `[lgpd-customer-data-request] HMAC invalid for org=${orgId} store_id=${storeId}`,
     );
     return fail("unauthenticated", "invalid_signature", 401);
@@ -206,7 +207,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if ((logInsertErr as { code?: string }).code === "23505") {
       return ok({ received: true, idempotent: true });
     }
-    console.error(
+    logger.error(
       `[lgpd-customer-data-request] webhook_events_log insert error: ${logInsertErr.message}`,
     );
     // Continue — don't block LGPD receipt on log failure
@@ -261,7 +262,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     requestId = result.id;
     dueAt = result.due_at;
   } catch (err) {
-    console.error(
+    logger.error(
       `[lgpd-customer-data-request] createLgpdRequest failed: ${(err as Error).message}`,
     );
     return fail("internal_error", "lgpd_request_create_failed", 500);
@@ -285,7 +286,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
 
   if (emitErr) {
-    console.error(
+    logger.error(
       `[lgpd-customer-data-request] emit_event failed: ${emitErr.message}`,
     );
     // Non-blocking — worker can be re-triggered via cron recovery

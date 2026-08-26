@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
 
 /**
  * O que fazer quando GRAVAR A ATIVIDADE falha — e o rastro não pode sumir.
@@ -66,7 +67,7 @@ export async function registraFalhaDeAtividade(
     // Segunda linha: o event_log também caiu. Aqui o log do processo é tudo o
     // que sobra, e ele existe para o caso em que o próprio canal de aviso
     // morreu — não como política de rotina.
-    console.error("[activity] perdi o rastro E o aviso", {
+    logger.error("[activity] perdi o rastro E o aviso", {
       lead: f.leadId,
       tipo: f.tipo,
       origem: f.origem,

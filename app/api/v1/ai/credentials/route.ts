@@ -21,6 +21,7 @@ import { validateProviderKey, type Provider } from "@/lib/ai/provider-validators
 import { IDS_DE_PROVEDOR } from "@/lib/ai/pontos/provedores";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   try {
     encrypted = encryptKey(input.api_key);
   } catch (err) {
-    console.error("[ai.credentials] encrypt failed", err);
+    logger.error("[ai.credentials] encrypt failed", { error: err instanceof Error ? err.message : String(err) });
     return fail("internal_error", "Erro ao cifrar credential.", 500, { requestId });
   }
 
@@ -162,9 +163,9 @@ async function runAsyncValidation(
       .eq("id", credentialId)
       .eq("organization_id", organizationId);
     if (error) {
-      console.error("[ai.credentials] async validation persist failed", error.message);
+      logger.error("[ai.credentials] async validation persist failed", { error: error.message });
     }
   } catch (err) {
-    console.error("[ai.credentials] async validation crashed", err);
+    logger.error("[ai.credentials] async validation crashed", { error: err instanceof Error ? err.message : String(err) });
   }
 }

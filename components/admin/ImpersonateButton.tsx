@@ -24,6 +24,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logger";
 
 interface ImpersonateButtonProps {
   organizationId: string;
@@ -68,7 +69,7 @@ export function ImpersonateButton({
       router.push(redirectUrl);
     } catch (err) {
       toast.error("Erro de rede ao iniciar impersonate");
-      console.error("[impersonate] start error", err);
+      logger.error("[impersonate] start error", { error: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(false);
     }

@@ -23,6 +23,7 @@ import { logInvocation } from "@/lib/ai/log-invocation";
 import { SENTIMENT_SYSTEM_PROMPT } from "@/lib/ai/prompts/sentiment";
 import type { EventRow } from "@/lib/event-log/dispatcher";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 
 const SENTIMENT_MODEL = DEFAULT_CLASSIFIER_MODEL; // "anthropic/claude-haiku-4-5"
 const DEFAULT_SENTIMENT_THRESHOLD = 0.3;
@@ -219,7 +220,7 @@ export async function processSentiment(event: EventRow): Promise<SentimentResult
       .eq("organization_id", event.organization_id);
 
     if (updateErr) {
-      console.warn("[ai-sentiment-worker] metadata update failed", {
+      logger.warn("[ai-sentiment-worker] metadata update failed", {
         message_id: messageId,
         error: updateErr.message,
       });
@@ -264,7 +265,7 @@ export async function processSentiment(event: EventRow): Promise<SentimentResult
       } as never);
 
       if (emitErr) {
-        console.warn("[ai-sentiment-worker] ai.sentiment_alert emit failed", {
+        logger.warn("[ai-sentiment-worker] ai.sentiment_alert emit failed", {
           message_id: messageId,
           error: emitErr.message,
         });
@@ -274,7 +275,7 @@ export async function processSentiment(event: EventRow): Promise<SentimentResult
     return { skipped: false, sentiment_score: result.sentiment_score };
   } catch (err) {
     // Global catch: NEVER throw — must not break the bot path.
-    console.warn("[ai-sentiment-worker] sentiment_classify_failed", {
+    logger.warn("[ai-sentiment-worker] sentiment_classify_failed", {
       event_id: event.id,
       error: err instanceof Error ? err.message : String(err),
     });

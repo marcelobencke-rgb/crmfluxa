@@ -14,6 +14,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { insertSkillVersion, setSkillPointer, type SkillMatcher } from '../../agent-engine/agent/skills';
 import type { ParsedSkillPackage } from './package';
+import { logger } from "@/lib/logger";
 
 const SKILL_ASSETS_BUCKET = 'skill-assets';
 
@@ -49,7 +50,7 @@ export async function importSkillPackage(
       if (uploaded.length > 0) {
         await deps.admin.storage.from(SKILL_ASSETS_BUCKET).remove(uploaded);
       }
-      console.error(
+      logger.error(
         `[install-skill] upload falhou (${objectPath}): ${error.message} — versão órfã ${version.id} fica no banco, ponteiro não move`,
       );
       throw new Error(`falha ao subir arquivo do pacote de skill: ${f.path}`);

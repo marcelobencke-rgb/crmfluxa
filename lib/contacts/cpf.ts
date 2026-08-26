@@ -8,6 +8,7 @@
  */
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
 
 export function normalizeCpf(raw: string): string {
   return raw.replace(/\D/g, "");
@@ -33,10 +34,9 @@ export async function encryptCpfSql(
 ): Promise<Uint8Array | null> {
   const { data, error } = await supabase.rpc("encrypt_cpf", { p_plaintext: plaintext });
   if (error) {
-    console.warn(
-      "[contacts.cpf] encrypt_cpf RPC unavailable — storing cpf_hash only.",
-      error.message,
-    );
+    logger.warn("[contacts.cpf] encrypt_cpf RPC unavailable — storing cpf_hash only", {
+      error: error.message,
+    });
     return null;
   }
   if (!data) return null;

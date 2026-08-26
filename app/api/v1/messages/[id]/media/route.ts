@@ -14,6 +14,7 @@ import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { fetchWahaMedia } from "@/lib/messaging/media/waha-source";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +68,7 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
       return response;
     }
     if (signErr) {
-      console.error("[messages.media] createSignedUrl failed", signErr.message);
+      logger.error("[messages.media] createSignedUrl failed", { error: signErr.message });
     }
   }
 

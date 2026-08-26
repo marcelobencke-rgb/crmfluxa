@@ -17,6 +17,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ingestPolicyFile, PdfExtractError } from "@/lib/ai/rag/ingest/policy";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     .maybeSingle();
 
   if (agentErr) {
-    console.error("[ai-policy-upload] agent lookup failed:", agentErr.message);
+    logger.error("[ai-policy-upload] agent lookup failed:", { error: agentErr.message });
     return fail("internal_error", "Erro ao validar agent_id.", 500, { requestId });
   }
   if (!agent) {
@@ -133,7 +134,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     .upload(blobPath, fileBuffer, { contentType: mimeType, upsert: false });
 
   if (uploadErr) {
-    console.error("[ai-policy-upload] storage upload failed:", uploadErr.message);
+    logger.error("[ai-policy-upload] storage upload failed:", { error: uploadErr.message });
     return fail("internal_error", "Erro ao fazer upload do arquivo.", 500, { requestId });
   }
 
@@ -163,7 +164,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         { requestId },
       );
     }
-    console.error("[ai-policy-upload] extraction failed:", err);
+    logger.error("[ai-policy-upload] extraction failed:", { error: err instanceof Error ? err.message : String(err) });
     return fail("internal_error", "Erro ao processar o arquivo.", 500, { requestId });
   }
 
@@ -195,7 +196,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   if (ksErr || !ks) {
     // Cleanup blob
     await admin.storage.from("ai-policy").remove([blobPath]);
-    console.error("[ai-policy-upload] insert knowledge source failed:", ksErr?.message);
+    logger.error("[ai-policy-upload] insert knowledge source failed", { error: ksErr?.message });
     return fail("internal_error", "Erro ao registrar fonte de conhecimento.", 500, { requestId });
   }
 
@@ -215,7 +216,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   } as never);
 
   if (emitErr) {
-    console.warn("[ai-policy-upload] emit_event failed (non-blocking):", emitErr.message);
+    logger.warn("[ai-policy-upload] emit_event failed (non-blocking):", { error: emitErr.message });
   }
 
   return ok({ id: ksId, blob_path: blobPath }, { status: 201, requestId });

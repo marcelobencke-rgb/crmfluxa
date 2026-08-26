@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { audit, isServiceRoleConfigured } from "@/lib/audit";
 import { generateRecoveryCodes, hashRecoveryCode } from "@/lib/auth/recovery-codes";
+import { logger } from "@/lib/logger";
 
 export type ConfirmMfaEnrollResult =
   | { ok: true; recovery_codes: string[] }
@@ -72,7 +73,7 @@ export async function confirmMfaEnroll(
     insertErr = r.error;
   }
   if (insertErr) {
-    console.error("[confirmMfaEnroll] failed to insert recovery codes:", insertErr.message);
+    logger.error("[confirmMfaEnroll] failed to insert recovery codes:", { error: insertErr.message });
   }
 
   await audit({

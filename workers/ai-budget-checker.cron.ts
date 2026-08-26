@@ -18,6 +18,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/resend";
 import { buildBudgetAlarmEmail } from "@/lib/email/templates/ai-budget-alarm";
+import { logger } from "@/lib/logger";
 
 interface BudgetRow {
   organization_id: string;
@@ -79,7 +80,7 @@ async function fetchAdminEmails(
       const email = u?.user?.email;
       if (email) emails.push(email);
     } catch (err) {
-      console.warn("[ai-budget] getUserById failed", {
+      logger.warn("[ai-budget] getUserById failed", {
         orgId,
         userId,
         err: err instanceof Error ? err.message : String(err),
@@ -103,7 +104,7 @@ async function emitEvent(
     p_payload: payload,
   } as never);
   if (error) {
-    console.warn("[ai-budget] emit_event failed", {
+    logger.warn("[ai-budget] emit_event failed", {
       eventType,
       orgId,
       error: error.message,
@@ -127,7 +128,7 @@ export async function runBudgetChecker(): Promise<BudgetCheckerStats> {
     .gt("monthly_limit_cents", 0);
 
   if (error) {
-    console.warn("[ai-budget] scan query failed", { error: error.message });
+    logger.warn("[ai-budget] scan query failed", { error: error.message });
     return stats;
   }
 
@@ -156,7 +157,7 @@ export async function runBudgetChecker(): Promise<BudgetCheckerStats> {
         .update({ last_alarm_sent_at: new Date().toISOString() })
         .eq("organization_id", b.organization_id);
       if (updErr) {
-        console.warn("[ai-budget] failed to stamp last_alarm_sent_at", {
+        logger.warn("[ai-budget] failed to stamp last_alarm_sent_at", {
           orgId: b.organization_id,
           error: updErr.message,
         });
@@ -188,7 +189,7 @@ export async function runBudgetChecker(): Promise<BudgetCheckerStats> {
           });
         }
       } catch (err) {
-        console.warn("[ai-budget] alarm email dispatch failed", {
+        logger.warn("[ai-budget] alarm email dispatch failed", {
           orgId: b.organization_id,
           err: err instanceof Error ? err.message : String(err),
         });
@@ -208,7 +209,7 @@ export async function runBudgetChecker(): Promise<BudgetCheckerStats> {
         .update(patch)
         .eq("organization_id", b.organization_id);
       if (thrErr) {
-        console.warn("[ai-budget] failed to apply throttle", {
+        logger.warn("[ai-budget] failed to apply throttle", {
           orgId: b.organization_id,
           action,
           error: thrErr.message,

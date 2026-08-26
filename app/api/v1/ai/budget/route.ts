@@ -14,6 +14,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBudgetStatus } from "@/lib/ai/budget/check";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +89,7 @@ export async function PATCH(req: NextRequest): Promise<Response> {
       .update(patch)
       .eq("organization_id", activeOrg.orgId);
     if (updErr) {
-      console.warn("[ai-budget] update failed", {
+      logger.warn("[ai-budget] update failed", {
         orgId: activeOrg.orgId,
         error: updErr.message,
       });
@@ -100,7 +101,7 @@ export async function PATCH(req: NextRequest): Promise<Response> {
       ...patch,
     });
     if (insErr) {
-      console.warn("[ai-budget] insert failed", {
+      logger.warn("[ai-budget] insert failed", {
         orgId: activeOrg.orgId,
         error: insErr.message,
       });

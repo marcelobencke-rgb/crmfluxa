@@ -20,6 +20,7 @@ import { registraFalhaDeAtividade } from "@/lib/leads/activity-write-failure";
 import { bulkLeadActionSchema, validateRequest } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -209,7 +210,7 @@ export async function POST(req: NextRequest): Promise<Response> {
                 p_organization_id: organizationId,
               })
               .then(({ error: emitError }) => {
-                if (emitError) console.error("[lead.bulk_moved] emit_event failed", emitError.message);
+                if (emitError) logger.error("[lead.bulk_moved] emit_event failed", { error: emitError.message });
               }),
           ),
       );
@@ -273,7 +274,7 @@ export async function POST(req: NextRequest): Promise<Response> {
               p_organization_id: organizationId,
             })
             .then(({ error: emitError }) => {
-              if (emitError) console.error("[lead.bulk_tagged] emit_event failed", emitError.message);
+              if (emitError) logger.error("[lead.bulk_tagged] emit_event failed", { error: emitError.message });
             });
         }
       }
@@ -316,7 +317,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       p_organization_id: organizationId,
     })
     .then(({ error }) => {
-      if (error) console.error("[lead.bulk] emit_event failed", error.message);
+      if (error) logger.error("[lead.bulk] emit_event failed", { error: error.message });
     });
 
   // Assign audita com action agregada dedicada (spec 04 §6.5); as demais ações
