@@ -15,6 +15,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseFaqMarkdown } from "@/lib/ai/rag/ingest/faq";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +74,7 @@ export async function GET(_req: NextRequest): Promise<Response> {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("[ai-knowledge-sources] GET list failed:", error.message);
+    logger.error("[ai-knowledge-sources] GET list failed:", { error: error.message });
     return fail("internal_error", "Erro ao listar fontes de conhecimento.", 500, { requestId });
   }
 
@@ -122,7 +123,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     .maybeSingle();
 
   if (agentErr) {
-    console.error("[ai-knowledge-sources] agent lookup failed:", agentErr.message);
+    logger.error("[ai-knowledge-sources] agent lookup failed:", { error: agentErr.message });
     return fail("internal_error", "Erro ao validar agent_id.", 500, { requestId });
   }
   if (!agent) {
@@ -176,7 +177,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     .single();
 
   if (ksErr || !ks) {
-    console.error("[ai-knowledge-sources] insert knowledge source failed:", ksErr?.message);
+    logger.error("[ai-knowledge-sources] insert knowledge source failed", { error: ksErr?.message });
     return fail("internal_error", "Erro ao criar fonte de conhecimento.", 500, { requestId });
   }
 
@@ -198,12 +199,11 @@ export async function POST(req: NextRequest): Promise<Response> {
     const { error: itemsErr } = await admin.from("ai_faq_items").insert(rows);
 
     if (itemsErr) {
-      console.error("[ai-knowledge-sources] insert faq items failed:", itemsErr.message);
+      logger.error("[ai-knowledge-sources] insert faq items failed:", { error: itemsErr.message });
       // Best-effort: source was created; log error but don't roll back.
-      console.warn(
-        "[ai-knowledge-sources] knowledge source created but FAQ items failed — ks id:",
-        ksId,
-      );
+      logger.warn("[ai-knowledge-sources] knowledge source created but FAQ items failed", {
+        knowledge_source_id: ksId,
+      });
     } else {
       itemsCount = rows.length;
     }
@@ -223,7 +223,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   } as never);
 
   if (emitErr) {
-    console.warn("[ai-knowledge-sources] emit_event failed (non-blocking):", emitErr.message);
+    logger.warn("[ai-knowledge-sources] emit_event failed (non-blocking):", { error: emitErr.message });
   }
 
   return ok({ id: ksId, items_count: itemsCount }, { status: 201, requestId });

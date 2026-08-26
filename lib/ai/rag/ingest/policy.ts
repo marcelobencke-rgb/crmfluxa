@@ -14,6 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { chunkText } from "@/lib/ai/rag/chunker";
 import { extractPdfText, PdfExtractError } from "@/lib/ai/rag/extractors/pdf";
 import { extractMarkdownText } from "@/lib/ai/rag/extractors/markdown";
+import { logger } from "@/lib/logger";
 
 export { PdfExtractError };
 
@@ -118,7 +119,7 @@ export async function ingestPolicyFile(args: IngestPolicyArgs): Promise<IngestPo
 
   const chunks = chunkPolicyText(text);
 
-  console.warn(
+  logger.warn(
     `[ai-policy-upload] ingestPolicyFile: ks=${knowledgeSourceId} ext=${ext} chunks=${chunks.length}`,
   );
 

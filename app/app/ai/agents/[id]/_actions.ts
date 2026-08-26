@@ -31,6 +31,7 @@ import {
 } from "@/lib/ai/agents/validation";
 import { publishAgentVersion } from "@/lib/ai/agents/publish";
 import { VALID_TOOL_IDS } from "@/lib/mcp/tools";
+import { logger } from "@/lib/logger";
 
 const UUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -264,7 +265,7 @@ export async function publishAgentAction(
       },
     })
     .then(({ error }) => {
-      if (error) console.error("[saveAgentDraftAction/publish] event_log error", error.message);
+      if (error) logger.error("[saveAgentDraftAction/publish] event_log error", { error: error.message });
     });
 
   void audit({
@@ -460,7 +461,7 @@ export async function revertToVersionAction(
       },
     })
     .then(({ error }) => {
-      if (error) console.error("[revertToVersionAction/event_log] error", error.message);
+      if (error) logger.error("[revertToVersionAction/event_log] error", { error: error.message });
     });
 
   void audit({

@@ -7,6 +7,7 @@
  */
 
 import type * as PdfjsDist from "pdfjs-dist";
+import { logger } from "@/lib/logger";
 
 export class PdfExtractError extends Error {
   constructor(message: string, public readonly cause?: unknown) {
@@ -34,12 +35,12 @@ export async function extractPdfText(buffer: Buffer): Promise<string> {
       const text = (result.text ?? "").trim();
       if (text.length > 0) return text;
       // Empty text from pdf-parse — may be an image-only PDF; fall through to pdfjs
-      console.warn("[pdf-extract] pdf-parse returned empty text — trying pdfjs fallback");
+      logger.warn("[pdf-extract] pdf-parse returned empty text — trying pdfjs fallback");
     } finally {
       await parser.destroy();
     }
   } catch (err) {
-    console.warn("[pdf-extract] pdf-parse failed, trying pdfjs-dist fallback:", err);
+    logger.warn("[pdf-extract] pdf-parse failed, trying pdfjs-dist fallback:", { error: err instanceof Error ? err.message : String(err) });
   }
 
   // --- Fallback: pdfjs-dist legacy build ---

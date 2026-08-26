@@ -20,6 +20,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
 import { lgpdAnonymizeSchema, validateRequest } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -123,7 +124,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       .update({ title: newTitle })
       .eq("id", row.id);
     if (leadErr) {
-      console.error("[lgpd.anonymize] crm_leads update failed", leadErr.message);
+      logger.error("[lgpd.anonymize] crm_leads update failed", { error: leadErr.message });
     } else {
       redactedLeadIds.push(row.id);
     }
@@ -135,7 +136,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     .update({ payload: { redacted: true } })
     .eq("contact_id", existing.id);
   if (actErr) {
-    console.error("[lgpd.anonymize] crm_lead_activities update failed", actErr.message);
+    logger.error("[lgpd.anonymize] crm_lead_activities update failed", { error: actErr.message });
   }
 
   // Emit + audit.
@@ -153,7 +154,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       p_organization_id: existing.organization_id,
     })
     .then(({ error }) => {
-      if (error) console.error("[lgpd.anonymize] emit_event failed", error.message);
+      if (error) logger.error("[lgpd.anonymize] emit_event failed", { error: error.message });
     });
 
   await audit({

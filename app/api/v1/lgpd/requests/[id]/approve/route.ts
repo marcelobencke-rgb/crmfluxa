@@ -16,6 +16,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -86,7 +87,7 @@ export async function POST(
     .maybeSingle();
 
   if (keyLookupErr) {
-    console.error("[lgpd-approve] idempotency lookup error", keyLookupErr.message);
+    logger.error("[lgpd-approve] idempotency lookup error", { error: keyLookupErr.message });
   }
 
   if (existingKey) {
@@ -152,7 +153,7 @@ export async function POST(
   });
 
   if (emitErr) {
-    console.error("[lgpd-approve] emit_event failed", emitErr.message);
+    logger.error("[lgpd-approve] emit_event failed", { error: emitErr.message });
     // Non-blocking — worker can recover via cron
   }
 

@@ -20,6 +20,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { slugToEvent } from "@/lib/nuvemshop/config";
 import { verifyHmac } from "@/lib/nuvemshop/oauth";
 import { ingressoLimitado, TETOS } from "@/lib/webhooks/limite-de-ingresso";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -155,7 +156,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
 
   if (insertErr) {
     // Don't block on log insert failures — still emit the event.
-    console.error("[nuvemshop.webhook] webhook_events_log insert failed", insertErr.message);
+    logger.error("[nuvemshop.webhook] webhook_events_log insert failed", { error: insertErr.message });
   }
 
   // event_type for event_log must match `^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$`.
@@ -170,7 +171,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
     p_organization_id: integration.organization_id,
   });
   if (emitErr) {
-    console.error("[nuvemshop.webhook] emit_event failed", emitErr.message);
+    logger.error("[nuvemshop.webhook] emit_event failed", { error: emitErr.message });
   }
 
   await audit({

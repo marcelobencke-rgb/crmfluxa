@@ -8,6 +8,7 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ from }) }
 
 import { GET } from './route';
 import { NextRequest } from 'next/server';
+import { logger } from "@/lib/logger";
 
 function req(qs = ''): NextRequest {
   return new NextRequest(`http://localhost:3000/api/v1/ai/evolution${qs}`);
@@ -162,7 +163,13 @@ describe('GET /api/v1/ai/evolution', () => {
   });
 
   it('ordena antes de truncar e avisa quando o teto é atingido', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // ESPIA O `logger`, NÃO O `console`.
+    // O que este caso guarda é o CONTRATO DE LOG da aplicação (mensagem + contexto),
+    // e não por qual transporte ele sai. Espionar `console` amarrava o teste à
+    // implementação do logger: quando as chamadas passaram de `console.error(msg,
+    // obj)` para `logger.error(msg, ctx)` — que emite UMA string JSON —, o espião
+    // parou de ver argumento nenhum e o caso reprovou sem defeito de comportamento.
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
     const ROW_CAP = 50_000;
     const espiao = fakeDb({ llm_calls: Array.from({ length: ROW_CAP }, () => ({ cost_cents: 1 })) });
 
@@ -199,7 +206,7 @@ describe('GET /api/v1/ai/evolution', () => {
   });
 
   it('uma fonte fora do ar zera o bloco dela e nomeia tabela + requestId no log', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
     fakeDb(
       { skill_activations: [{ created_at: '2026-07-02T10:00:00.000Z', skill_name: 'a' }] },
       { org_memory_entries: 'relation down' },

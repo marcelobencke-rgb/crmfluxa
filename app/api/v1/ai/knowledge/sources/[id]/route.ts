@@ -13,6 +13,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -86,7 +87,7 @@ export async function PATCH(
     .maybeSingle();
 
   if (fetchErr) {
-    console.error("[ai-knowledge-sources] PATCH fetch failed:", fetchErr.message);
+    logger.error("[ai-knowledge-sources] PATCH fetch failed:", { error: fetchErr.message });
     return fail("internal_error", "Erro ao verificar fonte.", 500, { requestId });
   }
   if (!existing) {
@@ -110,7 +111,7 @@ export async function PATCH(
       .eq("organization_id", activeOrg.orgId);
 
     if (updateErr) {
-      console.error("[ai-knowledge-sources] PATCH update failed:", updateErr.message);
+      logger.error("[ai-knowledge-sources] PATCH update failed:", { error: updateErr.message });
       return fail("internal_error", "Erro ao atualizar fonte.", 500, { requestId });
     }
   }
@@ -126,7 +127,7 @@ export async function PATCH(
       .eq("organization_id", activeOrg.orgId);
 
     if (delErr) {
-      console.error("[ai-knowledge-sources] PATCH delete items failed:", delErr.message);
+      logger.error("[ai-knowledge-sources] PATCH delete items failed:", { error: delErr.message });
       return fail("internal_error", "Erro ao remover itens antigos.", 500, { requestId });
     }
 
@@ -144,7 +145,7 @@ export async function PATCH(
       const { error: insertErr } = await admin.from("ai_faq_items").insert(rows);
 
       if (insertErr) {
-        console.error("[ai-knowledge-sources] PATCH insert items failed:", insertErr.message);
+        logger.error("[ai-knowledge-sources] PATCH insert items failed:", { error: insertErr.message });
         return fail("internal_error", "Erro ao inserir novos itens FAQ.", 500, { requestId });
       }
       itemsCount = rows.length;
@@ -167,7 +168,7 @@ export async function PATCH(
   } as never);
 
   if (emitErr) {
-    console.warn("[ai-knowledge-sources] emit_event failed (non-blocking):", emitErr.message);
+    logger.warn("[ai-knowledge-sources] emit_event failed (non-blocking):", { error: emitErr.message });
   }
 
   return ok(
@@ -201,7 +202,7 @@ export async function DELETE(
     .maybeSingle();
 
   if (fetchErr) {
-    console.error("[ai-knowledge-sources] DELETE fetch failed:", fetchErr.message);
+    logger.error("[ai-knowledge-sources] DELETE fetch failed:", { error: fetchErr.message });
     return fail("internal_error", "Erro ao verificar fonte.", 500, { requestId });
   }
   if (!existing) {
@@ -216,7 +217,7 @@ export async function DELETE(
     .eq("organization_id", activeOrg.orgId);
 
   if (archiveErr) {
-    console.error("[ai-knowledge-sources] DELETE archive failed:", archiveErr.message);
+    logger.error("[ai-knowledge-sources] DELETE archive failed:", { error: archiveErr.message });
     return fail("internal_error", "Erro ao arquivar fonte.", 500, { requestId });
   }
 

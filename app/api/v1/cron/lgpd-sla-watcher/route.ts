@@ -24,6 +24,7 @@ import { triggerSlaAlarm } from "@/lib/lgpd/sla-alarm";
 import type { LgpdRequest } from "@/lib/lgpd/types";
 import type { AlarmThreshold } from "@/lib/lgpd/sla-alarm";
 import { comBatimento } from "@/lib/cron/com-batimento";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +90,7 @@ async function getInterno(req: NextRequest): Promise<Response> {
     .limit(SCAN_LIMIT);
 
   if (queryError) {
-    console.error("[lgpd-sla-watcher] query failed", queryError.message);
+    logger.error("[lgpd-sla-watcher] query failed", { error: queryError.message });
     return fail("internal_error", "Failed to query lgpd_requests.", 500, { requestId });
   }
 
@@ -152,7 +153,10 @@ async function getInterno(req: NextRequest): Promise<Response> {
       }
     } catch (err) {
       errorsCount++;
-      console.error("[lgpd-sla-watcher] triggerSlaAlarm threw for request", row.id, err);
+      logger.error("[lgpd-sla-watcher] triggerSlaAlarm threw for request", {
+          request_id: row.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
     }
   }
 

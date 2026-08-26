@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { registraFalhaDeAtividade } from "@/lib/leads/activity-write-failure";
+import { logger } from "@/lib/logger";
 
 /**
  * Falhar baixo é escolher NÃO BLOQUEAR — não é escolher NÃO CONTAR.
@@ -65,7 +66,13 @@ describe("o rastro perdido é contado, não engolido", () => {
   });
 
   it("se ATÉ o aviso falhar, sobra o log do processo — segunda linha, não política", async () => {
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    // ESPIA O `logger`, NÃO O `console`.
+    // O que este caso guarda é o CONTRATO DE LOG da aplicação (mensagem + contexto),
+    // e não por qual transporte ele sai. Espionar `console` amarrava o teste à
+    // implementação do logger: quando as chamadas passaram de `console.error(msg,
+    // obj)` para `logger.error(msg, ctx)` — que emite UMA string JSON —, o espião
+    // parou de ver argumento nenhum e o caso reprovou sem defeito de comportamento.
+    const spy = vi.spyOn(logger, "error").mockImplementation(() => {});
     const { client } = supabaseFalso({ message: "event_log fora do ar" });
     await registraFalhaDeAtividade(client as never, FALHA);
     expect(spy).toHaveBeenCalledOnce();

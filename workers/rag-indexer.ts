@@ -25,6 +25,7 @@ import {
 import type { EventRow, HandlerResult } from "@/lib/event-log/dispatcher";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NuvemshopApiClient } from "@/lib/nuvemshop/api-client";
+import { logger } from "@/lib/logger";
 
 const DEBOUNCE_TTL_SEC = 30;
 const LAG_WARN_MS = 5 * 60 * 1000; // 5 minutes
@@ -128,11 +129,10 @@ async function fetchNuvemshopProduct(
   if (!creds) {
     // Wave 4 stub — full Nuvemshop credential resolution implemented in S-06.x
     // Concern: fn_decrypt_oauth RPC may not exist; if so, this returns null gracefully.
-    console.warn(
-      "[rag-indexer] nuvemshop credentials unavailable for org",
-      organizationId,
-      "— skipping product fetch (stub path)",
-    );
+    logger.warn("[rag-indexer] nuvemshop credentials unavailable — pulando busca de produto", {
+      organization_id: organizationId,
+      caminho: "stub",
+    });
     return null;
   }
 
@@ -145,11 +145,10 @@ async function fetchNuvemshopProduct(
     const product = await client.get<NuvemshopProduct>(`/products/${productId}`);
     return product ?? null;
   } catch (err) {
-    console.warn(
-      "[rag-indexer] fetchNuvemshopProduct failed",
-      productId,
-      err instanceof Error ? err.message : String(err),
-    );
+    logger.warn("[rag-indexer] fetchNuvemshopProduct failed", {
+      product_id: productId,
+      error: err instanceof Error ? err.message : String(err),
+    });
     return null;
   }
 }
@@ -186,7 +185,7 @@ async function handleProductSynced(
     sourceType: "nuvemshop_product",
   });
 
-  console.warn(
+  logger.warn(
     `[rag-indexer] created version ${versionNumber} (${versionId}) for org ${row.organization_id}`,
   );
 
@@ -244,10 +243,10 @@ async function handleProductSynced(
 
     if (upsertErr) {
       // Log but don't fail the whole version for a single chunk upsert error.
-      console.warn(
-        `[rag-indexer] chunk upsert error at position ${i}:`,
-        upsertErr.message,
-      );
+      logger.warn("[rag-indexer] chunk upsert error", {
+        pos: i,
+        error: upsertErr.message,
+      });
     } else {
       successCount++;
     }
@@ -344,7 +343,7 @@ async function handleKnowledgeSourceUpdated(
     organizationId: row.organization_id,
     sourceType: "knowledge_source",
   });
-  console.warn(
+  logger.warn(
     `[rag-indexer] reconstruindo base: versão ${versionNumber} (${versionId}), ` +
       `${sources.length} fonte(s), ${pedacos.length} chunk(s)`,
   );
@@ -379,7 +378,7 @@ async function handleKnowledgeSourceUpdated(
       { onConflict: "knowledge_source_id,kb_version_id,position", ignoreDuplicates: true },
     );
     if (upErr) {
-      console.warn(`[rag-indexer] chunk upsert error at ${i}:`, upErr.message);
+      logger.warn(`[rag-indexer] chunk upsert error at ${i}:`, { error: upErr.message });
     } else {
       gravados++;
       gravadosPorFonte.set(p.sourceId, (gravadosPorFonte.get(p.sourceId) ?? 0) + 1);
@@ -429,7 +428,7 @@ export async function processRagIndexer(row: EventRow): Promise<HandlerResult> {
   // Lag monitor (IA-11)
   const lagMs = Date.now() - new Date(row.payload["created_at"] as string ?? row.id).getTime();
   if (lagMs > LAG_WARN_MS) {
-    console.warn(
+    logger.warn(
       `[rag-indexer] lag exceeded 5min: ${Math.round(lagMs / 1000)}s for event ${row.id} (${row.event_type})`,
     );
   }
@@ -449,7 +448,7 @@ export async function processRagIndexer(row: EventRow): Promise<HandlerResult> {
     agentId = agent.id;
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
-    console.error("[rag-indexer] resolveAgent failed:", detail);
+    logger.error("[rag-indexer] resolveAgent failed", { error: detail });
     return { consumer_key: consumerKey, status: "error", detail };
   }
 
@@ -501,7 +500,7 @@ export async function processRagIndexer(row: EventRow): Promise<HandlerResult> {
   } catch (err) {
     // Global catch — worker must NOT throw.
     const detail = err instanceof Error ? err.message : String(err);
-    console.error("[rag-indexer] unhandled error:", detail);
+    logger.error("[rag-indexer] unhandled error", { error: detail });
 
     if (versionId) {
       await markVersionFailed(versionId, row.organization_id, detail).catch(() => {

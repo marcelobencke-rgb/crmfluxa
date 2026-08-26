@@ -14,6 +14,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logger";
 
 export interface ImpersonatingInfo {
   tenantId: string;
@@ -47,7 +48,7 @@ export function ImpersonateBanner({ impersonating }: Props) {
       router.push(`/admin/tenants/${impersonating.tenantId}`);
     } catch (err) {
       toast.error("Erro de rede ao encerrar impersonate");
-      console.error("[impersonate] end error", err);
+      logger.error("[impersonate] end error", { error: err instanceof Error ? err.message : String(err) });
     } finally {
       setBusy(false);
     }

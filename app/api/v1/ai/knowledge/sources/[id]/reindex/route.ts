@@ -18,6 +18,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +69,7 @@ export async function POST(
     .maybeSingle();
 
   if (fetchErr) {
-    console.error("[ai-knowledge-reindex] fetch failed:", fetchErr.message);
+    logger.error("[ai-knowledge-reindex] fetch failed:", { error: fetchErr.message });
     return fail("internal_error", "Erro ao verificar fonte.", 500, { requestId });
   }
   if (!existing) {
@@ -88,7 +89,7 @@ export async function POST(
     .eq("organization_id", activeOrg.orgId);
 
   if (clearErr) {
-    console.warn("[ai-knowledge-reindex] clear last_index_error failed (non-blocking):", clearErr.message);
+    logger.warn("[ai-knowledge-reindex] clear last_index_error failed (non-blocking):", { error: clearErr.message });
   }
 
   // Emit knowledge_source.updated (fire-and-forget).
@@ -106,7 +107,7 @@ export async function POST(
   } as never);
 
   if (emitErr) {
-    console.warn("[ai-knowledge-reindex] emit_event failed (non-blocking):", emitErr.message);
+    logger.warn("[ai-knowledge-reindex] emit_event failed (non-blocking):", { error: emitErr.message });
   }
 
   return ok({ id, queued: true as const, agent_id: ksRow.agent_id }, { requestId });

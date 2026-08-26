@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { env } from "@/lib/env";
 import type { AuditAction } from "./actions";
+import { logger } from "@/lib/logger";
 
 export function isServiceRoleConfigured(): boolean {
   const key = env.SUPABASE_SERVICE_ROLE_KEY.trim();
@@ -83,7 +84,7 @@ export async function audit(entry: AuditEntry): Promise<void> {
  * único sinal era um console.error dentro do contêiner.
  */
 function reportAuditFailure(message: string, entry: AuditEntry): void {
-  console.error("[audit] insert error", message, { action: entry.action });
+  logger.error("[audit] insert error", { error: message, action: entry.action });
   void import("@sentry/nextjs")
     .then((Sentry) => {
       Sentry.captureException(new Error(`[audit] write failed: ${message}`), {

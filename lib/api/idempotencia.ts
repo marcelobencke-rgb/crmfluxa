@@ -33,6 +33,7 @@
  */
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
 
 /** 24h — o mesmo TTL que o MCP já praticava. */
 const TTL_MS = 24 * 60 * 60 * 1000;
@@ -126,7 +127,7 @@ export function guardarResposta(
     })
     .then(({ error }) => {
       if (error && error.code !== "23505") {
-        console.error("[idempotencia] não consegui guardar a resposta", error.message);
+        logger.error("[idempotencia] não consegui guardar a resposta", { error: error.message });
       }
     });
 }

@@ -14,6 +14,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { byteaToBuffer, decryptKey } from "@/lib/crypto/aes_gcm";
 import { validateProviderKey } from "@/lib/ai/provider-validators";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,7 @@ export async function POST(
       tag: byteaToBuffer(row.api_key_tag),
     });
   } catch (err) {
-    console.error("[ai.credentials] decrypt failed during revalidate", err);
+    logger.error("[ai.credentials] decrypt failed during revalidate", { error: err instanceof Error ? err.message : String(err) });
     return fail("decrypt_failed", "Falha ao decifrar credential.", 500, { requestId });
   }
 

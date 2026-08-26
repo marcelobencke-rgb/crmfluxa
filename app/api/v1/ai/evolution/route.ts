@@ -23,6 +23,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { aggregateEvolution, type EvolutionInput } from "@/lib/ai/evolution/aggregate";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest): Promise<Response> {
    * "não aconteceu nada".
    */
   function fonteFalhou(tabela: string, error: { message: string }): void {
-    console.warn(`[ai-evolution] leitura de ${tabela} falhou`, {
+    logger.warn(`[ai-evolution] leitura de ${tabela} falhou`, {
       requestId,
       table: tabela,
       error: error.message,

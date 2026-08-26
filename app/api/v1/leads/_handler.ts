@@ -16,6 +16,7 @@ import { camposAlterados } from "@/lib/leads/campos-alterados";
 import { registraFalhaDeAtividade } from "@/lib/leads/activity-write-failure";
 import type { CreateLeadInput, UpdateLeadInput } from "@/lib/schemas";
 import { ehCorrecaoDeMovimentoDaIa } from "@/lib/leads/correcao-humana";
+import { logger } from "@/lib/logger";
 
 type SB = SupabaseClient;
 
@@ -327,7 +328,7 @@ export async function createLeadHandler(
       p_organization_id: ctx.organization_id,
     })
     .then(({ error }) => {
-      if (error) console.error("[lead.create] emit_event failed", error.message);
+      if (error) logger.error("[lead.create] emit_event failed", { error: error.message });
     });
 
   await audit({
@@ -485,7 +486,7 @@ export async function updateLeadHandler(
       p_organization_id: existing.organization_id,
     })
     .then(({ error }) => {
-      if (error) console.error("[lead.update] emit_event failed", error.message);
+      if (error) logger.error("[lead.update] emit_event failed", { error: error.message });
     });
 
   if (input.tags !== undefined) {
@@ -502,7 +503,7 @@ export async function updateLeadHandler(
           p_organization_id: existing.organization_id,
         })
         .then(({ error }) => {
-          if (error) console.error("[lead.update] emit_event failed", error.message);
+          if (error) logger.error("[lead.update] emit_event failed", { error: error.message });
         });
     }
   }
@@ -633,7 +634,7 @@ export async function moveLeadHandler(
       p_organization_id: lead.organization_id,
     })
     .then(({ error }) => {
-      if (error) console.error("[lead.move] emit_event failed", error.message);
+      if (error) logger.error("[lead.move] emit_event failed", { error: error.message });
     });
 
   // Wave 3 (CORE 2): a mudança de estágio entra no barramento da vida do lead.

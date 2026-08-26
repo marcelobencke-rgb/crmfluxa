@@ -13,6 +13,7 @@ import type { NextRequest } from "next/server";
 import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,7 @@ export async function GET(
 
   if (auditErr) {
     // Non-fatal — return empty trail
-    console.error("[lgpd-request-detail] audit_log fetch error", auditErr.message);
+    logger.error("[lgpd-request-detail] audit_log fetch error", { error: auditErr.message });
   }
 
   const audit_trail = auditRows ?? [];
@@ -82,7 +83,7 @@ export async function GET(
         .createSignedUrl(pdfPath, 72 * 60 * 60); // 72h in seconds
 
       if (signErr) {
-        console.error("[lgpd-request-detail] signed URL error", signErr.message);
+        logger.error("[lgpd-request-detail] signed URL error", { error: signErr.message });
       } else {
         signed_pdf_url = signedData?.signedUrl ?? null;
       }

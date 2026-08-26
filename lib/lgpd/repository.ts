@@ -8,6 +8,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { computeDueAt } from "./sla";
 import type { LgpdRequest, LgpdRequestType, LgpdScope } from "./types";
+import { logger } from "@/lib/logger";
 
 // ---------------------------------------------------------------------------
 // createLgpdRequest
@@ -117,7 +118,7 @@ export async function findContactByExternalId(
     .maybeSingle();
 
   if (err1) {
-    console.warn(
+    logger.warn(
       `[lgpd-customer-redact] findContactByExternalId (source_metadata) error: ${err1.message}`,
     );
   }
@@ -135,7 +136,7 @@ export async function findContactByExternalId(
       .maybeSingle();
 
     if (err2) {
-      console.warn(
+      logger.warn(
         `[lgpd-customer-redact] findContactByExternalId (email fallback) error: ${err2.message}`,
       );
     }

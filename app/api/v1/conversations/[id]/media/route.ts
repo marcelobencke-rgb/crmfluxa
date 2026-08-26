@@ -12,6 +12,7 @@ import { extFromMime, MAX_MEDIA_BYTES } from "@/lib/messaging/media/types";
 import { validateOutboundMedia } from "@/lib/messaging/media/upload-validation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
     .from("whatsapp-media")
     .upload(storagePath, buffer, { contentType: mime, upsert: false });
   if (upErr) {
-    console.error("[conversations.media] upload failed", upErr.message);
+    logger.error("[conversations.media] upload failed", { error: upErr.message });
     return fail("internal_error", "Erro ao subir o arquivo.", 500, { requestId });
   }
 

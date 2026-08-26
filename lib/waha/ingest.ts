@@ -152,7 +152,7 @@ async function avisarChatNaoReconhecido(
     p_organization_id: organizationId,
   } as never);
   if (error) {
-    console.error("[waha.ingest] o aviso de chat não reconhecido também falhou", error.message);
+    logger.error("[waha.ingest] o aviso de chat não reconhecido também falhou", { error: error.message });
   }
 }
 
@@ -352,7 +352,7 @@ async function upsertContact(
     p_notify: notifyName,
   } as never);
   if (error) {
-    console.error("[waha.ingest] fn_upsert_wa_contact failed", error.message);
+    logger.error("[waha.ingest] fn_upsert_wa_contact failed", { error: error.message });
     return null;
   }
   return (data as string) ?? null;
@@ -370,7 +370,7 @@ async function upsertConversation(
     p_session: sessionId,
   } as never);
   if (error) {
-    console.error("[waha.ingest] fn_upsert_wa_conversation failed", error.message);
+    logger.error("[waha.ingest] fn_upsert_wa_conversation failed", { error: error.message });
     return null;
   }
   return (data as string) ?? null;
@@ -426,7 +426,7 @@ async function markConversation(
   if (erroAviso) {
     // Segunda linha de defesa: o próprio canal de aviso caiu. Aqui o log do
     // processo é o que sobra — é para ESTE caso que ele existe, não como rotina.
-    console.error("[waha.ingest] o carimbo falhou E o aviso também", {
+    logger.error("[waha.ingest] o carimbo falhou E o aviso também", {
       conversa: convId,
       erro: error.message,
       aviso: erroAviso.message,
@@ -620,7 +620,7 @@ async function handleInbound(
         p_organization_id: session.organization_id,
       } as never)
       .then(({ error }) => {
-        if (error) console.error("[waha.ingest] emit dispatch_requested failed", error.message);
+        if (error) logger.error("[waha.ingest] emit dispatch_requested failed", { error: error.message });
       });
 
     admin
@@ -638,7 +638,7 @@ async function handleInbound(
         p_organization_id: session.organization_id,
       } as never)
       .then(({ error }) => {
-        if (error) console.error("[waha.ingest] emit message.received failed", error.message);
+        if (error) logger.error("[waha.ingest] emit message.received failed", { error: error.message });
       });
 
     if (mediaUrlOf(p)) {
@@ -652,7 +652,7 @@ async function handleInbound(
           p_organization_id: session.organization_id,
         } as never)
         .then(({ error }) => {
-          if (error) console.error("[waha.ingest] emit media.persist_requested failed", error.message);
+          if (error) logger.error("[waha.ingest] emit media.persist_requested failed", { error: error.message });
         });
     }
   }
@@ -770,7 +770,7 @@ async function handleOutboundFromUserPhone(
     .select("id")
     .maybeSingle();
   if (insertErr && insertErr.code !== "23505") {
-    console.error("[waha.ingest] outbound insert failed", insertErr.message);
+    logger.error("[waha.ingest] outbound insert failed", { error: insertErr.message });
     return;
   }
   if (insertErr?.code === "23505") {
@@ -804,7 +804,7 @@ async function handleOutboundFromUserPhone(
         p_organization_id: session.organization_id,
       } as never)
       .then(({ error }) => {
-        if (error) console.error("[waha.ingest] emit media.persist_requested failed", error.message);
+        if (error) logger.error("[waha.ingest] emit media.persist_requested failed", { error: error.message });
       });
   }
 }

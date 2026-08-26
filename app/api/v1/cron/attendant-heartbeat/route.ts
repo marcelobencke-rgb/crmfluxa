@@ -20,6 +20,7 @@ import { env } from "@/lib/env";
 import { HEARTBEAT_TIMEOUT_MINUTES } from "@/lib/routing/eligibility";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { comBatimento } from "@/lib/cron/com-batimento";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +47,7 @@ async function getInterno(req: NextRequest): Promise<Response> {
     .select("user_id");
 
   if (error) {
-    console.error("[attendant-heartbeat] sweep failed", error.message);
+    logger.error("[attendant-heartbeat] sweep failed", { error: error.message });
     return fail("internal_error", "Failed to sweep stale heartbeats.", 500, { requestId });
   }
 

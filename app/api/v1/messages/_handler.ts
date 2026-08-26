@@ -24,6 +24,7 @@ import type { ListMessagesQuery, SendMessageInput } from "@/lib/schemas";
 import { sendTemplateForSession } from "@/lib/channels/meta/send-template-for-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Message } from "@/lib/types/messaging";
+import { logger } from "@/lib/logger";
 
 type SB = SupabaseClient;
 
@@ -97,9 +98,11 @@ async function removerEcoDoProprioEnvio(
       // produzir: apagar a própria mensagem que acabou de ser entregue. Quem
       // mexer no filtro de cima não vai ser avisado por teste nenhum.
       .neq("id", minhaLinhaId);
-    if (error) console.error("[messages.send] não consegui remover o eco do próprio envio", error.message);
+    if (error) logger.error("[messages.send] não consegui remover o eco do próprio envio", { error: error.message });
   } catch (err) {
-    console.error("[messages.send] a remoção do eco lançou", err instanceof Error ? err.message : err);
+    logger.error("[messages.send] a remoção do eco lançou", {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 
@@ -553,7 +556,7 @@ export async function sendMessageHandler(
       p_organization_id: c.organization_id,
     })
     .then(({ error }) => {
-      if (error) console.error("[messages.send] emit_event failed", error.message);
+      if (error) logger.error("[messages.send] emit_event failed", { error: error.message });
     });
 
   return message;

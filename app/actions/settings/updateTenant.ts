@@ -9,6 +9,7 @@ import { audit } from "@/lib/audit";
 import { tenantSchema, type TenantInput } from "@/lib/schemas/settings";
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
+import { logger } from "@/lib/logger";
 
 export type UpdateTenantResult =
   | { ok: true }
@@ -108,7 +109,7 @@ export async function updateTenant(input: TenantInput): Promise<UpdateTenantResu
       p_organization_id: activeOrg.orgId,
     })
     .then(({ error: e }) => {
-      if (e) console.error("[updateTenant] emit_event failed", e.message);
+      if (e) logger.error("[updateTenant] emit_event failed", { error: e.message });
     });
 
   revalidatePath("/app/settings/tenant");

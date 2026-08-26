@@ -18,6 +18,7 @@ import type {
   ContactPatch,
   ContactListQuery,
 } from "@/lib/schemas";
+import { logger } from "@/lib/logger";
 
 type SB = SupabaseClient;
 
@@ -213,7 +214,7 @@ export async function getContactHandler(
         p_contact_id: input.contactId,
       });
       if (decErr) {
-        console.warn("[contacts.get] decrypt_cpf RPC unavailable", decErr.message);
+        logger.warn("[contacts.get] decrypt_cpf RPC unavailable", { error: decErr.message });
       } else if (typeof dec === "string") {
         cpfDecrypted = dec;
       }
@@ -307,7 +308,7 @@ export async function createContactHandler(
       p_organization_id: contact.organization_id,
     })
     .then(({ error }) => {
-      if (error) console.error("[contacts.create] emit_event failed", error.message);
+      if (error) logger.error("[contacts.create] emit_event failed", { error: error.message });
     });
 
   await audit({
@@ -475,7 +476,7 @@ export async function patchContactHandler(
       p_organization_id: contact.organization_id,
     })
     .then(({ error }) => {
-      if (error) console.error("[contacts.patch] emit_event failed", error.message);
+      if (error) logger.error("[contacts.patch] emit_event failed", { error: error.message });
     });
 
   if (input.tags !== undefined) {
@@ -492,7 +493,7 @@ export async function patchContactHandler(
           p_organization_id: contact.organization_id,
         })
         .then(({ error }) => {
-          if (error) console.error("[contacts.patch] emit_event failed", error.message);
+          if (error) logger.error("[contacts.patch] emit_event failed", { error: error.message });
         });
     }
   }

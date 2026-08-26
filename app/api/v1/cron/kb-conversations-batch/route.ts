@@ -21,6 +21,7 @@ import { env } from "@/lib/env";
 import { ingestConversationsBatch } from "@/lib/ai/rag/ingest/conversations";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { comBatimento } from "@/lib/cron/com-batimento";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,7 @@ async function getInterno(req: NextRequest): Promise<Response> {
     .eq("is_active", true);
 
   if (agentErr) {
-    console.error("[kb-conversations-cron] agent list failed", agentErr.message);
+    logger.error("[kb-conversations-cron] agent list failed", { error: agentErr.message });
     return fail("internal_error", agentErr.message, 500, { requestId });
   }
 
@@ -89,11 +90,10 @@ async function getInterno(req: NextRequest): Promise<Response> {
       totalSkipped += result.skipped;
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
-      console.error(
-        "[kb-conversations-cron] org failed",
-        agent.organization_id,
-        detail,
-      );
+      logger.error("[kb-conversations-cron] org failed", {
+        organization_id: agent.organization_id,
+        error: detail,
+      });
       failures.push(`${agent.organization_id}:${detail}`);
     }
   }

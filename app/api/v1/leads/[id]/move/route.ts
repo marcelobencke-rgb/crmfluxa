@@ -18,6 +18,7 @@ import { moveLeadSchema, validateRequest } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
 import { emitLeadActivity, stageChangeReason } from "@/lib/leads/activity-emitter";
 import { registraFalhaDeAtividade } from "@/lib/leads/activity-write-failure";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -181,7 +182,7 @@ export async function POST(
       p_organization_id: lead.organization_id,
     })
     .then(({ error }) => {
-      if (error) console.error("[lead.move] emit_event failed", error.message);
+      if (error) logger.error("[lead.move] emit_event failed", { error: error.message });
     });
 
   await audit({

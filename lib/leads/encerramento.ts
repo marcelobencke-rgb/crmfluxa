@@ -25,6 +25,7 @@ import { ApiError } from "@/lib/api/types";
 import { audit } from "@/lib/audit";
 import { emitLeadActivity } from "@/lib/leads/activity-emitter";
 import { registraFalhaDeAtividade } from "@/lib/leads/activity-write-failure";
+import { logger } from "@/lib/logger";
 
 /** Como a demanda terminou. Não há terceira: encerrar é ganhar ou perder. */
 export type DesfechoDaDemanda = "won" | "lost";
@@ -170,7 +171,7 @@ export async function encerraDemanda(
       p_organization_id: ctx.organization_id,
     })
     .then(({ error }) => {
-      if (error) console.error(`[${eventType}] emit_event failed`, error.message);
+      if (error) logger.error(`[${eventType}] emit_event failed`, { error: error.message });
     });
 
   // A LINHA NA TIMELINE — o que faltava. `reason` nomeia o desfecho e, na perda,

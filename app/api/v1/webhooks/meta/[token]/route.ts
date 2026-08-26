@@ -25,6 +25,7 @@ import { ingestMetaInbound } from "@/lib/channels/meta/ingest";
 import { metaSessionByWebhookToken } from "@/lib/channels/meta/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ingressoLimitado, TETOS } from "@/lib/webhooks/limite-de-ingresso";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
       if (r.status === "failed" || r.status === "no_session") {
         // 2xx continua (a Meta re-entregaria em loop), mas a falha NÃO fica muda:
         // vai ao log estruturado e ao corpo da resposta.
-        console.error("[meta.ingest] inbound não ingerido", {
+        logger.error("[meta.ingest] inbound não ingerido", {
           status: r.status,
           reason: r.status === "failed" ? r.reason : undefined,
           external_id: e.externalId,
