@@ -24,7 +24,19 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 45, e não 30, porque a suíte PASSOU do teto e o gate virou resultado
+    # parcial. As duas partes rodam EM SEQUÊNCIA no mesmo job (a parte 2 precisa
+    # de processo novo para zerar o contador de login), então o teto vale para a
+    # soma. Medido: main em 26-27min, esta branch em 28m53s e depois 30m21s — a
+    # última foi CANCELADA no teto, com a parte 2 nunca executada. O relatório
+    # saiu com "4 falhas" quando o número real da rodada anterior era 10: um job
+    # cortado se lê como um job que passou nos que faltaram.
+    #
+    # Teto que corta é pior que teto alto: ele não protege de nada (o job já
+    # gastou os 30min) e ainda produz um número que engana quem confia nele.
+    # 45 dá folga para a suíte crescer sem mentir; se um dia encostar de novo, a
+    # saída é PARALELIZAR as partes em jobs separados, não subir o teto de novo.
+    timeout-minutes: 45
     # ─────────────────────────────────────────────────────────────────────────
     # A COBERTURA DEIXA DE SER PROSA DIGITADA À MÃO.
     #
