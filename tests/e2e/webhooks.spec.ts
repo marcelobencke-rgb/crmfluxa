@@ -110,10 +110,15 @@ test.describe("webhooks & automações — fluxo completo", () => {
     let pipelineId: string | undefined;
 
     try {
-      // --- Step 1: login como manager; sidebar mostra "Webhooks" ---
+      // --- Step 1: login como manager e ir para Webhooks ---
+      //
+      // POR URL, e não clicando na sidebar: o grupo `organizacao` (onde Webhooks
+      // vive) é o `GRUPO_NO_RODAPE` — `SidebarNav` o filtra da navegação que
+      // rola e renderiza APENAS o hub "Configurações". Não existe, nem pode
+      // existir, um link "Webhooks" na sidebar. O que este caso prova é o fluxo
+      // de webhooks ponta a ponta; a navegação era só o caminho até ele.
       await login(page, creds.users.manager!.email);
-      await expect(page.getByRole("link", { name: "Webhooks" })).toBeVisible();
-      await page.getByRole("link", { name: "Webhooks" }).click();
+      await page.goto("/app/webhooks");
       await page.waitForURL(/\/app\/webhooks/);
 
       // --- Step 2: aba "Receber dados" — criar fonte ---

@@ -227,7 +227,12 @@ test.describe("ciclo de vida do convite (ponta a ponta + adversarial)", () => {
     await expect(page.getByText("Selecione uma conversa", { exact: true })).toBeVisible();
 
     await page.goto("/app/pipelines");
-    await expect(page.getByRole("heading", { name: "Pipelines" })).toBeVisible();
+    // O que este caso promete é que o agent NÃO É BLOQUEADO — o mesmo par dos
+    // dois `waitForURL(/\/403/)` acima, do outro lado. Asserir um heading
+    // "Pipelines" era frágil e passou a ser impossível: `page.tsx` renderiza o
+    // QUADRO direto quando a org tem funis, e aquele heading só sobrevive no
+    // ramo de estado vazio (que o seed do e2e nunca produz).
+    await expect(page).toHaveURL(/\/app\/pipelines/);
   });
 
   test("3. permissão pós-aceite: agent NÃO consegue convidar (403)", async ({ page }) => {

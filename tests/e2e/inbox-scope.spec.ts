@@ -41,7 +41,11 @@ test.describe("G4-02 — inbox com escopo", () => {
   test("manager: vê a visão Todas", async ({ page }) => {
     await login(page, creds.users.manager!.email);
     await page.goto("/app/inbox");
-    await expect(page.getByRole("tab", { name: /Todas/ })).toBeVisible();
+    // `button`, não `tab`: o seletor de status do inbox é uma lista lateral
+    // (`SidebarItem` em components/inbox/InboxSidebar.tsx renderiza <button>),
+    // não um tablist. O caso continua provando o mesmo — o manager enxerga a
+    // visão "Todas" —, só deixa de procurar um papel de ARIA que a tela não usa.
+    await expect(page.getByRole("button", { name: /Todas/ })).toBeVisible();
     await page.screenshot({ path: path.join(EVIDENCE, "G4-02-inbox-scope-manager.png"), fullPage: true });
   });
 
