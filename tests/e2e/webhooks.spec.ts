@@ -224,7 +224,12 @@ test.describe("webhooks & automações — fluxo completo", () => {
       // A regra não tem condição — dispara tanto pro "Lead de Teste" (passo 3)
       // quanto pro lead real (passo 5), logo pode haver 2 cards com esse nome;
       // .first() basta pra confirmar que a automação rodou com sucesso.
-      await page.getByRole("tab", { name: "Atividade" }).click();
+      // "Histórico", e não "Atividade": desde que o passo anterior passou a ir
+      // para /app/automations, é a aba DESTA tela que mostra as execuções.
+      // Renderiza o MESMO `ActivityTab` que a aba "Atividade" de /app/webhooks
+      // (as duas importam de app/app/webhooks/_components/ActivityTab) — mesmo
+      // conteúdo, mesmo botão "Atualizar", só outro rótulo.
+      await page.getByRole("tab", { name: "Histórico" }).click();
       const runTitle = page.getByText(RULE_NAME, { exact: true }).first();
       const runCard = cardOf(runTitle);
       let found = false;

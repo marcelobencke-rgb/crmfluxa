@@ -189,7 +189,12 @@ test.describe("J6.8 — anti-SSRF do outbound call_webhook (real, ponta a ponta)
       await drenar();
 
       // --- aba Atividade: a run aparece e NÃO é Sucesso (ação outbound barrada) ---
-      await page.getByRole("tab", { name: "Atividade" }).click();
+      // "Histórico", e não "Atividade": desde que o passo anterior passou a ir
+      // para /app/automations, é a aba DESTA tela que mostra as execuções.
+      // Renderiza o MESMO `ActivityTab` que a aba "Atividade" de /app/webhooks
+      // (as duas importam de app/app/webhooks/_components/ActivityTab) — mesmo
+      // conteúdo, mesmo botão "Atualizar", só outro rótulo.
+      await page.getByRole("tab", { name: "Histórico" }).click();
       const runTitle = page.getByText(RULE_NAME, { exact: true }).first();
       const runCard = cardOf(runTitle);
       let appeared = false;
