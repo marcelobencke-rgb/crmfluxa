@@ -15,11 +15,27 @@ name: e2e
 # "nem rodou" é pior que vermelho.
 #
 # Quando N execuções seguidas passarem limpas, adicionar `e2e` aos obrigatórios.
+# ─── QUANDO ESTE JOB RODA, e por que não é a cada push ──────────────────────
+#
+# Cada execução leva ~27 min de runner, e o gatilho anterior (`pull_request` sem
+# `types`) disparava em TODO push para a branch da PR. Numa frente iterativa isso
+# vira dez execuções para uma feature — e em 2026-08-27 a conta do GitHub parou
+# de aceitar jobs por estouro de limite de gasto, com os quatro checks morrendo
+# em 3 segundos sem executar passo nenhum.
+#
+# Agora: uma execução quando a PR é marcada PRONTA (sai de rascunho), uma quando
+# a `main` recebe o merge, e sob demanda pelo botão. Rascunho não gasta runner.
+#
+# ⚠️ Consequência que vale saber: numa PR que nasce pronta (não passou por
+# rascunho), `ready_for_review` NÃO dispara. Use o `workflow_dispatch`, ou abra
+# como rascunho e marque pronta — que é o fluxo que este gatilho premia.
 on:
   pull_request:
     branches: [main]
+    types: [ready_for_review]
   push:
     branches: [main]
+  workflow_dispatch: {}
 
 jobs:
   e2e:

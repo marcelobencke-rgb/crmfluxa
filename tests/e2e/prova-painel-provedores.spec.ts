@@ -116,6 +116,20 @@ test("F3 — a OpenRouter é oferecida e seus modelos estão no seletor", async 
   await page.screenshot({ path: "evidence/provedores/04-modelos-openrouter.png", fullPage: true });
 });
 
+/**
+ * VIEWPORT ALTA SÓ AQUI — 720px não cabe o catálogo de modelos.
+ *
+ * O padrão do Playwright é 1280x720, e o `Select` de modelo do OpenRouter abre
+ * um popper com o catálogo inteiro. O log mostrava o alvo resolvido e correto,
+ * "done scrolling", e logo depois "element is outside of the viewport": o popper
+ * é mais alto que a janela, então rolar não traz a opção para dentro.
+ *
+ * `test.use` e não mudança global: a altura da janela é medida por outros specs
+ * (a dobra do menu a 900px, entre eles), e subir para todo mundo trocaria uma
+ * falha por outra em lugar diferente.
+ */
+test.use({ viewport: { width: 1280, height: 1200 } });
+
 test("F1 — trocar o modelo GRAVA, e a tela passa a mostrar o novo", async ({ page }) => {
   await page.goto("/app/ai/providers");
   await page.waitForSelector('[data-testid="painel-de-provedores"]');

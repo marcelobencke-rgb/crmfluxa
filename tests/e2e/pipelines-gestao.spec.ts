@@ -180,6 +180,17 @@ test.describe("gestão de funis", () => {
       await page.getByTestId("nome-do-novo-funil").fill(NOME);
       await page.getByTestId("confirmar-novo-funil").click();
       await page.waitForURL(/\/app\/pipelines\//, { timeout: 30_000 });
+      // ESPERA O QUADRO NOVO ASSENTAR, e não só a URL trocar.
+      //
+      // `handleCreate` faz `router.push` para o funil recém-criado; a URL muda
+      // ANTES de o Server Component novo chegar com a lista atualizada. Abrir o
+      // seletor nessa janela clicava no gatilho da página velha, e a navegação
+      // seguinte trocava o DOM com o menu aberto — a linha do funil novo nunca
+      // aparecia, e o `idDoFunil` estourava os 30s.
+      //
+      // O gatilho exibe `currentPipelineName`: ele conter NOME é a prova de que
+      // o quadro do funil novo já é o que está na tela.
+      await expect(page.getByTestId("alternar-funil")).toContainText(NOME, { timeout: 30_000 });
       await page.screenshot({ path: path.join(EVIDENCIA, "funis-01-criado.png"), fullPage: true });
 
       await abrirSeletor(page);
@@ -198,6 +209,10 @@ test.describe("gestão de funis", () => {
       await page.getByTestId("renomear-funil").click();
       await page.getByTestId("nome-do-funil").fill(RENOMEADO);
       await page.getByTestId("salvar-nome-funil").click();
+      // Mesmo sinal de assentamento do passo de criar: o gatilho exibe o nome do
+      // funil atual, então ele conter RENOMEADO prova que a mutação chegou à
+      // tela — abrir o seletor antes disso lê a lista velha.
+      await expect(page.getByTestId("alternar-funil")).toContainText(RENOMEADO, { timeout: 30_000 });
       await abrirSeletor(page);
       await expect(linhaDoFunil(page, RENOMEADO)).toHaveCount(1);
       await page.keyboard.press("Escape");

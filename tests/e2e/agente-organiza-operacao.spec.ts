@@ -266,8 +266,15 @@ test.describe("o agente organiza a operação e a tela conta quem foi", () => {
       });
 
       // ---- a tela mostra "Ativa" COM a autoria do assistente ----
-      await page.goto(`${APP_URL}/app/webhooks`);
-      await page.getByRole("tab", { name: "Automações" }).click();
+      // A aba "Automações" não existe mais em /app/webhooks: as regras mudaram
+      // para /app/automations, que renderiza a mesma `RulesTab` com
+      // `defaultValue="rules"` — cair na URL já é cair na aba certa.
+      //
+      // Este era o motivo REAL do "estoura 180s e morre na limpeza": o clique
+      // numa aba inexistente pendurava até o teto do teste, e o `finally` da
+      // linha ~324 herdava um orçamento já zerado. A falha aparecia no
+      // `request.delete` da limpeza — 50 linhas depois da causa.
+      await page.goto(`${APP_URL}/app/automations`);
       const tituloDaRegra = page.getByText(REGRA, { exact: true }).first();
       await expect(tituloDaRegra).toBeVisible({ timeout: 15_000 });
       const cardDaRegra = cardDe(tituloDaRegra);
