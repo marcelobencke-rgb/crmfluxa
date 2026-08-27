@@ -167,7 +167,16 @@ test.describe("gestão de funis", () => {
     // Capturado ANTES da mutação começar: se algo estourar mais adiante, o
     // `finally` precisa saber a quem devolver o "Padrão" mesmo sem ter chegado
     // até lá pela sequência feliz.
+    // ABRE O MENU ANTES DE LER — as linhas só existem no DOM com ele aberto.
+    //
+    // Esta chamada estava sem `abrirSeletor` e por isso estourava 30s: o
+    // `idDoFunil` procurava a linha num menu fechado. O caso irmão acima passava
+    // porque abre explicitamente; este falhava na PRIMEIRA linha do corpo, antes
+    // de chegar em qualquer conserto que eu tivesse feito adiante — e por isso
+    // três rodadas seguidas mostraram o mesmo sintoma em lugares diferentes.
+    await abrirSeletor(page);
     const idSemeado = await idDoFunil(page, FUNIL_SEMEADO);
+    await page.keyboard.press("Escape");
     let id: string | undefined;
 
     try {

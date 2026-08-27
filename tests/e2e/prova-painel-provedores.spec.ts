@@ -116,20 +116,6 @@ test("F3 — a OpenRouter é oferecida e seus modelos estão no seletor", async 
   await page.screenshot({ path: "evidence/provedores/04-modelos-openrouter.png", fullPage: true });
 });
 
-/**
- * VIEWPORT ALTA SÓ AQUI — 720px não cabe o catálogo de modelos.
- *
- * O padrão do Playwright é 1280x720, e o `Select` de modelo do OpenRouter abre
- * um popper com o catálogo inteiro. O log mostrava o alvo resolvido e correto,
- * "done scrolling", e logo depois "element is outside of the viewport": o popper
- * é mais alto que a janela, então rolar não traz a opção para dentro.
- *
- * `test.use` e não mudança global: a altura da janela é medida por outros specs
- * (a dobra do menu a 900px, entre eles), e subir para todo mundo trocaria uma
- * falha por outra em lugar diferente.
- */
-test.use({ viewport: { width: 1280, height: 1200 } });
-
 test("F1 — trocar o modelo GRAVA, e a tela passa a mostrar o novo", async ({ page }) => {
   await page.goto("/app/ai/providers");
   await page.waitForSelector('[data-testid="painel-de-provedores"]');
@@ -138,7 +124,23 @@ test("F1 — trocar o modelo GRAVA, e a tela passa a mostrar o novo", async ({ p
   await page.click('[data-testid="provider-stage_classifier"]');
   await page.getByRole("option", { name: /OpenRouter/ }).click();
   await page.click('[data-testid="modelo-stage_classifier"]');
-  await page.getByRole("option", { name: /Llama 3\.3 70B Instruct/ }).first().click();
+  // TYPEAHEAD DO RADIX, e não clique na opção.
+  //
+  // O catálogo do OpenRouter abre um `Select` com centenas de itens, e clicar
+  // direto reprovava com "element is visible, enabled and stable / done
+  // scrolling / element is outside of the viewport": o alvo resolvia certo e o
+  // clique nunca acontecia.
+  //
+  // Subir a viewport para 1200px NÃO resolveu — tentado e medido numa rodada
+  // inteira. Logo, a altura da janela não era a causa: é o popper do Radix, com
+  // rolagem própria, que a heurística de viewport do Playwright não alcança.
+  //
+  // Digitar é o que um usuário faz e é o caminho que o próprio Radix oferece: o
+  // typeahead move o foco para o item que casa e o rola nativamente; `Enter`
+  // seleciona. Sem depender de geometria nenhuma.
+  await page.getByRole("option").first().waitFor({ timeout: 15_000 });
+  await page.keyboard.type("Llama 3.3 70B", { delay: 30 });
+  await page.keyboard.press("Enter");
   await page.click('[data-testid="salvar-stage_classifier"]');
 
   // A confirmação é o mínimo; o que importa vem depois.
