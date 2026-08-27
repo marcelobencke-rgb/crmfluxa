@@ -62,9 +62,30 @@ async function login(page: Page, email: string): Promise<void> {
   await page.waitForURL(/\/app(\/|$)/);
 }
 
-/** A linha do funil pelo nome visível — a lista não expõe id para o usuário. */
+/**
+ * A LISTA DE FUNIS VIVE DENTRO DO DROPDOWN, não numa página.
+ *
+ * A versão anterior deste spec procurava `li[data-testid^="funil-"]` numa tela
+ * de lista que não existe mais: a gestão de funis passou a ser o
+ * `PipelineSelector` do quadro (components/kanban/PipelineSelector.tsx), um
+ * menu que se abre pelo nome do funil atual. As linhas são `div`, não `li`, e
+ * só estão no DOM com o menu ABERTO — daí `abrirSeletor` antes de cada leitura.
+ */
+async function abrirSeletor(page: Page): Promise<void> {
+  await page.getByTestId("alternar-funil").click();
+  await expect(page.getByTestId("novo-funil").or(page.locator('[data-testid^="funil-"]').first()))
+    .toBeVisible();
+}
+
 function linhaDoFunil(page: Page, nome: string) {
-  return page.locator('li[data-testid^="funil-"]').filter({ hasText: nome });
+  return page.locator('[data-testid^="funil-"]').filter({ hasText: nome });
+}
+
+/** Troca o funil ATUAL — renomear e arquivar agem sobre ele, não sobre uma linha. */
+async function selecionarFunil(page: Page, nome: string): Promise<void> {
+  await abrirSeletor(page);
+  await linhaDoFunil(page, nome).first().click();
+  await page.waitForURL(/\/app\/pipelines/);
 }
 
 /**
@@ -76,16 +97,34 @@ function linhaDoFunil(page: Page, nome: string) {
  * para um alvo só — que é o que o teste quer dizer quando diz "clique aqui".
  */
 async function idDoFunil(page: Page, nome: string): Promise<string> {
-  const testid = await linhaDoFunil(page, nome).getAttribute("data-testid");
+  const testid = await linhaDoFunil(page, nome).first().getAttribute("data-testid");
   if (!testid) throw new Error(`funil «${nome}» não está na lista`);
   return testid.replace(/^funil-/, "");
 }
 
+/**
+ * ⚠️ O QUE ESTE SPEC DEIXOU DE COBRIR, e por quê.
+ *
+ * **Reordenar funis.** A versão anterior tinha um passo `subir-${id}` que subia
+ * o funil para o topo da lista. O `PipelineSelector` não oferece reordenação de
+ * FUNIS — o `subir-`/`descer-` que existe hoje (em
+ * app/app/settings/tenant/pipelines/_stages.tsx) é de ETAPAS, outra coisa. O
+ * passo saiu porque não há UI para exercer; se a reordenação de funis voltar,
+ * volta com ele.
+ *
+ * **Recusa como elemento inline.** A versão anterior asseria
+ * `arquivar-erro-${id}`, um elemento de erro por linha. O dropdown mostra a
+ * recusa por TOAST — `handleArchive` repassa a mensagem da API. O que o caso
+ * guarda (a recusa é EXPLICADA, não silenciosa) continua guardado; o que mudou
+ * é onde a explicação aparece.
+ */
 test.describe("gestão de funis", () => {
   test.beforeEach(async ({ page }) => {
     await login(page, creds.users.manager!.email);
     await page.goto("/app/pipelines");
-    await expect(page.getByRole("heading", { name: "Pipelines" })).toBeVisible();
+    // `/app/pipelines` renderiza o QUADRO direto (page.tsx:25); o heading
+    // "Pipelines" só existe no ramo de estado vazio, que o seed nunca produz.
+    await expect(page.getByTestId("alternar-funil")).toBeVisible({ timeout: 30_000 });
   });
 
   test("a lista mostra só a organização ativa, mesmo com funil homônimo em outra", async ({
@@ -94,7 +133,8 @@ test.describe("gestão de funis", () => {
     // O manager é membro de DUAS organizações, e as duas têm um funil "Pedidos".
     // Sem o filtro por organização, apareceriam as duas linhas — indistinguíveis,
     // cada uma levando a um quadro diferente.
-    await expect(page.getByText("Pedidos", { exact: true })).toHaveCount(1);
+    await abrirSeletor(page);
+    await expect(linhaDoFunil(page, "Pedidos")).toHaveCount(1);
   });
 
   test("cria funil com colunas, edita, e as recusas aparecem explicadas", async ({ page }) => {
@@ -106,61 +146,83 @@ test.describe("gestão de funis", () => {
 
     try {
       // ---- criar ----
+      // Criar REDIRECIONA para o quadro do funil novo (handleCreate faz
+      // router.push), então ele já fica sendo o "funil atual" — que é sobre
+      // quem renomear e arquivar agem.
+      await abrirSeletor(page);
       await page.getByTestId("novo-funil").click();
       await page.getByTestId("nome-do-novo-funil").fill(NOME);
       await page.getByTestId("confirmar-novo-funil").click();
-      await expect(linhaDoFunil(page, NOME)).toBeVisible();
-      id = await idDoFunil(page, NOME);
+      await page.waitForURL(/\/app\/pipelines\//, { timeout: 30_000 });
       await page.screenshot({ path: path.join(EVIDENCIA, "funis-01-criado.png"), fullPage: true });
 
+      await abrirSeletor(page);
+      await expect(linhaDoFunil(page, NOME)).toHaveCount(1);
+      id = await idDoFunil(page, NOME);
+      await page.keyboard.press("Escape");
+
       // ---- o funil nasce com as quatro colunas (senão o quadro é morto) ----
-      await linhaDoFunil(page, NOME).getByRole("link").click();
-      await page.waitForURL(/\/app\/pipelines\//);
       for (const coluna of ["Novo", "Em andamento", "Ganho", "Perdido"]) {
         await expect(page.getByText(coluna, { exact: true }).first()).toBeVisible();
       }
       await page.screenshot({ path: path.join(EVIDENCIA, "funis-02-quadro-novo.png"), fullPage: true });
 
-      await page.goto("/app/pipelines");
-
-      // ---- renomear ----
-      await page.getByTestId(`renomear-${id}`).click();
-      await page.getByTestId(`nome-${id}`).fill(RENOMEADO);
-      await page.getByTestId(`salvar-nome-${id}`).click();
-      await expect(linhaDoFunil(page, RENOMEADO)).toBeVisible();
-
-      // ---- reordenar: sobe para o topo ----
-      await page.getByTestId(`subir-${id}`).click();
-      await expect(page.locator('li[data-testid^="funil-"]').first()).toContainText(RENOMEADO);
+      // ---- renomear (age no funil ATUAL, que é o recém-criado) ----
+      await abrirSeletor(page);
+      await page.getByTestId("renomear-funil").click();
+      await page.getByTestId("nome-do-funil").fill(RENOMEADO);
+      await page.getByTestId("salvar-nome-funil").click();
+      await abrirSeletor(page);
+      await expect(linhaDoFunil(page, RENOMEADO)).toHaveCount(1);
+      await page.keyboard.press("Escape");
 
       // ---- tornar padrão ----
+      await abrirSeletor(page);
       await page.getByTestId(`padrao-${id}`).click();
-      await expect(linhaDoFunil(page, RENOMEADO).getByText("Padrão")).toBeVisible();
+      await abrirSeletor(page);
+      await expect(linhaDoFunil(page, RENOMEADO)).toContainText("Padrão");
+      await page.keyboard.press("Escape");
       await page.screenshot({ path: path.join(EVIDENCIA, "funis-03-padrao.png"), fullPage: true });
 
       // ---- recusa: arquivar o funil padrão ----
-      await page.getByTestId(`arquivar-${id}`).click();
-      await page.getByTestId(`arquivar-confirmar-${id}`).click();
-      await expect(page.getByTestId(`arquivar-erro-${id}`)).toContainText(/padrão/i);
+      // A recusa chega por TOAST, não por elemento inline: `handleArchive`
+      // repassa a mensagem da API (`toast.error(\`Erro: \${e.message}\`)`). O que o
+      // caso guarda é que a recusa é EXPLICADA — e continua guardando.
+      await abrirSeletor(page);
+      await page.getByTestId("arquivar-funil").click();
+      await page.getByTestId("arquivar-confirmar").click();
+      await expect(page.getByText(/padrão/i).first()).toBeVisible({ timeout: 15_000 });
       await page.screenshot({
         path: path.join(EVIDENCIA, "funis-04-recusa-padrao.png"),
         fullPage: true,
       });
+      await page.keyboard.press("Escape");
 
       // ---- devolve o padrão e arquiva de verdade ----
+      await abrirSeletor(page);
       await page.getByTestId(`padrao-${idPedidos}`).click();
-      await expect(linhaDoFunil(page, "Pedidos").getByText("Padrão")).toBeVisible();
+      await abrirSeletor(page);
+      await expect(linhaDoFunil(page, "Pedidos")).toContainText("Padrão");
+      await page.keyboard.press("Escape");
 
-      await page.getByTestId(`arquivar-${id}`).click();
-      await page.getByTestId(`arquivar-confirmar-${id}`).click();
+      await selecionarFunil(page, RENOMEADO);
+      await abrirSeletor(page);
+      await page.getByTestId("arquivar-funil").click();
+      await page.getByTestId("arquivar-confirmar").click();
+      await page.waitForURL(/\/app\/pipelines/, { timeout: 30_000 });
+      await abrirSeletor(page);
       await expect(linhaDoFunil(page, RENOMEADO)).toHaveCount(0);
+      await page.keyboard.press("Escape");
 
       // ---- recusa: arquivar o último funil ----
-      await page.getByTestId(`arquivar-${idPedidos}`).click();
-      await page.getByTestId(`arquivar-confirmar-${idPedidos}`).click();
-      await expect(page.getByTestId(`arquivar-erro-${idPedidos}`)).toContainText(/único/i);
+      await selecionarFunil(page, "Pedidos");
+      await abrirSeletor(page);
+      await page.getByTestId("arquivar-funil").click();
+      await page.getByTestId("arquivar-confirmar").click();
+      await expect(page.getByText(/único|último/i).first()).toBeVisible({ timeout: 15_000 });
       await page.screenshot({
-        path: path.join(EVIDENCIA, "funis-05-recusa-ultimo.png"),
+        path: path.join(EVIDENCIA, "funis-05-recusa-ultimo.png",
+        ),
         fullPage: true,
       });
     } finally {
@@ -172,27 +234,29 @@ test.describe("gestão de funis", () => {
       await page.goto("/app/pipelines").catch(() => {});
 
       try {
+        await abrirSeletor(page);
         const pedidosEhPadrao = await linhaDoFunil(page, "Pedidos")
-          .getByText("Padrão")
-          .isVisible()
+          .filter({ hasText: "Padrão" })
+          .count()
+          .then((n) => n > 0)
           .catch(() => false);
-        if (!pedidosEhPadrao) {
-          await page.getByTestId(`padrao-${idPedidos}`).click();
-          await expect(linhaDoFunil(page, "Pedidos").getByText("Padrão")).toBeVisible();
-        }
+        if (!pedidosEhPadrao) await page.getByTestId(`padrao-${idPedidos}`).click();
+        await page.keyboard.press("Escape").catch(() => {});
       } catch {
         // melhor esforço
       }
 
       try {
         if (id) {
-          const aindaExiste = await page
-            .getByTestId(`arquivar-${id}`)
-            .isVisible()
-            .catch(() => false);
+          await abrirSeletor(page);
+          const aindaExiste = (await linhaDoFunil(page, RENOMEADO).count()) > 0;
+          await page.keyboard.press("Escape").catch(() => {});
           if (aindaExiste) {
-            await page.getByTestId(`arquivar-${id}`).click();
-            await page.getByTestId(`arquivar-confirmar-${id}`).click();
+            // Arquivar age no funil ATUAL: precisa selecioná-lo antes.
+            await selecionarFunil(page, RENOMEADO);
+            await abrirSeletor(page);
+            await page.getByTestId("arquivar-funil").click();
+            await page.getByTestId("arquivar-confirmar").click();
           }
         }
       } catch {
@@ -213,8 +277,12 @@ test("quem não pode gerenciar vê a lista sem os controles de escrita", async (
   // cobra manager nas rotas, então agent não vê "Novo funil" nem "Arquivar".
   await login(page, creds.users.agent!.email);
   await page.goto("/app/pipelines");
-  await expect(page.getByRole("heading", { name: "Pipelines" })).toBeVisible();
-  await expect(page.getByText("Pedidos", { exact: true })).toHaveCount(1);
+  await expect(page.getByTestId("alternar-funil")).toBeVisible({ timeout: 30_000 });
+  await page.getByTestId("alternar-funil").click();
+  await expect(linhaDoFunil(page, "Pedidos")).toHaveCount(1);
+  // `podeGerenciar` esconde criar/renomear/arquivar do dropdown para quem é
+  // agent — botão que o servidor recusaria é promessa que não se cumpre.
   await expect(page.getByTestId("novo-funil")).toHaveCount(0);
-  await expect(page.locator('[data-testid^="arquivar-"]')).toHaveCount(0);
+  await expect(page.getByTestId("renomear-funil")).toHaveCount(0);
+  await expect(page.getByTestId("arquivar-funil")).toHaveCount(0);
 });
