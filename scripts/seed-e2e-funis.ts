@@ -6,7 +6,7 @@
  * feature conserta só aparece com o usuário participando de mais de uma org: a
  * policy `crm_pipelines_select` libera TODAS as orgs de quem consulta, e a tela
  * do Kanban não filtrava pela ativa. Como `trg_seed_default_pipeline_for_org`
- * semeia um funil "Pedidos" em toda org nova, as duas listas se misturavam em
+ * semeia um funil "Funil de vendas" em toda org nova (era "Pedidos" até a migration 0144), as duas listas se misturavam em
  * linhas idênticas. Com uma org só, o spec passaria mesmo com o filtro apagado —
  * mediria o seed, não o código.
  *
@@ -79,7 +79,7 @@ async function main(): Promise<void> {
       .single();
     if (error) throw new Error(`falha ao criar a segunda org: ${error.message}`);
     segundaOrgId = (data as { id: string }).id;
-    // O gatilho `trg_seed_default_pipeline_for_org` já semeou o funil "Pedidos"
+    // O gatilho `trg_seed_default_pipeline_for_org` já semeou o funil "Funil de vendas"
     // aqui dentro — é exatamente esse homônimo que o spec não pode ver na lista.
   }
 

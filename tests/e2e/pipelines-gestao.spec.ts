@@ -7,7 +7,7 @@
  * explicadas na tela (arquivar o padrão, arquivar o último).
  *
  * ⚠️ O PRIMEIRO CASO SÓ TEM PODER COM DUAS ORGANIZAÇÕES. `seed-e2e-funis.ts`
- * coloca o manager numa segunda org que também tem um funil "Pedidos" (o gatilho
+ * coloca o manager numa segunda org que também tem um funil "Funil de vendas" (o gatilho
  * de seed cria um em toda org nova). Com uma org só, o caso passaria mesmo com o
  * filtro de `organization_id` apagado da página — mediria o seed, não o código.
  *
@@ -15,7 +15,7 @@
  * padrão volta para onde estava) — garantido por `try/finally` no segundo caso,
  * não só pela sequência feliz: a organização usada aqui (`e2e-test-org`) é
  * compartilhada com outros specs no mesmo CI, e um assert que estoura no meio
- * não pode deixar "Pedidos" sem ser padrão para quem rodar depois.
+ * não pode deixar o funil semeado sem ser padrão para quem rodar depois.
  *
  * Pré-requisito: seed de credenciais + seed de funis (rodados aqui se faltarem).
  */
@@ -51,6 +51,22 @@ function loadCreds(): Creds {
 }
 
 const creds = loadCreds();
+/**
+ * O NOME DO FUNIL QUE O GATILHO SEMEIA — e ele MUDOU.
+ *
+ * Até a migration 0144, `fn_seed_default_pipeline_for_org` criava "Pedidos" com
+ * 8 etapas de e-commerce em toda organização nova. A 0144 trocou por um padrão
+ * neutro: "Funil de vendas" com Novo · Em andamento · Ganho · Perdido.
+ *
+ * Este spec (e o comentário de `scripts/seed-e2e-funis.ts`) ficaram com o nome
+ * antigo, então TODA busca por linha do funil devolvia zero — a causa das três
+ * falhas depois que o dropdown já abria certo.
+ *
+ * Constante, e não literal espalhado por 11 lugares: se outra migration mexer no
+ * seed, o conserto é uma linha, e o comentário acima diz onde olhar.
+ */
+const FUNIL_SEMEADO = "Funil de vendas";
+
 const NOME = `Clinica E2E ${Date.now()}`;
 const RENOMEADO = `${NOME} renomeado`;
 
@@ -139,18 +155,19 @@ test.describe("gestão de funis", () => {
   test("a lista mostra só a organização ativa, mesmo com funil homônimo em outra", async ({
     page,
   }) => {
-    // O manager é membro de DUAS organizações, e as duas têm um funil "Pedidos".
+    // O manager é membro de DUAS organizações, e as duas têm um funil com o
+    // MESMO nome (o gatilho semeia o mesmo em toda org).
     // Sem o filtro por organização, apareceriam as duas linhas — indistinguíveis,
     // cada uma levando a um quadro diferente.
     await abrirSeletor(page);
-    await expect(linhaDoFunil(page, "Pedidos")).toHaveCount(1);
+    await expect(linhaDoFunil(page, FUNIL_SEMEADO)).toHaveCount(1);
   });
 
   test("cria funil com colunas, edita, e as recusas aparecem explicadas", async ({ page }) => {
     // Capturado ANTES da mutação começar: se algo estourar mais adiante, o
     // `finally` precisa saber a quem devolver o "Padrão" mesmo sem ter chegado
     // até lá pela sequência feliz.
-    const idPedidos = await idDoFunil(page, "Pedidos");
+    const idSemeado = await idDoFunil(page, FUNIL_SEMEADO);
     let id: string | undefined;
 
     try {
@@ -209,9 +226,9 @@ test.describe("gestão de funis", () => {
 
       // ---- devolve o padrão e arquiva de verdade ----
       await abrirSeletor(page);
-      await page.getByTestId(`padrao-${idPedidos}`).click();
+      await page.getByTestId(`padrao-${idSemeado}`).click();
       await abrirSeletor(page);
-      await expect(linhaDoFunil(page, "Pedidos")).toContainText("Padrão");
+      await expect(linhaDoFunil(page, FUNIL_SEMEADO)).toContainText("Padrão");
       await page.keyboard.press("Escape");
 
       await selecionarFunil(page, RENOMEADO);
@@ -224,7 +241,7 @@ test.describe("gestão de funis", () => {
       await page.keyboard.press("Escape");
 
       // ---- recusa: arquivar o último funil ----
-      await selecionarFunil(page, "Pedidos");
+      await selecionarFunil(page, FUNIL_SEMEADO);
       await abrirSeletor(page);
       await page.getByTestId("arquivar-funil").click();
       await page.getByTestId("arquivar-confirmar").click();
@@ -244,12 +261,12 @@ test.describe("gestão de funis", () => {
 
       try {
         await abrirSeletor(page);
-        const pedidosEhPadrao = await linhaDoFunil(page, "Pedidos")
+        const semeadoEhPadrao = await linhaDoFunil(page, FUNIL_SEMEADO)
           .filter({ hasText: "Padrão" })
           .count()
           .then((n) => n > 0)
           .catch(() => false);
-        if (!pedidosEhPadrao) await page.getByTestId(`padrao-${idPedidos}`).click();
+        if (!semeadoEhPadrao) await page.getByTestId(`padrao-${idSemeado}`).click();
         await page.keyboard.press("Escape").catch(() => {});
       } catch {
         // melhor esforço
@@ -288,7 +305,7 @@ test("quem não pode gerenciar vê a lista sem os controles de escrita", async (
   await page.goto("/app/pipelines");
   await expect(page.getByTestId("alternar-funil")).toBeVisible({ timeout: 30_000 });
   await abrirSeletor(page);
-  await expect(linhaDoFunil(page, "Pedidos")).toHaveCount(1);
+  await expect(linhaDoFunil(page, FUNIL_SEMEADO)).toHaveCount(1);
   // `podeGerenciar` esconde criar/renomear/arquivar do dropdown para quem é
   // agent — botão que o servidor recusaria é promessa que não se cumpre.
   await expect(page.getByTestId("novo-funil")).toHaveCount(0);
