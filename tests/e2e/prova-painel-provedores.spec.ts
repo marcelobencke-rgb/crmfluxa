@@ -61,7 +61,14 @@ test("F0/F1 — o painel abre agrupado, explica os pontos e diz a origem", async
 
   await expect(page.getByRole("heading", { name: "Provedores de IA" })).toBeVisible();
   // A frase de abertura conta ao operador a dimensão do que ele controla.
-  await expect(page.locator('[data-testid="painel-de-provedores"]')).toContainText("23 lugares");
+  // A FORMA da frase, não o número. O painel imprime
+  // `{dados.pontos.length} lugares diferentes`, então fixar "23" faz o caso
+  // reprovar toda vez que o produto ganha um ponto de IA — que é crescimento
+  // esperado, não defeito. O comentário acima já dizia que o alvo é "a dimensão
+  // do que ele controla"; a regex guarda exatamente isso.
+  await expect(page.locator('[data-testid="painel-de-provedores"]')).toContainText(
+    /\d+ lugares diferentes/,
+  );
 
   for (const papel of ["atender", "entender", "proteger", "lembrar", "perceber", "melhorar"]) {
     await expect(page.locator(`[data-testid="papel-${papel}"]`)).toBeVisible();

@@ -103,7 +103,9 @@ test.describe("J6.8 — anti-SSRF do outbound call_webhook (real, ponta a ponta)
     try {
       // --- fonte inbound (para gerar o lead que dispara a regra) ---
       await login(page, creds.users.manager!.email);
-      await page.getByRole("link", { name: "Webhooks" }).click();
+      // Por URL: "Webhooks" não tem link na sidebar (grupo no rodapé, só o hub
+      // "Configurações" aparece). Ver o comentário longo em webhooks.spec.ts.
+      await page.goto("/app/webhooks");
       await page.waitForURL(/\/app\/webhooks/);
       await page.getByRole("button", { name: /Nova fonte|Criar primeira fonte/ }).click();
       await page.locator("#src-name").fill(SOURCE_NAME);
@@ -122,7 +124,14 @@ test.describe("J6.8 — anti-SSRF do outbound call_webhook (real, ponta a ponta)
       await page.keyboard.press("Escape");
 
       // --- automação: gatilho lead novo → ação "Avisar outro sistema (webhook)" ---
-      await page.getByRole("tab", { name: "Automações" }).click();
+      // A aba "Automações" não existe mais nesta tela. As abas de /app/webhooks
+      // hoje são "Receber dados", "Enviar dados" e "Atividade" — e "Enviar dados"
+      // virou um PONTEIRO: explica que o envio é gerenciado pelo motor de
+      // Automações e oferece um link para lá. As regras mudaram de casa para
+      // /app/automations, que renderiza a MESMA `RulesTab` (reusada, não
+      // duplicada) com `defaultValue="rules"` — então cair na URL já é cair na
+      // aba certa, sem clique.
+      await page.goto("/app/automations");
       await page.getByRole("button", { name: /Nova automação|Criar primeira automação/ }).click();
       const ruleSheet = page.getByRole("dialog");
       await ruleSheet.locator("#rule-name").fill(RULE_NAME);
@@ -180,7 +189,12 @@ test.describe("J6.8 — anti-SSRF do outbound call_webhook (real, ponta a ponta)
       await drenar();
 
       // --- aba Atividade: a run aparece e NÃO é Sucesso (ação outbound barrada) ---
-      await page.getByRole("tab", { name: "Atividade" }).click();
+      // "Histórico", e não "Atividade": desde que o passo anterior passou a ir
+      // para /app/automations, é a aba DESTA tela que mostra as execuções.
+      // Renderiza o MESMO `ActivityTab` que a aba "Atividade" de /app/webhooks
+      // (as duas importam de app/app/webhooks/_components/ActivityTab) — mesmo
+      // conteúdo, mesmo botão "Atualizar", só outro rótulo.
+      await page.getByRole("tab", { name: "Histórico" }).click();
       const runTitle = page.getByText(RULE_NAME, { exact: true }).first();
       const runCard = cardOf(runTitle);
       let appeared = false;

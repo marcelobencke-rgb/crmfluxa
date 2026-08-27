@@ -115,7 +115,7 @@ export function PipelineSelector({
   return (
     <>
       <DropdownMenu open={open} onOpenChange={setOpen}>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenuTrigger asChild data-testid="alternar-funil">
           <Button variant="ghost" className="flex items-center gap-2 text-2xl font-semibold tracking-tight h-auto px-2 py-1 -ml-2 hover:bg-accent hover:text-accent-foreground">
             {currentPipelineName}
             <CaretDown size={20} className="opacity-70" />
@@ -125,7 +125,11 @@ export function PipelineSelector({
           <DropdownMenuLabel>Alternar Funil</DropdownMenuLabel>
           
           {pipelines.map((p) => (
-            <div key={p.id} className="flex items-center justify-between group">
+            <div
+              key={p.id}
+              data-testid={`funil-${p.id}`}
+              className="flex items-center justify-between group"
+            >
               <DropdownMenuItem 
                 onClick={() => handleSelect(p.id)}
                 className="flex-1 cursor-pointer"
@@ -145,6 +149,7 @@ export function PipelineSelector({
                   size="icon" 
                   className="h-8 w-8 opacity-0 group-hover:opacity-100 mr-2"
                   onClick={() => handleMakeDefault(p.id)}
+                  data-testid={`padrao-${p.id}`}
                   title="Tornar padrão"
                 >
                   <Check size={14} />
@@ -161,15 +166,15 @@ export function PipelineSelector({
           {podeGerenciar && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => { setOpen(false); setCreateOpen(true); }} className="cursor-pointer">
+              <DropdownMenuItem onClick={() => { setOpen(false); setCreateOpen(true); }} className="cursor-pointer" data-testid="novo-funil">
                 <Plus size={16} className="mr-2" />
                 Criar Novo Funil
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setOpen(false); setRenameOpen(true); }} className="cursor-pointer">
+              <DropdownMenuItem onClick={() => { setOpen(false); setRenameOpen(true); }} className="cursor-pointer" data-testid="renomear-funil">
                 <PencilSimple size={16} className="mr-2" />
                 Renomear Funil Atual
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setOpen(false); setArchiveOpen(true); }} className="cursor-pointer text-destructive focus:text-destructive">
+              <DropdownMenuItem onClick={() => { setOpen(false); setArchiveOpen(true); }} className="cursor-pointer text-destructive focus:text-destructive" data-testid="arquivar-funil">
                 <Archive size={16} className="mr-2" />
                 Arquivar Funil Atual
               </DropdownMenuItem>
@@ -193,13 +198,14 @@ export function PipelineSelector({
               value={newName} 
               onChange={(e) => setNewName(e.target.value)} 
               placeholder="Novo nome" 
+              data-testid="nome-do-funil"
               autoFocus
               onKeyDown={(e) => e.key === "Enter" && handleRename()}
             />
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setRenameOpen(false)}>Cancelar</Button>
-            <Button onClick={handleRename} disabled={!newName.trim() || editar.isPending}>Salvar</Button>
+            <Button onClick={handleRename} disabled={!newName.trim() || editar.isPending} data-testid="salvar-nome-funil">Salvar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -214,13 +220,14 @@ export function PipelineSelector({
               value={createName} 
               onChange={(e) => setCreateName(e.target.value)} 
               placeholder="Nome do novo funil" 
+              data-testid="nome-do-novo-funil"
               autoFocus
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
             />
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreate} disabled={!createName.trim() || criar.isPending}>Criar</Button>
+            <Button onClick={handleCreate} disabled={!createName.trim() || criar.isPending} data-testid="confirmar-novo-funil">Criar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -239,7 +246,7 @@ export function PipelineSelector({
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="ghost" onClick={() => setArchiveOpen(false)}>Cancelar</Button>
             <Button variant="outline" onClick={() => handleArchive(true)} disabled={arquivar.isPending}>Excluir de vez</Button>
-            <Button variant="destructive" onClick={() => handleArchive(false)} disabled={arquivar.isPending}>Arquivar</Button>
+            <Button variant="destructive" onClick={() => handleArchive(false)} disabled={arquivar.isPending} data-testid="arquivar-confirmar">Arquivar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

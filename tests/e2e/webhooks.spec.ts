@@ -110,10 +110,15 @@ test.describe("webhooks & automações — fluxo completo", () => {
     let pipelineId: string | undefined;
 
     try {
-      // --- Step 1: login como manager; sidebar mostra "Webhooks" ---
+      // --- Step 1: login como manager e ir para Webhooks ---
+      //
+      // POR URL, e não clicando na sidebar: o grupo `organizacao` (onde Webhooks
+      // vive) é o `GRUPO_NO_RODAPE` — `SidebarNav` o filtra da navegação que
+      // rola e renderiza APENAS o hub "Configurações". Não existe, nem pode
+      // existir, um link "Webhooks" na sidebar. O que este caso prova é o fluxo
+      // de webhooks ponta a ponta; a navegação era só o caminho até ele.
       await login(page, creds.users.manager!.email);
-      await expect(page.getByRole("link", { name: "Webhooks" })).toBeVisible();
-      await page.getByRole("link", { name: "Webhooks" }).click();
+      await page.goto("/app/webhooks");
       await page.waitForURL(/\/app\/webhooks/);
 
       // --- Step 2: aba "Receber dados" — criar fonte ---
@@ -154,7 +159,14 @@ test.describe("webhooks & automações — fluxo completo", () => {
       await page.keyboard.press("Escape");
 
       // --- Step 4: aba Automações — criar regra + ligar ---
-      await page.getByRole("tab", { name: "Automações" }).click();
+      // A aba "Automações" não existe mais nesta tela. As abas de /app/webhooks
+      // hoje são "Receber dados", "Enviar dados" e "Atividade" — e "Enviar dados"
+      // virou um PONTEIRO: explica que o envio é gerenciado pelo motor de
+      // Automações e oferece um link para lá. As regras mudaram de casa para
+      // /app/automations, que renderiza a MESMA `RulesTab` (reusada, não
+      // duplicada) com `defaultValue="rules"` — então cair na URL já é cair na
+      // aba certa, sem clique.
+      await page.goto("/app/automations");
       await page.getByRole("button", { name: /Nova automação|Criar primeira automação/ }).click();
       const ruleSheet = page.getByRole("dialog");
       await expect(ruleSheet).toBeVisible();
@@ -212,7 +224,12 @@ test.describe("webhooks & automações — fluxo completo", () => {
       // A regra não tem condição — dispara tanto pro "Lead de Teste" (passo 3)
       // quanto pro lead real (passo 5), logo pode haver 2 cards com esse nome;
       // .first() basta pra confirmar que a automação rodou com sucesso.
-      await page.getByRole("tab", { name: "Atividade" }).click();
+      // "Histórico", e não "Atividade": desde que o passo anterior passou a ir
+      // para /app/automations, é a aba DESTA tela que mostra as execuções.
+      // Renderiza o MESMO `ActivityTab` que a aba "Atividade" de /app/webhooks
+      // (as duas importam de app/app/webhooks/_components/ActivityTab) — mesmo
+      // conteúdo, mesmo botão "Atualizar", só outro rótulo.
+      await page.getByRole("tab", { name: "Histórico" }).click();
       const runTitle = page.getByText(RULE_NAME, { exact: true }).first();
       const runCard = cardOf(runTitle);
       let found = false;
