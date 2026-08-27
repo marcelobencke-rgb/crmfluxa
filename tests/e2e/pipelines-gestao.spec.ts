@@ -73,8 +73,17 @@ async function login(page: Page, email: string): Promise<void> {
  */
 async function abrirSeletor(page: Page): Promise<void> {
   await page.getByTestId("alternar-funil").click();
-  await expect(page.getByTestId("novo-funil").or(page.locator('[data-testid^="funil-"]').first()))
-    .toBeVisible();
+  // O SINAL DE ABERTO É O `role="menu"` do Radix, e não um item de dentro.
+  //
+  // A primeira versão esperava `getByTestId("novo-funil").or(...linha...)`. Duas
+  // coisas erradas: `novo-funil` só existe para quem tem `podeGerenciar`, então
+  // o caso do agent nunca o veria; e `.or()` casa OS DOIS quando os dois existem,
+  // o que é violação de modo estrito no `toBeVisible()`.
+  //
+  // `role="menu"` é um elemento só, existe para qualquer papel, e é o mesmo
+  // mundo de seletor que `kanban-owner-filter.spec.ts` usa para abrir menu Radix
+  // — o único spec desta suíte que faz isso e passa.
+  await expect(page.getByRole("menu")).toBeVisible({ timeout: 15_000 });
 }
 
 function linhaDoFunil(page: Page, nome: string) {
@@ -278,7 +287,7 @@ test("quem não pode gerenciar vê a lista sem os controles de escrita", async (
   await login(page, creds.users.agent!.email);
   await page.goto("/app/pipelines");
   await expect(page.getByTestId("alternar-funil")).toBeVisible({ timeout: 30_000 });
-  await page.getByTestId("alternar-funil").click();
+  await abrirSeletor(page);
   await expect(linhaDoFunil(page, "Pedidos")).toHaveCount(1);
   // `podeGerenciar` esconde criar/renomear/arquivar do dropdown para quem é
   // agent — botão que o servidor recusaria é promessa que não se cumpre.
