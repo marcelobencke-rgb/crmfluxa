@@ -281,8 +281,12 @@ test.describe("webhooks & automações — fluxo completo", () => {
       // no finally substitui a exceção pendente) — só loga e segue.
       try {
         if (ruleCreated) {
-          await page.goto(`${APP_URL}/app/webhooks`);
-          await page.getByRole("tab", { name: "Automações" }).click();
+          // Mesma correção do bloco principal: as regras vivem em
+          // /app/automations, e a aba "Automações" não existe mais aqui. Esta
+          // ocorrência ficou para trás na primeira passada por estar dentro do
+          // `finally` — e limpeza que pendura num clique impossível gasta o
+          // orçamento do teste inteiro.
+          await page.goto(`${APP_URL}/app/automations`);
           const ruleTitle = page.getByText(RULE_NAME, { exact: true });
           // waitFor (não .count() imediato): a lista busca via rede após a
           // troca de aba — um count() síncrono aqui pegava 0 e pulava o

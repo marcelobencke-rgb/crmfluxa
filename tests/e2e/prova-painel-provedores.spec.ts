@@ -124,7 +124,36 @@ test("F1 — trocar o modelo GRAVA, e a tela passa a mostrar o novo", async ({ p
   await page.click('[data-testid="provider-stage_classifier"]');
   await page.getByRole("option", { name: /OpenRouter/ }).click();
   await page.click('[data-testid="modelo-stage_classifier"]');
-  await page.getByRole("option", { name: /Llama 3\.3 70B Instruct/ }).first().click();
+  // TYPEAHEAD DO RADIX, e não clique na opção.
+  //
+  // O catálogo do OpenRouter abre um `Select` com centenas de itens, e clicar
+  // direto reprovava com "element is visible, enabled and stable / done
+  // scrolling / element is outside of the viewport": o alvo resolvia certo e o
+  // clique nunca acontecia.
+  //
+  // Subir a viewport para 1200px NÃO resolveu — tentado e medido numa rodada
+  // inteira. Logo, a altura da janela não era a causa: é o popper do Radix, com
+  // rolagem própria, que a heurística de viewport do Playwright não alcança.
+  //
+  // Digitar é o que um usuário faz e é o caminho que o próprio Radix oferece: o
+  // typeahead move o foco para o item que casa e o rola nativamente; `Enter`
+  // seleciona. Sem depender de geometria nenhuma.
+  // O nome COMPLETO, não um prefixo: o typeahead casa do começo, e "Llama 3.3
+  // 70B" sozinho pode pegar outra variante do catálogo que comece igual. Foi o
+  // que aconteceu na rodada anterior — algo FOI selecionado, e a falha só
+  // apareceu 30 linhas adiante, na asserção do modelo gravado.
+  await page.getByRole("option").first().waitFor({ timeout: 15_000 });
+  await page.keyboard.type("Llama 3.3 70B Instruct", { delay: 30 });
+  await page.keyboard.press("Enter");
+
+  // FALHA LOCAL EM VEZ DE FALHA REMOTA. Sem esta linha, escolher o modelo errado
+  // só aparece lá embaixo, depois do salvar e de uma navegação — e o veredito
+  // vira "não gravou" para um problema de seleção. O gatilho exibe o que está
+  // escolhido AGORA.
+  await expect(page.locator('[data-testid="modelo-stage_classifier"]')).toContainText(
+    /Llama 3\.3 70B Instruct/i,
+    { timeout: 15_000 },
+  );
   await page.click('[data-testid="salvar-stage_classifier"]');
 
   // A confirmação é o mínimo; o que importa vem depois.
