@@ -76,9 +76,18 @@ export function InboxFilters({ value, onChange, collapsed, onToggleCollapse }: P
   return (
     <div className="space-y-3 border-b border-border bg-background px-3 py-3">
       <div className="flex gap-2">
+        {/* Mesmo defeito do botão gêmeo em InboxSidebar: só-ícone, sem nome
+            acessível. Este só aparece com os filtros recolhidos, então escapou
+            da varredura que pegou o outro — mas é a mesma regra. */}
         {collapsed && (
-          <Button variant="outline" size="icon" onClick={onToggleCollapse} className="h-8 w-8 shrink-0">
-            <Funnel className="h-4 w-4" />
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onToggleCollapse}
+            className="h-8 w-8 shrink-0"
+            aria-label="Mostrar filtros de status"
+          >
+            <Funnel className="h-4 w-4" aria-hidden />
           </Button>
         )}
         <div className="relative flex-1">

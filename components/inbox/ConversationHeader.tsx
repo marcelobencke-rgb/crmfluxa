@@ -208,6 +208,9 @@ export function ConversationHeader({ conversation, crmPanelCollapsed, onToggleCr
             variant={crmPanelCollapsed ? "default" : "ghost"}
             className="hidden h-8 w-8 xl:flex"
             onClick={onToggleCrmPanel}
+            // `title` sozinho é fallback fraco na computação de nome acessível;
+            // o `aria-label` explícito é o que o axe cobra sem ressalva.
+            aria-label={crmPanelCollapsed ? "Mostrar painel do contato" : "Ocultar painel do contato"}
             title={crmPanelCollapsed ? "Mostrar painel do contato" : "Ocultar painel do contato"}
           >
             <SidebarSimple size={16} weight={crmPanelCollapsed ? "bold" : "regular"} aria-hidden />

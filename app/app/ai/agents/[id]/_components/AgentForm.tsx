@@ -616,6 +616,21 @@ export function AgentForm(props: Props) {
             {validation.credential_id ? (
               <p className="text-xs text-destructive">{validation.credential_id}</p>
             ) : null}
+            {/* O CAMINHO PARA CONSEGUIR O QUE A TELA EXIGE.
+                Esta tela COBRA uma credencial e não dizia onde arranjar uma —
+                sem nenhuma, o seletor mostra a lista vazia e acabou. Numa
+                instalação nova ninguém tem credencial, então esse era o estado
+                de quem abre a tela pela primeira vez: exigência sem porta.
+                Aparece SEMPRE, não só na lista vazia: quem já tem uma e quer
+                outra também precisa saber para onde ir. */}
+            <p className="text-xs text-muted-foreground">
+              {props.credentials.length === 0
+                ? "Nenhuma credencial cadastrada ainda. "
+                : "Precisa de outra? "}
+              <Link href="/app/ai/credentials" className="underline underline-offset-2 hover:text-foreground">
+                Cadastrar credencial de IA
+              </Link>
+            </p>
             {cred && credSt !== "validated" ? (
               <p className="text-xs text-amber-600 dark:text-amber-400">
                 Credencial selecionada está com status {credSt}. Publish bloqueado até validar.
@@ -668,6 +683,18 @@ export function AgentForm(props: Props) {
               {validation.channel_session_id ? (
                 <p className="text-xs text-destructive">{validation.channel_session_id}</p>
               ) : null}
+              {/* Mesma razão do bloco de credencial: o item desabilitado
+                  "Nenhum número conectado" dizia o que FALTA sem dizer onde
+                  resolver — beco fechado na tela que o dono do negócio abre
+                  para pôr o agente no ar. */}
+              <p className="text-xs text-muted-foreground">
+                {props.channelSessions.length === 0
+                  ? "Nenhum número conectado ainda. "
+                  : "Precisa conectar outro? "}
+                <Link href="/app/connections" className="underline underline-offset-2 hover:text-foreground">
+                  Conectar número de WhatsApp
+                </Link>
+              </p>
             </div>
           </Card>
 

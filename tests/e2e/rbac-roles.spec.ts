@@ -124,7 +124,12 @@ test.describe("rbac role matrix (spec 13 §4)", () => {
     await expectNoBlockingA11y(page, '[role="tablist"]');
 
     await page.goto("/app/pipelines");
-    await expect(page.getByRole("heading", { name: "Pipelines" })).toBeVisible();
+    // O que o caso promete é que o agent NÃO É BLOQUEADO. Asserir o heading
+    // "Pipelines" era frágil e virou impossível: page.tsx:25 renderiza o QUADRO
+    // direto quando a org tem funis, e aquele heading só sobrevive no ramo de
+    // estado vazio — que o seed do e2e nunca produz. Mesmo conserto já aplicado
+    // em invite-lifecycle.
+    await expect(page).toHaveURL(/\/app\/pipelines/);
     await expectNoBlockingA11y(page);
   });
 

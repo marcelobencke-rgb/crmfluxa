@@ -221,16 +221,38 @@ Checks **obrigatórios** na branch protection da `main` (verificado na configura
 - **`build-and-size`** (`perf.yml`) — `pnpm build` em Node 22.
 - **`e2e`** (`e2e.yml`) — sobe Supabase local, aplica o `baseline.sql` e roda **37 das 39 specs** Playwright (medido em 2026-08-10; **reconte antes de citar**, com `ls tests/e2e/*.spec.ts | wc -l` e `grep -oE '[a-z0-9-]+\.spec\.ts' .github/workflows/e2e.yml | sort -u | wc -l` — este número já apodreceu duas vezes, e uma delas fui eu copiando o `echo` do próprio workflow em vez de contar os arquivos). As duas de fora: `vps-fresh-onboarding` (precisa de WAHA + Redis + Resend + Nuvemshop) e `agente-papeis-operador`. A primeira é a **P0** da doutrina de QA Visual — ou seja, `e2e` verde **não** prova a jornada de instalação fresca, que é o produto que se vende.
 
-Todos os quatro são **obrigatórios** — medido em 2026-08-08 na branch protection:
+**TRÊS são obrigatórios; o `e2e` NÃO é** — medido em 2026-08-27:
 
 ```console
 $ gh api repos/marcelobencke-rgb/crmfluxa/branches/main/protection --jq '.required_status_checks.contexts|join(", ")'
-verify, build-and-size, invariants, e2e
+verify, invariants, build-and-size
 ```
 
-O `e2e` entrou para a lista depois de este arquivo ter sido escrito. A versão anterior dizia que ele
-"ainda não é obrigatório", e uma triagem que lesse isso mediria contra a régua errada — que é o modo
-de falha nº 1 do procedimento de triagem. Reconfira na fonte antes de confiar em qualquer lista aqui.
+⚠️ **A versão anterior deste bloco afirmava os QUATRO, com o mesmo comando colado como prova — e
+estava errada.** Medido em 2026-08-27, a API respondia `"Branch not protected"`: a `main` não tinha
+proteção NENHUMA, e os cinco PRs mesclados naquela semana entraram sem gate algum. A discussão sobre
+"mergear com o `e2e` vermelho é aval do dono" era sobre uma trava que não existia.
+
+A causa provável: proteção de branch **não é gratuita em repositório privado**, e este repo era
+privado — a mesma API devolvia `"Upgrade to GitHub Pro or make this repository public"`. Ou a
+proteção existiu num momento de repo público/plano pago e se perdeu, ou o bloco sempre foi
+aspiracional. O repositório virou **público** em 2026-08-27 e a proteção foi ligada de verdade.
+
+O `e2e` ficou de FORA de propósito: ele ainda carrega 3 falhas conhecidas, e torná-lo obrigatório
+travaria todo merge até fecharem. Entra quando N execuções seguidas passarem limpas.
+
+`enforce_admins` é `false`: num projeto de mantenedor único, ligar isso tranca o dono para fora do
+próprio caminho de emergência.
+
+**A lição que este bloco agora carrega é sobre ele mesmo:** um comando colado com saída não é prova
+de que a saída seja a de hoje. Reconfira na fonte antes de confiar em qualquer lista aqui — inclusive
+nesta.
+
+E uma segunda, que contraria a ordem de precedência do topo deste arquivo: o `AGENTS.md`, que é
+DERIVADO daqui, estava CERTO o tempo todo — nomeava os três e dizia que o `e2e` não é obrigatório.
+Quem lesse a doutrina como manda (a fonte primeiro) mediria contra a régua errada; quem lesse a cópia
+acertaria. Documento derivado não é menos confiável por ser derivado — é menos confiável quando
+ninguém o reconcilia, e desta vez foi o contrário.
 
 Ao mexer em schema, RLS, RBAC, atribuição, escopo, roteamento, follow-up, webhooks ou automações: rode `pnpm test:db` **localmente** antes de abrir PR. É o único caminho que exercita o `baseline.sql` que o self-hoster realmente aplica.
 

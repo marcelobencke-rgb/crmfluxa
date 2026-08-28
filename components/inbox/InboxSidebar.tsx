@@ -47,8 +47,18 @@ export function InboxSidebar({ value, onChange, collapsed, onToggleCollapse }: P
     <div className="flex w-48 flex-col bg-background flex-1 min-h-0">
       <div className="flex items-center justify-between p-3">
         <span className="font-semibold text-sm">Status</span>
-        <Button variant="ghost" size="icon" onClick={onToggleCollapse} className="h-8 w-8">
-          <Funnel className="h-4 w-4 text-muted-foreground" />
+        {/* `aria-label` obrigatório: botão só-ícone não tem texto para o leitor
+            de tela anunciar, e `button-name` do axe é impacto CRÍTICO — foi ele
+            que reprovou rbac-roles. O ícone leva `aria-hidden` porque quem
+            nomeia o botão é o label, não o desenho. */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleCollapse}
+          className="h-8 w-8"
+          aria-label="Recolher filtros de status"
+        >
+          <Funnel className="h-4 w-4 text-muted-foreground" aria-hidden />
         </Button>
       </div>
 
