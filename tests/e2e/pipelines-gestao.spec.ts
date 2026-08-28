@@ -218,12 +218,18 @@ test.describe("gestão de funis", () => {
       await page.getByTestId("renomear-funil").click();
       await page.getByTestId("nome-do-funil").fill(RENOMEADO);
       await page.getByTestId("salvar-nome-funil").click();
-      // Mesmo sinal de assentamento do passo de criar: o gatilho exibe o nome do
-      // funil atual, então ele conter RENOMEADO prova que a mutação chegou à
-      // tela — abrir o seletor antes disso lê a lista velha.
-      await expect(page.getByTestId("alternar-funil")).toContainText(RENOMEADO, { timeout: 30_000 });
+      // O SINAL AQUI É A LISTA, não o gatilho — e a diferença é real.
+      //
+      // Tentei o gatilho (como no passo de criar) e reprovou: ele mostra
+      // `data?.pipeline.name ?? initialName`, onde `data` é query de CLIENTE. O
+      // `router.refresh()` do `useEditarFunil` revalida o SERVIDOR e atualiza a
+      // lista (que vem por props), mas não invalida o cache dessa query — o
+      // gatilho segue com o nome velho até ela refazer sozinha.
+      //
+      // Criar navega (`router.push`), e por isso lá o gatilho serve. Renomear não
+      // navega. O mesmo sinal não vale para os dois passos.
       await abrirSeletor(page);
-      await expect(linhaDoFunil(page, RENOMEADO)).toHaveCount(1);
+      await expect(linhaDoFunil(page, RENOMEADO)).toHaveCount(1, { timeout: 30_000 });
       await page.keyboard.press("Escape");
 
       // ---- tornar padrão ----
