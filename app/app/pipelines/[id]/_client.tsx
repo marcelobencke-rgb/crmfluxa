@@ -24,17 +24,29 @@ import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { FilterBar } from "@/components/kanban/FilterBar";
 import { BulkActionBar } from "@/components/kanban/BulkActionBar";
 import { NewLeadDialog } from "@/components/kanban/NewLeadDialog";
+import { ImportarLeads } from "@/components/kanban/ImportarLeads";
+import { PipelineSwitcher } from "@/components/kanban/PipelineSwitcher";
 import { Button } from "@/components/ui/button";
 import { Plus } from "@/lib/ui/icons";
 import type { LeadFilters } from "@/lib/kanban/filters";
 import { applyFilters, filtersFromParams, filtersToParams } from "@/lib/kanban/filters";
+import type { FunilDaResposta } from "@/hooks/pipelines/usePipelines";
 
 export function PipelinePageClient({
   pipelineId,
   initialName,
+  funis,
+  podeGerenciar,
+  podeImportar,
 }: {
   pipelineId: string;
   initialName: string;
+  /** Os funis não arquivados da organização — alimenta o seletor. */
+  funis: FunilDaResposta[];
+  /** Espelha o `requireRole("manager")` das rotas de escrita de funil. */
+  podeGerenciar: boolean;
+  /** Espelha o `requireRole("agent")` de `POST /api/v1/leads/import`. */
+  podeImportar: boolean;
 }) {
   const t = useT();
   const { data, isLoading, error, pulses, realtimeStatus, seguranca } = useBoard(pipelineId);
@@ -81,12 +93,18 @@ export function PipelinePageClient({
           fora da viewport em telas estreitas. De `sm:` pra cima volta a ser
           uma linha só, como sempre foi. */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight">
-          {data?.pipeline.name ?? initialName}
-        </h1>
-        <Button onClick={() => setNewOpen(true)} disabled={!data} className="shrink-0">
-          <Plus size={16} className="mr-2" /> {t("Novo Lead")}
-        </Button>
+        <PipelineSwitcher
+          pipelineId={pipelineId}
+          pipelineName={initialName}
+          funisIniciais={funis}
+          podeGerenciar={podeGerenciar}
+        />
+        <div className="flex shrink-0 gap-2">
+          {podeImportar && <ImportarLeads funis={funis} pipelineIdPadrao={pipelineId} />}
+          <Button onClick={() => setNewOpen(true)} disabled={!data} className="shrink-0">
+            <Plus size={16} className="mr-2" /> {t("Novo Lead")}
+          </Button>
+        </div>
       </header>
       {data && (
         <NewLeadDialog

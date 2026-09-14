@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { vizinhoAoMover, type FunilDaLista } from "./_client";
+import { vizinhoAoMover } from "./PipelineSwitcher";
+import type { FunilDaResposta } from "@/hooks/pipelines/usePipelines";
 
-const funil = (id: string): FunilDaLista => ({
+const funil = (id: string): FunilDaResposta => ({
   id,
   name: id,
   slug: id,
@@ -12,8 +13,11 @@ const funil = (id: string): FunilDaLista => ({
 });
 
 /**
- * A conta do `i - 2` é a única lógica não-óbvia da tela, e ela erra em silêncio:
- * um funil que "sobe" e não sai do lugar parece lentidão, não bug.
+ * A conta do `i - 2` é a única lógica não-óbvia do seletor, e ela erra em
+ * silêncio: um funil que "sobe" e não sai do lugar parece lentidão, não bug.
+ *
+ * Movido de `app/app/kanban/_client.test.tsx` quando a gestão de funis saiu
+ * da listagem e foi para o seletor do board.
  */
 describe("vizinhoAoMover", () => {
   const lista = [funil("a"), funil("b"), funil("c"), funil("d")];

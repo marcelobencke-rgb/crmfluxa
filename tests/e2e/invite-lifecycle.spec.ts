@@ -226,8 +226,10 @@ test.describe("ciclo de vida do convite (ponta a ponta + adversarial)", () => {
     await page.goto("/app/inbox");
     await expect(page.getByText("Selecione uma conversa", { exact: true })).toBeVisible();
 
+    // "Funis" não abre mais uma lista — cai direto no quadro do funil padrão.
     await page.goto("/app/kanban");
-    await expect(page.getByRole("heading", { name: "Funis" })).toBeVisible();
+    await page.waitForURL(/\/app\/pipelines\//);
+    await expect(page.getByTestId("seletor-de-funil")).toBeVisible();
   });
 
   test("3. permissão pós-aceite: agent NÃO consegue convidar (403)", async ({ page }) => {

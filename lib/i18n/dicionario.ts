@@ -5322,8 +5322,8 @@ export const DICIONARIO: Traducoes = {
   },
   "Este contato já foi anonimizado": { es: "Este contacto ya fue anonimizado" },
   "Anonimizar contato": { es: "Anonimizar contacto" },
-  "Customer 360 — busque, filtre e gerencie contatos.": {
-    es: "Customer 360 — busca, filtra y gestiona contactos.",
+  "Busque, filtre e gerencie contatos.": {
+    es: "Busca, filtra y gestiona contactos.",
   },
   "Importar CSV": { es: "Importar CSV" },
   // ── Juntar contatos duplicados ──────────────────────────────────────────
@@ -5861,6 +5861,8 @@ export const DICIONARIO: Traducoes = {
     es: "Sale de esta lista y deja de recibir negocio nuevo. El historial se conserva, y nada se borra.",
   },
   "Excluir de vez": { es: "Eliminar definitivamente" },
+  "Trocar de funil": { es: "Cambiar de embudo" },
+  "Gerenciar funis": { es: "Gestionar embudos" },
   "Novo Lead": { es: "Nuevo Lead" },
   "Não consegui carregar este funil:": { es: "No pude cargar este embudo:" },
   "sem responsável.": { es: "sin responsable." },
