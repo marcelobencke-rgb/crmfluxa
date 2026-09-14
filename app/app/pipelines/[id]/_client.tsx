@@ -120,7 +120,7 @@ export function PipelinePageClient({
           {t("Não consegui carregar este funil:")} {formatError(error, t)}
         </div>
       ) : isLoading || !data ? (
-        <div className="flex flex-1 animate-pulse items-center justify-center text-muted-foreground">
+        <div className="flex flex-1 animate-pulse items-center justify-center text-foreground">
           {t("Carregando…")}
         </div>
       ) : (

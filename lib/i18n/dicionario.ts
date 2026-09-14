@@ -5322,8 +5322,8 @@ export const DICIONARIO: Traducoes = {
   },
   "Este contato já foi anonimizado": { es: "Este contacto ya fue anonimizado" },
   "Anonimizar contato": { es: "Anonimizar contacto" },
-  "Busque, filtre e gerencie contatos.": {
-    es: "Busca, filtra y gestiona contactos.",
+  "Customer 360 — busque, filtre e gerencie contatos.": {
+    es: "Customer 360 — busca, filtra y gestiona contactos.",
   },
   "Importar CSV": { es: "Importar CSV" },
   // ── Juntar contatos duplicados ──────────────────────────────────────────
