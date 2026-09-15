@@ -94,11 +94,16 @@ export async function loginAs(
 
 /** Navega até o board de demonstração — só por clique, como um usuário. */
 export async function gotoBoard(page: Page): Promise<void> {
-  // "Kanban" saiu da interface — o item virou "Funis" (a mesma URL).
+  // "Funis" não abre mais uma lista — cai direto no quadro do funil PADRÃO,
+  // que pode não ser o de demonstração. Se não for, troca pelo seletor que
+  // ficou no lugar do antigo `<h1>` (`components/kanban/PipelineSwitcher.tsx`).
   await page.getByRole("link", { name: "Funis", exact: true }).click();
-  await page.waitForURL(/\/app\/kanban/, { timeout: 20_000 });
-  await page.getByText(/CRM Vivo — Clínica/i).first().click();
   await page.waitForURL(/\/app\/pipelines\//, { timeout: 20_000 });
+  if (!page.url().includes(CREDS.crm_vivo.pipeline_id)) {
+    await page.getByTestId("seletor-de-funil").click();
+    await page.getByText(/CRM Vivo — Clínica/i).first().click();
+    await page.waitForURL(/\/app\/pipelines\//, { timeout: 20_000 });
+  }
   if (!page.url().includes(CREDS.crm_vivo.pipeline_id)) {
     throw new Error(`clique levou a ${page.url()}, não ao pipeline do seed`);
   }

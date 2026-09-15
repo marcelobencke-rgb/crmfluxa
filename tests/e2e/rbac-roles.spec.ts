@@ -139,8 +139,10 @@ test.describe("rbac role matrix (spec 13 §4)", () => {
     // segue coberto por todas as regras — sem regressão é o critério.
     await expectNoBlockingA11y(page, '[role="tablist"]');
 
+    // "Funis" não abre mais uma lista — cai direto no quadro do funil padrão.
     await page.goto("/app/kanban");
-    await expect(page.getByRole("heading", { name: "Funis" })).toBeVisible();
+    await page.waitForURL(/\/app\/pipelines\//);
+    await expect(page.getByTestId("seletor-de-funil")).toBeVisible();
     await expectNoBlockingA11y(page);
   });
 

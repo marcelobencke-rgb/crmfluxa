@@ -147,11 +147,15 @@ test.describe("navegação agrupada", () => {
     await page.waitForURL(/\/app\/products/);
   });
 
-  test("e a lista de funis é o item vizinho, com nome próprio", async ({ page }) => {
+  test("e Funis, o item vizinho com nome próprio, cai direto no quadro do funil padrão", async ({
+    page,
+  }) => {
+    // "Funis" não abre mais uma lista — a URL continua sendo /app/kanban, mas
+    // ela só redireciona para o quadro do funil padrão (ver `app/app/kanban/page.tsx`).
     await loginAdmin(page);
     await sidebar(page).getByRole("link", { name: "Funis", exact: true }).click();
-    await page.waitForURL(/\/app\/kanban/);
-    await expect(page.getByRole("heading", { name: "Funis", level: 1 })).toBeVisible();
+    await page.waitForURL(/\/app\/pipelines\//);
+    await expect(page.getByTestId("seletor-de-funil")).toBeVisible();
   });
 
   test("chega em Conhecimento, que só existia atrás das abas de IA", async ({ page }) => {
@@ -256,7 +260,7 @@ test.describe("navegação agrupada", () => {
       });
 
       await sidebar(page).getByRole("link", { name: "Funis", exact: true }).click();
-      await page.waitForURL(/\/app\/kanban/);
+      await page.waitForURL(/\/app\/pipelines\//);
       await expect(page.getByRole("dialog")).toHaveCount(0);
       await expectSemOverflowHorizontal(page, "shell mobile após navegar pelo drawer");
 

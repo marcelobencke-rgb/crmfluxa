@@ -5861,6 +5861,8 @@ export const DICIONARIO: Traducoes = {
     es: "Sale de esta lista y deja de recibir negocio nuevo. El historial se conserva, y nada se borra.",
   },
   "Excluir de vez": { es: "Eliminar definitivamente" },
+  "Trocar de funil": { es: "Cambiar de embudo" },
+  "Gerenciar funis": { es: "Gestionar embudos" },
   "Novo Lead": { es: "Nuevo Lead" },
   "Não consegui carregar este funil:": { es: "No pude cargar este embudo:" },
   "sem responsável.": { es: "sin responsable." },

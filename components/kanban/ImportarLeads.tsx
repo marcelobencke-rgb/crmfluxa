@@ -19,8 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useT } from "@/hooks/i18n/useT";
 import { UploadSimple } from "@/lib/ui/icons";
-
-import type { FunilDaLista } from "../_client";
+import type { FunilDaResposta } from "@/hooks/pipelines/usePipelines";
 
 export interface ResumoDaImportacao {
   total_linhas: number;
@@ -48,11 +47,24 @@ export interface ResumoDaImportacao {
  *     `funilDeEntrada`, `lib/leads/nascimento-do-lead.ts`). Perguntar seria uma
  *     pergunta a mais para uma resposta que já é a certa — e quem quiser outra
  *     etapa arrasta os cards, que é o gesto do quadro.
+ *
+ * ⚠️ MORA EM `components/kanban/`, NÃO EM `app/app/kanban/_components/`. Vivia
+ * lá quando o próprio quadro do Kanban era a lista de funis; agora quem abre o
+ * diálogo é o seletor de funil dentro do board (`/app/pipelines/[id]`), e um
+ * componente compartilhado não fica na pasta privada de uma rota que não é mais
+ * dona dele.
  */
-export function ImportarLeads({ funis }: { funis: FunilDaLista[] }) {
+export function ImportarLeads({
+  funis,
+  pipelineIdPadrao,
+}: {
+  funis: FunilDaResposta[];
+  /** Funil pré-selecionado — o que está aberto no board, não o primeiro da lista. */
+  pipelineIdPadrao?: string;
+}) {
   const t = useT();
   const [aberto, setAberto] = useState(false);
-  const [funilId, setFunilId] = useState(funis[0]?.id ?? "");
+  const [funilId, setFunilId] = useState(pipelineIdPadrao ?? funis[0]?.id ?? "");
   const [enviando, setEnviando] = useState(false);
   const [resumo, setResumo] = useState<ResumoDaImportacao | null>(null);
   const [erro, setErro] = useState<string | null>(null);
