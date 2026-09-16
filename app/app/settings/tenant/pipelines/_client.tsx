@@ -8,18 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { updatePipelineConfig } from "@/app/actions/settings/updatePipelineConfig";
-import type { PipelineConfigPatch } from "@/lib/schemas/settings";
+import { customFieldSchema, type PipelineConfigPatch, type CustomFieldDef } from "@/lib/schemas/settings";
 import { camposDoFunil } from "@/lib/leads/campos-do-funil";
-import { customFieldSchema, type CustomFieldDef } from "@/lib/schemas/settings";
-import { Plus, Trash } from "@/lib/ui/icons";
+import {
+  CustomFieldDefsEditor,
+  TIPOS_DE_CAMPO,
+  tipoTemOpcoes,
+} from "@/components/settings/CustomFieldDefsEditor";
 import { AgentMappingSection, ancoraDoMapeamento } from "./_mapping";
 import { StagesSection, ancoraDasEtapas } from "./_stages";
 
@@ -31,29 +27,13 @@ export interface PipelineRow {
   settings: Record<string, unknown> | null;
 }
 
-/**
- * Os tipos de campo que esta tela oferece — DERIVADOS do schema, nunca
- * reescritos à mão.
- *
- * Quando a lista era digitada aqui, ela encolheu sem ninguém ver: `multiselect`
- * existia em `customFieldSchema`, era gravado pela API e aparecia no dossiê
- * (`components/contacts/CustomFieldsEditor.tsx`), mas faltava nesta lista. O
- * efeito para quem abria a tela era um campo que parecia corrompido — o
- * `<Select>` recebia `value="multiselect"`, nenhum `SelectItem` casava, e o
- * seletor ficava EM BRANCO. Pior: as opções do campo só apareciam para
- * `select`, então um multiselect ficava sem como ser editado, e a saída óbvia
- * (escolher um tipo para "consertar" o branco) transformava a escolha múltipla
- * em escolha única.
- *
- * Derivar do schema faz a divergência deixar de ser possível: tipo novo lá
- * nasce oferecido aqui.
- */
-export const TIPOS_DE_CAMPO = customFieldSchema.shape.type.options;
-
-/** Tipos cujo valor sai de uma lista fechada — são os que mostram o campo de opções. */
-export function tipoTemOpcoes(tipo: CustomFieldDef["type"]): boolean {
-  return tipo === "select" || tipo === "multiselect";
-}
+// Reexportados: o editor de campos (chave/rótulo/tipo/opções) mudou de casa
+// para `components/settings/CustomFieldDefsEditor.tsx` — ele agora serve
+// tanto os campos do NEGÓCIO (aqui) quanto os do CONTATO
+// (`app/app/settings/tenant/contact-fields`). O teste desta tela
+// (`_client.test.tsx`) importa os dois símbolos de `./_client`; reexportar
+// evita mexer no import por uma mudança que não é dele.
+export { TIPOS_DE_CAMPO, tipoTemOpcoes };
 
 function readLostReasons(settings: Record<string, unknown> | null): string[] {
   if (!settings) return [];
@@ -174,97 +154,14 @@ function PipelineEditor({ pipeline }: { pipeline: PipelineRow }) {
         <Input value={reasonsText} onChange={(e) => setReasonsText(e.target.value)} />
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-xs">{t("Campos do lead neste funil")}</Label>
-        <p className="text-xs text-muted-foreground">
-          {t("Aparecem no dossiê do negócio. No follow-up, você escolhe em qual campo gravar a resposta.")}
-        </p>
-        {fields.map((f, i) => (
-          <div key={`${f.key}-${i}`} className="grid gap-2 rounded-md border border-border p-2 md:grid-cols-[1fr_1fr_8rem_auto]">
-            <Input
-              aria-label={`${t("Chave do campo")} ${i + 1}`}
-              placeholder={t("chave (endereco)")}
-              value={f.key}
-              onChange={(e) => {
-                const next = [...fields];
-                next[i] = { ...f, key: e.target.value };
-                setFields(next);
-              }}
-            />
-            <Input
-              aria-label={`${t("Rótulo do campo")} ${i + 1}`}
-              placeholder={t("Rótulo (Endereço)")}
-              value={f.label}
-              onChange={(e) => {
-                const next = [...fields];
-                next[i] = { ...f, label: e.target.value };
-                setFields(next);
-              }}
-            />
-            <Select
-              value={f.type}
-              onValueChange={(type) => {
-                const next = [...fields];
-                next[i] = { ...f, type: type as CustomFieldDef["type"] };
-                setFields(next);
-              }}
-            >
-              <SelectTrigger aria-label={`${t("Tipo do campo")} ${i + 1}`}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TIPOS_DE_CAMPO.map((tipo) => (
-                  <SelectItem key={tipo} value={tipo}>
-                    {tipo}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={`${t("Remover campo")} ${f.label || i + 1}`}
-              onClick={() => setFields(fields.filter((_, j) => j !== i))}
-            >
-              <Trash size={14} aria-hidden />
-            </Button>
-            {tipoTemOpcoes(f.type) && (
-              <Input
-                className="md:col-span-3"
-                aria-label={`${t("Opções do campo")} ${i + 1}`}
-                placeholder={t("Opções, separadas por vírgula")}
-                value={(f.options ?? []).map((o) => o.label).join(", ")}
-                onChange={(e) => {
-                  const options = e.target.value
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean)
-                    .map((label) => ({ value: label, label }));
-                  const next = [...fields];
-                  next[i] = { ...f, options };
-                  setFields(next);
-                }}
-              />
-            )}
-          </div>
-        ))}
-        {fields.length < 50 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              setFields([
-                ...fields,
-                { key: `campo_${fields.length + 1}`, label: t("Novo campo"), type: "text" },
-              ])
-            }
-          >
-            <Plus size={14} aria-hidden className="mr-1" /> {t("Adicionar campo")}
-          </Button>
+      <CustomFieldDefsEditor
+        fields={fields}
+        onChange={setFields}
+        label={t("Campos do lead neste funil")}
+        helperText={t(
+          "Aparecem no dossiê do negócio. No follow-up, você escolhe em qual campo gravar a resposta.",
         )}
-      </div>
+      />
 
       <div className="flex sm:justify-end">
         <Button onClick={handleSave} disabled={isPending} className="w-full sm:w-auto">

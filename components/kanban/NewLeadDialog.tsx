@@ -2,7 +2,7 @@
 
 import { useT } from "@/hooks/i18n/useT";
 import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -23,11 +22,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FieldShell, SectionHeading } from "@/components/ui/field-shell";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { FileText, Note, Kanban, Money, CalendarBlank, Tag, Check } from "@/lib/ui/icons";
 import { useCreateLead } from "@/hooks/kanban/useCreateLead";
 import type { Stage } from "@/lib/kanban/types";
+import type { Lead } from "@/lib/types/leads";
 import { createLeadSchema, type CreateLeadInput } from "@/lib/schemas/leads";
-import { parseReaisToCents } from "@/lib/money";
-import { EcoDoValor } from "./EcoDoValor";
+import { maskMoneyBRL, moneyBRLMaskedToCents } from "@/lib/money";
 
 interface FormShape {
   title: string;
@@ -46,7 +48,7 @@ interface Props {
   /** Vincula o lead criado a este contato de origem (ex.: painel do Inbox). */
   contactId?: string | null;
   /** Depois do INSERT — o inbox relê o resumo para o lead novo aparecer no formulário. */
-  onCreated?: () => void;
+  onCreated?: (lead: Lead) => void;
 }
 
 function defaultStageId(stages: Stage[]): string {
@@ -90,15 +92,9 @@ export function NewLeadDialog({
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const reais = values.valueReais.trim();
-    let valueCents: number | null = null;
-    if (reais.length > 0) {
-      valueCents = parseReaisToCents(reais);
-      if (valueCents === null) {
-        form.setError("valueReais", { message: "Valor inválido" });
-        return;
-      }
-    }
+    // A máscara garante que só dígito chega aqui — não há "valor inválido"
+    // possível de digitar, então não há o que validar antes de converter.
+    const valueCents = values.valueReais.trim() ? moneyBRLMaskedToCents(values.valueReais) : null;
 
     const payload: Record<string, unknown> = {
       pipeline_id: pipelineId,
@@ -121,9 +117,9 @@ export function NewLeadDialog({
     }
 
     try {
-      await create.mutateAsync(parsed.data as CreateLeadInput);
+      const created = await create.mutateAsync(parsed.data as CreateLeadInput);
       toast.success(t("Lead criado"));
-      onCreated?.();
+      onCreated?.(created.data);
       form.reset({
         title: "",
         description: "",
@@ -139,103 +135,117 @@ export function NewLeadDialog({
   }
 
   const stageId = form.watch("stage_id");
+  const expectedCloseDate = useWatch({ control: form.control, name: "expected_close_date" });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Novo Lead</DialogTitle>
+      <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden p-0 sm:max-w-xl">
+        <DialogHeader className="shrink-0 border-b border-border px-6 py-5">
+          <DialogTitle>{t("Novo Lead")}</DialogTitle>
           <DialogDescription>
             {t("Crie um lead manualmente neste pipeline.")}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">{t("Título")}</Label>
-            <Input
-              id="title"
-              placeholder="Ex: Pedido Maria — combo presente"
-              {...form.register("title", { required: true, minLength: 2 })}
-            />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">{t("Descrição")}</Label>
-            <Textarea
-              id="description"
-              rows={3}
-              placeholder={t("Contexto, observações, links…")}
-              {...form.register("description")}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>{t("Etapa")}</Label>
-            <Select
-              value={stageId}
-              onValueChange={(v) => form.setValue("stage_id", v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t("Selecione a etapa")} />
-              </SelectTrigger>
-              <SelectContent>
-                {stages
-                  .filter((s) => !s.is_archived)
-                  .map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="valueReais">Valor (R$)</Label>
-              <Input
-                id="valueReais"
-                inputMode="decimal"
-                placeholder="0,00"
-                {...form.register("valueReais")}
-              />
-              <EcoDoValor control={form.control} />
-              {form.formState.errors.valueReais && (
-                <p className="text-xs text-error-fg">
-                  {form.formState.errors.valueReais.message}
-                </p>
-              )}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+            <div className="space-y-4">
+              <SectionHeading>{t("Informações básicas")}</SectionHeading>
+              <FieldShell id="title" label={t("Título")} icon={FileText} required>
+                <Input
+                  id="title"
+                  placeholder="Ex: Pedido Maria — combo presente"
+                  className="pl-9 placeholder:text-text-subtle"
+                  {...form.register("title", { required: true, minLength: 2 })}
+                />
+              </FieldShell>
+              <FieldShell id="description" label={t("Descrição")} icon={Note} multiline>
+                <Textarea
+                  id="description"
+                  rows={3}
+                  placeholder={t("Contexto, observações, links…")}
+                  className="pl-9 placeholder:text-text-subtle"
+                  {...form.register("description")}
+                />
+              </FieldShell>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="expected_close_date">{t("Fechamento previsto")}</Label>
-              <Input
-                id="expected_close_date"
-                type="date"
-                {...form.register("expected_close_date")}
-              />
+
+            <div className="space-y-4">
+              <SectionHeading>{t("Funil")}</SectionHeading>
+              <FieldShell id="stage_id" label={t("Etapa")} icon={Kanban}>
+                <Select value={stageId} onValueChange={(v) => form.setValue("stage_id", v)}>
+                  <SelectTrigger id="stage_id" className="pl-9">
+                    <SelectValue placeholder={t("Selecione a etapa")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {stages
+                      .filter((s) => !s.is_archived)
+                      .map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </FieldShell>
+            </div>
+
+            <div className="space-y-4">
+              <SectionHeading>{t("Detalhes")}</SectionHeading>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FieldShell id="valueReais" label="Valor (R$)" icon={Money}>
+                  <Input
+                    id="valueReais"
+                    inputMode="numeric"
+                    placeholder="0,00"
+                    className="pl-9 placeholder:text-text-subtle"
+                    {...form.register("valueReais")}
+                    onChange={(e) => {
+                      e.target.value = maskMoneyBRL(e.target.value);
+                      form.setValue("valueReais", e.target.value);
+                    }}
+                  />
+                </FieldShell>
+                <FieldShell
+                  id="expected_close_date"
+                  label={t("Fechamento previsto")}
+                  icon={CalendarBlank}
+                >
+                  <DatePickerField
+                    id="expected_close_date"
+                    className="pl-9"
+                    value={expectedCloseDate}
+                    onChange={(v) => form.setValue("expected_close_date", v)}
+                  />
+                </FieldShell>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <SectionHeading>{t("Organização")}</SectionHeading>
+              <FieldShell id="tagsRaw" label={t("Tags (separadas por vírgula)")} icon={Tag}>
+                <Input
+                  id="tagsRaw"
+                  placeholder="vip, recompra"
+                  className="pl-9 placeholder:text-text-subtle"
+                  {...form.register("tagsRaw")}
+                />
+              </FieldShell>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="tagsRaw">{t("Tags (separadas por vírgula)")}</Label>
-            <Input
-              id="tagsRaw"
-              placeholder="vip, recompra"
-              {...form.register("tagsRaw")}
-            />
-          </div>
-
-          <DialogFooter>
+          <DialogFooter className="shrink-0 border-t border-border bg-surface-elevated px-6 py-4">
             <Button
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
               disabled={create.isPending}
             >
-              Cancelar
+              {t("Cancelar")}
             </Button>
             <Button type="submit" disabled={create.isPending || !stageId}>
-              {create.isPending ? "Criando…" : "Criar lead"}
+              <Check size={16} weight="bold" aria-hidden />
+              {create.isPending ? t("Criando…") : t("Criar lead")}
             </Button>
           </DialogFooter>
         </form>

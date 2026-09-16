@@ -247,6 +247,22 @@ export const NAV_CATALOG = [
     // na navegação" — a porta existia, era outra.
   },
   {
+    // Até aqui a ficha do contato pegava carona nos campos do funil PADRÃO
+    // (`crm_pipelines.settings.fields[]`) — um contato não pertence a um funil
+    // só, e o campo mudava sozinho se alguém trocasse qual funil é o padrão,
+    // sem essa ser uma decisão sobre contatos. Ganhou fonte própria
+    // (`organizations.settings.contact_fields`) e esta tela.
+    href: "/app/settings/tenant/contact-fields",
+    label: "Campos do contato",
+    description: "Os campos que aparecem na ficha de qualquer contato, em qualquer funil.",
+    icon: "ClipboardText",
+    group: "organizacao",
+    section: "Sua empresa",
+    minRole: "admin",
+    // SEM `sidebar`: mesmo motivo de "Tipos de agendamento" — chega-se por
+    // "Configurações".
+  },
+  {
     // Estava enterrado em Configurações e ninguém sabia que existia — o achado
     // que originou esta reorganização. A URL não muda; só o lugar na navegação.
     //

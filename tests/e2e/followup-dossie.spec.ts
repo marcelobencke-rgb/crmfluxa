@@ -276,7 +276,7 @@ test.describe("dossiê do follow-up — ler a história e intervir", () => {
     const card = page.getByRole("group", { name: `Lead: ${cenario.contactName}` });
     await expect(card).toBeVisible({ timeout: 30_000 });
     await card.getByRole("button", { name: cenario.contactName }).click();
-    // O dossiê do negócio é um Sheet — `role=dialog` no Radix.
+    // O dossiê do negócio é um Dialog centralizado — `role=dialog` no Radix.
     const dossieDoNegocio = page.getByRole("dialog");
     await expect(dossieDoNegocio).toContainText("Follow-up pausado");
     await expect(dossieDoNegocio).toContainText("Follow-up retomado");

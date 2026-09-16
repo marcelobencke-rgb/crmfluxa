@@ -489,6 +489,20 @@ export const AUDIT_ACTIONS = [
   // um bloqueio não há como saber nem uma coisa nem outra.
   "voice.opt_in_changed",
   "voice.session_unpaired",
+
+  // O inverso de `contact.blocked`. Bloqueio é automático (palavra de opt-out
+  // detectada no inbound); desbloqueio é decisão humana — reabre automação
+  // pra alguém que tinha pedido pra sair, então "quem, quando e por quê"
+  // precisa de registro tanto quanto o bloqueio original tem.
+  "contact.unblocked",
+
+  // As definições de campo personalizado da FICHA DO CONTATO
+  // (`organizations.settings.contact_fields`). Distinta de `org.updated` pelo
+  // mesmo motivo de `org.branding_updated`: a pergunta que a trilha responde é
+  // "quem mudou os campos que todo contato mostra?", não "quem mexeu no
+  // cadastro da empresa?" — fundir as duas obrigaria ler o metadata para saber
+  // qual das coisas aconteceu.
+  "org.contact_fields_updated",
 ] as const;
 
 /** Um código de auditoria. Derivado de `AUDIT_ACTIONS` — não redigite a lista. */

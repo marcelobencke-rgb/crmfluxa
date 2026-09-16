@@ -13,9 +13,9 @@
  * listagens — o mais perto do estado real sem plantar nem apagar dado de
  * ninguém num banco que quatro frentes compartilham.
  *
- * Locale pt-BR fixado no arquivo: sem isso o navegador de teste roda en-US e
- * campos `<input type="date">` aparecem como mm/dd/yyyy, que parece defeito do
- * produto e é do ambiente.
+ * Locale pt-BR fixado no arquivo: sem isso o navegador de teste roda en-US, e
+ * o resto da tela (números, moeda) segue o idioma do app, não o do navegador —
+ * a divergência parecia defeito do produto e era do ambiente.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -187,14 +187,13 @@ test.describe("Olhar o consumo de IA", () => {
   });
 
   test("um período sem nenhum dado é explicado, não fica em branco", async ({ page }) => {
-    await page.goto("/app/ai/usage");
+    // A janela vai pela URL, e não preenchendo o campo na tela: `UsageFilters`
+    // lê `from`/`to` de `searchParams` (ver `app/app/ai/usage/_client.tsx`) e o
+    // que este caso mede é a mensagem de período vazio, não a mecânica do
+    // seletor de data — que trocou de `<input type="date">` nativo para um
+    // calendário próprio (`DatePickerField`) sem mudar o contrato da URL.
+    await page.goto("/app/ai/usage?from=2020-01-01&to=2020-01-31");
     await expect(page.getByRole("heading", { name: /uso de ia/i })).toBeVisible();
-
-    // Uma janela no passado onde não houve uso nenhum.
-    const de = page.locator('input[type="date"]').first();
-    const ate = page.locator('input[type="date"]').nth(1);
-    await de.fill("2020-01-01");
-    await ate.fill("2020-01-31");
     await page.waitForTimeout(2500);
 
     const corpo = await page.locator("main").innerText();

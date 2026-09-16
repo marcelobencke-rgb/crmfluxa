@@ -58,6 +58,10 @@ export const contactCreateSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
+  website: z.string().max(300).optional(),
+  instagram: z.string().max(300).optional(),
+  facebook: z.string().max(300).optional(),
+  notes: z.string().max(5000).optional(),
   tags: z.array(z.string()).optional(),
   source: z.string().min(1).default("manual"),
   source_metadata: z.record(z.string(), z.unknown()).optional(),

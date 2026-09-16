@@ -123,8 +123,18 @@ describe("o elo que some sem barulho", () => {
     // Chamar e não USAR o resultado é o defeito de verdade: a função roda, o
     // custo se paga, e a resposta sai sem a conversa. A primeira versão deste
     // caso só olhava a chamada e o sabote passou.
-    expect(fonte, "o resultado de withConversas não chegou à resposta").toMatch(
-      /leads:\s*leadsComConversa\.leads/,
+    //
+    // NÃO exige que `leadsComConversa.leads` chegue DIRETO na resposta: depois
+    // dela entrou `withContacts` (nome/telefone do contato, pro card e pro
+    // ícone de "iniciar conversa"), que encadeia por cima — `leadsComContato =
+    // await withContacts(..., leadsComConversa.leads)`. O elo que importa é
+    // ESSE encadeamento continuar inteiro até o campo `leads:` da resposta,
+    // não que a variável final se chame igual à de `withConversas`.
+    expect(fonte, "withConversas não alimenta o passo seguinte (withContacts)").toMatch(
+      /await withContacts\(\s*[\s\S]*?leadsComConversa\.leads/,
+    );
+    expect(fonte, "o resultado da cadeia não chegou à resposta").toMatch(
+      /leads:\s*leadsComContato\.leads/,
     );
   });
 

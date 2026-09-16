@@ -10,8 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TimePickerField } from "@/components/ui/time-picker-field";
 import {
   Select,
   SelectContent,
@@ -151,22 +153,11 @@ export function FormularioDeTarefa({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="tarefa-dia">{t("Prazo")}</Label>
-              <Input
-                id="tarefa-dia"
-                type="date"
-                value={dia}
-                onChange={(e) => setDia(e.target.value)}
-              />
+              <DatePickerField id="tarefa-dia" value={dia} onChange={setDia} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="tarefa-hora">{t("Horário")}</Label>
-              <Input
-                id="tarefa-hora"
-                type="time"
-                value={hora}
-                disabled={!dia}
-                onChange={(e) => setHora(e.target.value)}
-              />
+              <TimePickerField id="tarefa-hora" value={hora} disabled={!dia} onChange={setHora} />
             </div>
           </div>
 

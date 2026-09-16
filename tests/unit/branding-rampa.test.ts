@@ -110,11 +110,14 @@ describe("rampaDeSemente — catraca de calibração contra o design system", ()
     // por não ter o que comparar — instrumento morto tem cara de teste verde.
     expect(esperados).toHaveLength(11);
     expect(new Set(esperados).size).toBe(11);
-    expect(esperados[K]).toBe("#506d48");
+    // Fluxa (2026-09-12): não é o hex literal do swatch de marca (#6F9F8E) — esse
+    // tom dava 2,74:1 contra `--color-bg`, abaixo do piso 3:1 do WCAG 1.4.11. A
+    // semente é o mesmo matiz (170,5°) escurecido até passar. Ver globals.css:32-49.
+    expect(esperados[K]).toBe("#003e8a");
   });
 
-  it("reproduz os 11 stops Sage a partir de #506d48 com Δ ≤ 2/255 por canal", () => {
-    const derivada = rampaDeSemente("#506d48");
+  it("reproduz os 11 stops Fluxa a partir de #003e8a com Δ ≤ 2/255 por canal", () => {
+    const derivada = rampaDeSemente("#003e8a");
     const distancias = esperados.map((esperado, i) => distanciaPorCanal(esperado, derivada[i]!));
     expect(
       Math.max(...distancias),

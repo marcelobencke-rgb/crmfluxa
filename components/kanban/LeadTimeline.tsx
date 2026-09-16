@@ -13,6 +13,7 @@ import {
 } from "@/lib/leads/activity-vocabulary";
 import { agrupaTimeline, ehBlocoColapsavel, ehBlocoDeDia } from "@/lib/leads/timeline-grouping";
 import type { TimelineItemView } from "@/lib/types/contacts";
+import { Note as NoteIcon } from "@/lib/ui/icons";
 
 interface Props {
   itens: TimelineItemView[];
@@ -51,6 +52,39 @@ function Marcador({ item }: { item: TimelineItemView }) {
   );
 }
 
+/**
+ * A anotação manual — a ÚNICA linha da timeline cujo corpo é texto que uma
+ * pessoa escreveu, não relato de sistema. O destaque âmbar é o MESMO de
+ * `NoteCard.tsx` (nota interna do inbox): já é o vocabulário visual do
+ * produto para "isto foi escrito à mão", não uma cor nova inventada aqui.
+ */
+function LinhaDeNota({ item, aoVivo, nome, quando: quandoTexto }: {
+  item: TimelineItemView;
+  aoVivo?: boolean;
+  nome: string;
+  quando: string;
+}) {
+  const t = useT();
+  return (
+    <li className="flex gap-2 py-1.5">
+      <Marcador item={item} />
+      <div className="min-w-0 flex-1 rounded-md border border-warning/40 bg-warning-bg px-2.5 py-2 text-warning-fg">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide opacity-80">
+          <NoteIcon size={11} weight="fill" aria-hidden />
+          {t("Nota")}
+          {aoVivo && <span className="text-accent">· {t("agora")}</span>}
+        </div>
+        {item.reason && (
+          <p className="mt-1 whitespace-pre-wrap break-words text-xs">{t(item.reason)}</p>
+        )}
+        <p className="mt-1 text-[11px] opacity-70">
+          {nome} · {quandoTexto}
+        </p>
+      </div>
+    </li>
+  );
+}
+
 function Linha({ item, aoVivo }: { item: TimelineItemView; aoVivo?: boolean }) {
   const tagDoIdioma = useTagDeIdioma();
   const t = useT();
@@ -62,6 +96,18 @@ function Linha({ item, aoVivo }: { item: TimelineItemView; aoVivo?: boolean }) {
     },
     t,
   );
+
+  if (item.type === "note") {
+    return (
+      <LinhaDeNota
+        item={item}
+        aoVivo={aoVivo}
+        nome={nome}
+        quando={quando(item.performed_at, tagDoIdioma)}
+      />
+    );
+  }
+
   return (
     <li className="flex gap-2 py-1.5">
       <Marcador item={item} />

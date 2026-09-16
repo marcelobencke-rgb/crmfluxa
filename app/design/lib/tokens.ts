@@ -2,7 +2,7 @@
 // "Soft-tech / calmo" — neutros desaturados (greige/warm-gray), accent não-saturado.
 // 5-Constraint Rule applied: Shape, Color (exact hex), Typography, Motion, Layout.
 
-export type PaletteId = "sage" | "clay" | "mist" | "plum" | "olive";
+export type PaletteId = "fluxa" | "sage" | "clay" | "mist" | "plum" | "olive";
 export type TypoId = "bricolage-jakarta" | "fraunces-manrope" | "atkinson" | "source-plex";
 export type DensityId = "aerada" | "equilibrada" | "compacta";
 export type ThemeId = "light" | "dark";
@@ -38,6 +38,39 @@ export type PaletteDef = {
 // ─── Palettes ──────────────────────────────────────────────────────────────
 
 export const PALETTES: Record<PaletteId, PaletteDef> = {
+  fluxa: {
+    id: "fluxa",
+    name: "Fluxa",
+    description:
+      "Marca Fluxa (2026-09-13): azul profundo + verde-sálvia. Accent = azul profundo, " +
+      "calibrado em OKLCH a partir de #0B2140 — o hex literal comprimia os stops 700-950 " +
+      "(escuro demais pra sobrar espaço de hover) e saturava o croma cedo; #003e8a mantém " +
+      "o matiz (257,5°) com L subido até 0,38, croma no teto do gamut nessa faixa. Sálvia " +
+      "calibrado (#278067) virou --color-success.",
+    accent: {
+      50: "#eff6ff", 100: "#d7e6fd", 200: "#adcaf4", 300: "#77a3e3",
+      400: "#447ed2", 500: "#1d5eb6", 600: "#003e8a", 700: "#0b366f",
+      800: "#102f5c", 900: "#132b4e", 950: "#0e1c32",
+    },
+    neutralLight: {
+      50: "#f4f5f5", 100: "#e0e3e3", 200: "#bbc2c1", 300: "#8c9696",
+      400: "#626f6f", 500: "#404d4d", 600: "#202b2b", 700: "#1f2727",
+      800: "#1e2424", 900: "#1d2222", 950: "#1a1d1d",
+    },
+    neutralDark: {
+      50: "#eef2f2", 100: "#d2dada", 200: "#a0aaaa", 300: "#757e7e",
+      400: "#4f5757", 500: "#353a3a", 600: "#272c2c", 700: "#1d2121",
+      800: "#121818", 900: "#0d1111", 950: "#070808",
+    },
+    states: {
+      light: { success: "#34703f", warning: "#b07a2b", error: "#a94a3c", info: "#4e688d" },
+      dark:  { success: "#7fae4f", warning: "#d09455", error: "#c87263", info: "#7d91af" },
+    },
+    surfaces: {
+      light: { bg: "#f7f5ef", surface: "#ffffff", surfaceElevated: "#edeee9", text: "#202b2b", textMuted: "#404d4d", border: "#d9e0df" },
+      dark:  { bg: "#0d1111", surface: "#121818", surfaceElevated: "#1d2121", text: "#eef2f2", textMuted: "#757e7e", border: "#272c2c" },
+    },
+  },
   sage: {
     id: "sage",
     name: "Sage",

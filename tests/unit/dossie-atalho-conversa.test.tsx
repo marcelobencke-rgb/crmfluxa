@@ -72,20 +72,25 @@ describe("a porta para a conversa", () => {
 });
 
 describe("o elo que some sem barulho", () => {
-  it("o dossiê MONTA o bloco — o componente sozinho não abre porta nenhuma", () => {
-    // O defeito original não era o componente faltando: era o dossiê não o
-    // chamar. Um teste que só exercitasse `ConversaNoDossie` ficaria verde com
-    // a tela exatamente como o usuário a encontrou.
+  // ⚠️ O dossiê deixou de ser o painel lateral (Sheet) que este arquivo
+  // testava quando foi escrito: virou um modal central com abas, e a
+  // linha do tempo — que antes era a única prova de que o dossiê "anunciava
+  // o canal sem dar a porta" — passou a ser uma COLUNA FIXA ao lado de
+  // QUALQUER aba, não mais algo por onde se rola para baixo. O bloco
+  // `ConversaNoDossie` (um link com prévia) deu lugar a uma aba própria
+  // "Conversas", com a thread INTEIRA embutida — mais porta do que a
+  // original pedia, não menos. Os dois casos abaixo provam a MESMA coisa que
+  // os dois de cima provavam (a aba existe, e usa a conversa DESTE negócio),
+  // só que contra a arquitetura atual.
+  it("o dossiê oferece uma aba de Conversas", () => {
     const fonte = readFileSync("components/kanban/LeadDossier.tsx", "utf8");
-    expect(fonte, "o dossiê não monta o bloco da conversa").toMatch(
-      /<ConversaNoDossie\s+conversa=\{lead\.conversa\}/,
-    );
+    expect(fonte, "falta a aba de Conversas").toContain('value="conversas"');
   });
 
-  it("e o bloco vem ANTES da linha do tempo que anuncia o canal", () => {
-    // É a timeline que diz "Entrou pelo WhatsApp". A porta atrás do anúncio
-    // obrigaria a rolar para achar o que o próprio texto acabou de prometer.
+  it("a aba usa a conversa DESTE negócio, não um inbox genérico", () => {
     const fonte = readFileSync("components/kanban/LeadDossier.tsx", "utf8");
-    expect(fonte.indexOf("<ConversaNoDossie")).toBeLessThan(fonte.indexOf("<LeadTimeline"));
+    expect(fonte, "a aba de Conversas não está amarrada a lead.conversa").toMatch(
+      /conversationId=\{lead\.conversa\?\.id/,
+    );
   });
 });

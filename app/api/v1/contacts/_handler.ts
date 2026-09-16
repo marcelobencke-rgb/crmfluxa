@@ -31,7 +31,7 @@ import { contactListQuerySchema } from "@/lib/schemas";
 type SB = SupabaseClient;
 
 const SELECT_COLS =
-  "id, organization_id, name, display_name, email, email_normalized, phone_number, cpf_hash, birthdate, is_blocked, blocked_reason, is_anonymized, anonymized_at, is_merged_into, merged_at, consent, tags, source, source_metadata, custom_fields, created_at, updated_at, last_activity_at";
+  "id, organization_id, name, display_name, email, email_normalized, phone_number, cpf_hash, birthdate, website, instagram, facebook, notes, is_blocked, blocked_reason, blocked_at, is_anonymized, anonymized_at, is_merged_into, merged_at, consent, tags, source, source_metadata, custom_fields, created_at, updated_at, last_activity_at";
 
 interface CursorPayload {
   sort: string | null;
@@ -380,6 +380,10 @@ export async function createContactHandler(
     email: input.email ?? null,
     phone_number: input.phone_number ? canonicalPhoneBR(input.phone_number) : null,
     birthdate: input.birthdate ?? null,
+    website: input.website ?? null,
+    instagram: input.instagram ?? null,
+    facebook: input.facebook ?? null,
+    notes: input.notes ?? null,
     tags: input.tags ?? [],
     source: input.source,
     source_metadata: input.source_metadata ?? {},
@@ -509,6 +513,10 @@ export async function patchContactHandler(
     patch.phone_number = input.phone_number ? canonicalPhoneBR(input.phone_number) : input.phone_number;
   }
   if (input.birthdate !== undefined) patch.birthdate = input.birthdate;
+  if (input.website !== undefined) patch.website = input.website;
+  if (input.instagram !== undefined) patch.instagram = input.instagram;
+  if (input.facebook !== undefined) patch.facebook = input.facebook;
+  if (input.notes !== undefined) patch.notes = input.notes;
   if (input.tags !== undefined) patch.tags = input.tags;
   if (input.source !== undefined) patch.source = input.source;
   if (input.source_metadata !== undefined) patch.source_metadata = input.source_metadata;
@@ -648,6 +656,115 @@ export async function patchContactHandler(
   });
 
   return contact;
+}
+
+// ---------------------------------------------------------------------------
+// unblock
+// ---------------------------------------------------------------------------
+
+/**
+ * Desfaz o bloqueio automático de opt-out (`lib/channels/pos-entrada.ts`
+ * grava `is_blocked=true` quando o inbound casa uma palavra de saída).
+ *
+ * Bloquear é decisão do SISTEMA; desbloquear é decisão HUMANA — por isso vive
+ * fora do PATCH genérico, com ação de auditoria própria (`contact.unblocked`,
+ * o inverso de `contact.blocked`) em vez de cair dentro de `contact.updated`.
+ * Também é por isso que `is_blocked` NÃO está em `contactPatchSchema`: nem a
+ * tela de edição nem a ferramenta MCP de contato têm como desligar isso de
+ * lado — só este caminho, com o papel mínimo e a trilha que ele exige.
+ */
+export async function unblockContactHandler(
+  supabase: SB,
+  ctx: HandlerCtx,
+  contactId: string,
+): Promise<{ contact: Contact; action: "unblocked" | "already_unblocked" }> {
+  const { data: existing, error: selErr } = await supabase
+    .from("contacts")
+    .select("id, organization_id, is_anonymized, is_blocked")
+    .eq("organization_id", ctx.organization_id)
+    .eq("id", contactId)
+    .maybeSingle();
+
+  if (selErr) {
+    throw new ApiError(500, "internal_error", undefined, ctx.requestId, selErr.message);
+  }
+  if (!existing) {
+    throw new ApiError(
+      404,
+      "not_found",
+      undefined,
+      ctx.requestId,
+      traduzir("Contato não encontrado.", ctx.idioma ?? "pt-BR"),
+    );
+  }
+  if (existing.is_anonymized) {
+    throw new ApiError(
+      403,
+      "lgpd_anonymization_irreversible",
+      undefined,
+      ctx.requestId,
+      traduzir("Contato anonimizado — edição bloqueada (LGPD).", ctx.idioma ?? "pt-BR"),
+    );
+  }
+
+  if (!existing.is_blocked) {
+    const { data: current, error: curErr } = await supabase
+      .from("contacts")
+      .select(SELECT_COLS)
+      .eq("organization_id", ctx.organization_id)
+      .eq("id", contactId)
+      .single();
+    if (curErr) throw new ApiError(500, "internal_error", undefined, ctx.requestId, curErr.message);
+    return { contact: current as Contact, action: "already_unblocked" };
+  }
+
+  const { data: updated, error: updErr } = await supabase
+    .from("contacts")
+    .update({
+      is_blocked: false,
+      blocked_reason: null,
+      blocked_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("organization_id", ctx.organization_id)
+    .eq("id", contactId)
+    .select(SELECT_COLS)
+    .single();
+
+  if (updErr) {
+    throw new ApiError(500, "internal_error", undefined, ctx.requestId, updErr.message);
+  }
+
+  const contact = updated as Contact;
+  const a = actorAuditPayload(ctx.actor);
+
+  // Timeline do contato — mesmo mecanismo que `contact.tag_added` já usa, pra
+  // "quem desbloqueou e quando" aparecer na tela, não só no audit log que
+  // ninguém abre no dia a dia (doutrina Sistema Vivo: nada é ilha).
+  await createAdminClient()
+    .rpc("emit_event", {
+      p_event_type: "contact.unblocked",
+      p_entity_kind: "contact",
+      p_entity_id: contact.id,
+      p_payload: {},
+      p_metadata: { request_id: ctx.requestId, ...a.metadataActor },
+      p_organization_id: contact.organization_id,
+    })
+    .then(({ error }) => {
+      if (error) console.error("[contacts.unblock] emit_event failed", error.message);
+    });
+
+  await audit({
+    action: "contact.unblocked",
+    actorUserId: a.actorUserId,
+    organizationId: contact.organization_id,
+    resourceType: "contact",
+    resourceId: contact.id,
+    requestId: ctx.requestId,
+    metadata: { ...a.metadataActor },
+  });
+
+  return { contact, action: "unblocked" };
 }
 
 // ---------------------------------------------------------------------------

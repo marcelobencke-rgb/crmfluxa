@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TimePickerField } from "@/components/ui/time-picker-field";
 import {
   Select,
   SelectContent,
@@ -181,25 +182,21 @@ function ScheduleDialog({
                     ))}
                   </SelectContent>
                 </Select>
-                <Input
-                  type="time"
+                <TimePickerField
+                  className="w-32"
                   value={w.start}
                   aria-label={t("Início")}
-                  onChange={(e) =>
-                    setWindows((ws) =>
-                      ws.map((x, j) => (j === i ? { ...x, start: e.target.value } : x)),
-                    )
+                  onChange={(v) =>
+                    setWindows((ws) => ws.map((x, j) => (j === i ? { ...x, start: v } : x)))
                   }
                 />
                 <span className="text-muted-foreground">–</span>
-                <Input
-                  type="time"
+                <TimePickerField
+                  className="w-32"
                   value={w.end}
                   aria-label="Fim"
-                  onChange={(e) =>
-                    setWindows((ws) =>
-                      ws.map((x, j) => (j === i ? { ...x, end: e.target.value } : x)),
-                    )
+                  onChange={(v) =>
+                    setWindows((ws) => ws.map((x, j) => (j === i ? { ...x, end: v } : x)))
                   }
                 />
                 <Button

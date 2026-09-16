@@ -56,18 +56,37 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // EPIC-11: gate /app/* on org not being suspended (S-11.08).
   if (activeOrg) {
     const admin = createAdminClient();
-    const { data: orgRow } = await admin
-      .from("organizations")
-      .select("onboarded_at, status, settings")
-      .eq("id", activeOrg.orgId)
-      .maybeSingle();
+    // Em paralelo: a segunda consulta é só para `defaultPipelineId` (o atalho
+    // do link "Funis" — ver o comentário dele em `lib/auth/types.ts`), e não
+    // tem por que esperar a primeira para começar. Mesma seleção de "qual é o
+    // padrão" que `/app/kanban` e `/api/v1/pipelines/default` já usam.
+    const [{ data: orgRow }, { data: pipelineRow }] = await Promise.all([
+      admin
+        .from("organizations")
+        .select("onboarded_at, status, settings")
+        .eq("id", activeOrg.orgId)
+        .maybeSingle(),
+      admin
+        .from("crm_pipelines")
+        .select("id")
+        .eq("organization_id", activeOrg.orgId)
+        .eq("is_archived", false)
+        .order("is_default", { ascending: false })
+        .order("position", { ascending: true })
+        .limit(1)
+        .maybeSingle(),
+    ]);
     if (orgRow && !orgRow.onboarded_at && !user.support) redirect("/onboarding");
     if (orgRow?.status === "suspended") redirect("/account-suspended");
     // G4-02: expõe visibility_mode ao client (inbox decide visões visíveis).
     // Fonte confiável (admin client, org do cookie validado) — nunca do body.
     const mode = (orgRow?.settings as { visibility_mode?: VisibilityMode } | null)
       ?.visibility_mode;
-    activeOrg = { ...activeOrg, visibility_mode: mode ?? DEFAULT_VISIBILITY_MODE };
+    activeOrg = {
+      ...activeOrg,
+      visibility_mode: mode ?? DEFAULT_VISIBILITY_MODE,
+      defaultPipelineId: pipelineRow?.id ?? null,
+    };
 
     // `marcaDaInstalacao()` é memoizada por TTL no PROCESSO (`lib/branding/
     // instalacao.ts`), e a derivação da cor é cacheada por régua+semente em

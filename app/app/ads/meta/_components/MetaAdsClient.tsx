@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -192,25 +192,23 @@ export function MetaAdsClient({ contaPadrao }: Props) {
           <>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="de">{t("De")}</Label>
-              <Input
+              <DatePickerField
                 id="de"
-                type="date"
                 className="w-40"
                 value={intervalo.de}
                 max={intervalo.ate}
-                onChange={(e) => setIntervalo((i) => ({ ...i, de: e.target.value }))}
+                onChange={(v) => setIntervalo((i) => ({ ...i, de: v }))}
               />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="ate">{t("Até")}</Label>
-              <Input
+              <DatePickerField
                 id="ate"
-                type="date"
                 className="w-40"
                 value={intervalo.ate}
                 min={intervalo.de}
                 max={comoData(ontem())}
-                onChange={(e) => setIntervalo((i) => ({ ...i, ate: e.target.value }))}
+                onChange={(v) => setIntervalo((i) => ({ ...i, ate: v }))}
               />
             </div>
           </>
