@@ -97,7 +97,11 @@ export const LOGOTIPO = {
  * (`regua-do-produto.ts`): sálvia 600/400 para o símbolo, neutro 900/0 para
  * o nome e neutro 600/300 para o "CRM". Copiadas dos SVGs de `docs/brand/`.
  */
+// Símbolo segue o accent líder do produto (Azul Profundo desde 2026-09-13) —
+// stop 600/400 da rampa, os mesmos graus que `--color-accent` usa por tema.
+// Não é o hex literal do swatch (#0B2140): ver o cabeçalho de app/globals.css
+// pra o porquê (compressão de stop + teto de croma do azul escuro).
 export const CORES_DA_MARCA = {
-  claro: { simbolo: "#506d48", nome: "#1c1a16", sufixo: "#5d594f" },
-  escuro: { simbolo: "#82a077", nome: "#f5f4ef", sufixo: "#8e8b7f" },
+  claro: { simbolo: "#003e8a", nome: "#1d2222", sufixo: "#202b2b" },
+  escuro: { simbolo: "#447ed2", nome: "#eef2f2", sufixo: "#757e7e" },
 } as const;

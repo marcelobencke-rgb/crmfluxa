@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { format, formatRelative, isToday, isYesterday } from "date-fns";
 import { toast } from "sonner";
-import { CaretDown, CaretUp, ChatCircle, Trash } from "@/lib/ui/icons";
+import { CaretDown, CaretUp, WhatsappLogo, PencilSimple, Kanban, Trash } from "@/lib/ui/icons";
 import {
   Table,
   TableBody,
@@ -32,10 +32,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useDeleteContact } from "@/hooks/contacts/useDeleteContact";
+import { useContactFieldDefs } from "@/hooks/contacts/useContactFieldDefs";
 import type { ContactOrderBy } from "@/lib/schemas/contacts";
 import type { Contact } from "@/lib/types/contacts";
 import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { phoneForDisplay } from "@/lib/channels/phone-variants";
+import { EditContactDialog } from "@/components/contacts/EditContactDialog";
+import { AbrirLeadDialog } from "@/components/contacts/AbrirLeadDialog";
 
 interface Props {
   contacts: Contact[];
@@ -110,13 +113,20 @@ export function ContactsTable({ contacts, orderBy, orderDir, onSort }: Props) {
   const t = useT();
   const del = useDeleteContact();
   const [alvo, setAlvo] = useState<Contact | null>(null);
-  const [abrindo, setAbrindo] = useState<string | null>(null);
+  const [editAlvo, setEditAlvo] = useState<Contact | null>(null);
+  const [leadAlvo, setLeadAlvo] = useState<Contact | null>(null);
+  const [abrindoConversa, setAbrindoConversa] = useState<string | null>(null);
   const router = useRouter();
   const qc = useQueryClient();
 
+  // Mesmas definições que o dossiê do contato usa pra editar — sem elas o
+  // editor não sabe quais "campos personalizados" desenhar.
+  const fieldDefsQuery = useContactFieldDefs();
+  const customFieldDefs = fieldDefsQuery.data ?? [];
+
   async function iniciarConversa(c: Contact) {
-    if (!c.phone_number || abrindo) return;
-    setAbrindo(c.id);
+    if (!c.phone_number || abrindoConversa) return;
+    setAbrindoConversa(c.id);
     try {
       const res = await fetch("/api/v1/conversations/open-with-contact", {
         method: "POST",
@@ -135,7 +145,7 @@ export function ContactsTable({ contacts, orderBy, orderDir, onSort }: Props) {
     } catch (err) {
       toast.error(err instanceof Error ? t(err.message) : t("Não foi possível abrir a conversa."));
     } finally {
-      setAbrindo(null);
+      setAbrindoConversa(null);
     }
   }
 
@@ -185,7 +195,7 @@ export function ContactsTable({ contacts, orderBy, orderDir, onSort }: Props) {
             onSort={onSort}
           />
           <TableHead>{t("Status")}</TableHead>
-          <TableHead className="w-[88px]">
+          <TableHead className="w-[160px]">
             <span className="sr-only">{t("Ações")}</span>
           </TableHead>
         </TableRow>
@@ -229,6 +239,26 @@ export function ContactsTable({ contacts, orderBy, orderDir, onSort }: Props) {
             </TableCell>
             <TableCell>
               <div className="flex items-center justify-end gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  title={t("Editar contato")}
+                  aria-label={`${t("Editar contato")} ${displayName(c, t)}`}
+                  onClick={() => setEditAlvo(c)}
+                >
+                  <PencilSimple size={16} weight="regular" aria-hidden />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  title={t("Abrir negócio no funil")}
+                  aria-label={`${t("Abrir negócio de")} ${displayName(c, t)} ${t("no funil")}`}
+                  onClick={() => setLeadAlvo(c)}
+                >
+                  <Kanban size={16} weight="regular" aria-hidden />
+                </Button>
                 {c.conversa ? (
                   <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                     <Link
@@ -236,7 +266,7 @@ export function ContactsTable({ contacts, orderBy, orderDir, onSort }: Props) {
                       title={t("Abrir conversa no Inbox")}
                       aria-label={`${t("Abrir conversa com")} ${displayName(c, t)} ${t("no Inbox")}`}
                     >
-                      <ChatCircle size={16} weight="regular" aria-hidden />
+                      <WhatsappLogo size={16} weight="regular" aria-hidden />
                       {c.conversa.unread > 0 && (
                         <span className="sr-only">{c.conversa.unread} {t("sem ler")}</span>
                       )}
@@ -249,10 +279,10 @@ export function ContactsTable({ contacts, orderBy, orderDir, onSort }: Props) {
                     className="h-8 w-8"
                     title={t("Iniciar conversa no Inbox")}
                     aria-label={`${t("Iniciar conversa com")} ${displayName(c, t)} ${t("no Inbox")}`}
-                    disabled={abrindo === c.id}
+                    disabled={abrindoConversa === c.id}
                     onClick={() => void iniciarConversa(c)}
                   >
-                    <ChatCircle size={16} weight="regular" aria-hidden />
+                    <WhatsappLogo size={16} weight="regular" aria-hidden />
                   </Button>
                 ) : null}
                 <Button
@@ -294,6 +324,23 @@ export function ContactsTable({ contacts, orderBy, orderDir, onSort }: Props) {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    {editAlvo && (
+      <EditContactDialog
+        contact={editAlvo}
+        open={editAlvo !== null}
+        onOpenChange={(open) => { if (!open) setEditAlvo(null); }}
+        customFieldDefs={customFieldDefs}
+      />
+    )}
+
+    <AbrirLeadDialog
+      key={leadAlvo?.id ?? "none"}
+      open={leadAlvo !== null}
+      onOpenChange={(open) => { if (!open) setLeadAlvo(null); }}
+      contactId={leadAlvo?.id ?? null}
+      contactLabel={leadAlvo ? displayName(leadAlvo, t) : ""}
+    />
     </>
   );
 }

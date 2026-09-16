@@ -61,6 +61,46 @@ export function formatCentsBRL(cents: number): string {
 }
 
 /**
+ * Máscara de campo de valor: cada dígito digitado entra pela DIREITA, como
+ * centavos — "1" → "0,01", "12" → "0,12", "123" → "1,23", "123456" →
+ * "1.234,56". Elimina a ambiguidade que `parseReaisToCents` existe pra
+ * desambiguar: só existe UMA leitura possível do que foi digitado, porque só
+ * dígito entra na máscara — ponto e vírgula do texto colado são descartados,
+ * não interpretados.
+ */
+export function maskMoneyBRL(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 0) return "";
+  const padded = digits.padStart(3, "0");
+  const cents = padded.slice(-2);
+  const reaisDigits = padded.slice(0, -2).replace(/^0+(?=\d)/, "");
+  const comMilhar = reaisDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${comMilhar},${cents}`;
+}
+
+/**
+ * `maskMoneyBRL` → centavos. Os dígitos da máscara JÁ SÃO os centavos (é
+ * assim que ela foi construída) — sem heurística de separador nenhuma, ao
+ * contrário de `parseReaisToCents`.
+ */
+export function moneyBRLMaskedToCents(masked: string): number {
+  const digits = masked.replace(/\D/g, "");
+  return digits ? parseInt(digits, 10) : 0;
+}
+
+/**
+ * Centavos gravados → texto pronto pra pré-popular um campo de `maskMoneyBRL`
+ * (editar um lead que já tem valor). Fonte única: `EditLeadDialog.tsx` e
+ * `LeadFieldsForm.tsx` tinham cada um sua cópia de `centsToReais`, e as duas
+ * escreviam SEM separador de milhar ("1234,56") — divergente do formato que a
+ * própria máscara produz ("1.234,56") assim que a pessoa toca no campo.
+ */
+export function centsToMoneyBRLMasked(cents: number | null | undefined): string {
+  if (cents === null || cents === undefined) return "";
+  return maskMoneyBRL(String(Math.max(0, Math.round(cents))));
+}
+
+/**
  * Centavos de DÓLAR → "US$ 249,90". Para todo número que sai de
  * `llm_calls.cost_cents` / `ai_invocations.cost_cents`.
  *

@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useT } from "@/hooks/i18n/useT";
 import { useBoard } from "@/hooks/kanban/useBoard";
+import { camposVisiveisDoCard, type CampoDoCard } from "@/lib/kanban/card-fields";
 
 function formatError(err: unknown, t: (texto: string) => string): string {
   if (err instanceof Error) return err.message;
@@ -64,6 +65,25 @@ export function PipelinePageClient({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [newOpen, setNewOpen] = useState(false);
 
+  // `null` = nenhum clique ainda nesta sessão; usa o que está salvo. Um clique
+  // no `CardFieldsPicker` grava aqui (não só dentro dele) porque o QUADRO lê
+  // deste mesmo estado — é isso que faz marcar a caixinha refletir na hora,
+  // sem esperar "Salvar".
+  const [previewCampos, setPreviewCampos] = useState<Set<CampoDoCard> | null>(null);
+  // Reseta ao trocar de funil pelo `PipelineSwitcher` — mesma rota, `id`
+  // novo, então este componente NÃO remonta, e sem isto a pré-visualização
+  // de um funil vazaria para o próximo. Ajuste DURANTE o render (o padrão do
+  // React para "resetar estado quando uma prop muda"), não num `useEffect`:
+  // um `setState` síncrono dentro de efeito é o que
+  // `react-hooks/set-state-in-effect` está aqui para pegar — encadeia mais um
+  // ciclo de render depois da pintura, em vez de resolver no mesmo passo.
+  const [pipelineIdAnterior, setPipelineIdAnterior] = useState(pipelineId);
+  if (pipelineId !== pipelineIdAnterior) {
+    setPipelineIdAnterior(pipelineId);
+    setPreviewCampos(null);
+  }
+  const camposVisiveis = previewCampos ?? camposVisiveisDoCard(data?.pipeline.settings ?? null);
+
   const filteredLeads = data ? applyFilters(data.leads, filters) : [];
 
   return (
@@ -114,7 +134,14 @@ export function PipelinePageClient({
           stages={data.stages}
         />
       )}
-      <FilterBar filters={filters} onChange={setFilters} leads={data?.leads ?? []} />
+      <FilterBar
+        filters={filters}
+        onChange={setFilters}
+        leads={data?.leads ?? []}
+        pipelineId={pipelineId}
+        camposVisiveis={camposVisiveis}
+        onPreviewCampos={setPreviewCampos}
+      />
       {error ? (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm">
           {t("Não consegui carregar este funil:")} {formatError(error, t)}
@@ -133,6 +160,7 @@ export function PipelinePageClient({
           selectedIds={selectedIds}
           onSelectionChange={setSelectedIds}
           leadInicial={searchParams.get("lead")}
+          camposVisiveis={camposVisiveis}
         />
       )}
       <BulkActionBar

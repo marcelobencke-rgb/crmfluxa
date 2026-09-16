@@ -8,9 +8,10 @@
  */
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { normalizeCpfDigits } from "@/lib/contacts/cpf-format";
 
 export function normalizeCpf(raw: string): string {
-  return raw.replace(/\D/g, "");
+  return normalizeCpfDigits(raw);
 }
 
 /**

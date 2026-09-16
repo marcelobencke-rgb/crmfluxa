@@ -4,6 +4,7 @@
  * input certo por tipo. Usado pelo dossiê e pelo painel do inbox, via
  * `LeadFieldsForm`.
  */
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -98,11 +99,10 @@ export function CustomFieldsEditor({ fields, value, onChange, disabled, classNam
             return (
               <div key={f.key} className="space-y-2">
                 {labelEl}
-                <Input
+                <DatePickerField
                   id={id}
-                  type="date"
                   value={typeof v === "string" ? v : ""}
-                  onChange={(e) => set(f.key, e.target.value)}
+                  onChange={(next) => set(f.key, next)}
                   disabled={disabled}
                 />
               </div>

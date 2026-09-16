@@ -4596,9 +4596,18 @@ export const DICIONARIO: Traducoes = {
   },
   "Configurar minha organização": { es: "Configurar mi organización" },
   "Campos personalizados": { es: "Campos personalizados" },
-  "Campos definidos no funil padrão da organização.": {
-    es: "Campos definidos en el embudo predeterminado de la organización.",
+  "Campos definidos em Configurações › Campos do contato.": {
+    es: "Campos definidos en Configuración › Campos del contacto.",
   },
+  "Campos do contato": { es: "Campos del contacto" },
+  "Os campos que aparecem na ficha de qualquer contato, em qualquer funil.": {
+    es: "Los campos que aparecen en la ficha de cualquier contacto, en cualquier embudo.",
+  },
+  "Aparecem na ficha de qualquer contato — independente de qual funil o negócio dele está.": {
+    es: "Aparecen en la ficha de cualquier contacto — independiente de en qué embudo esté su negocio.",
+  },
+  "Salvar campos do contato": { es: "Guardar campos del contacto" },
+  "Campos do contato atualizados.": { es: "Campos del contacto actualizados." },
   "Configure sua organização": { es: "Configura tu organización" },
   "Sua conta foi confirmada, mas a organização inicial ainda não foi criada. Informe o nome da sua empresa para concluir o primeiro acesso e abrir o onboarding do CRM.": {
     es: "Tu cuenta fue confirmada, pero la organización inicial aún no fue creada. Indica el nombre de tu empresa para completar el primer acceso y abrir la configuración inicial del CRM.",
@@ -5322,8 +5331,8 @@ export const DICIONARIO: Traducoes = {
   },
   "Este contato já foi anonimizado": { es: "Este contacto ya fue anonimizado" },
   "Anonimizar contato": { es: "Anonimizar contacto" },
-  "Customer 360 — busque, filtre e gerencie contatos.": {
-    es: "Customer 360 — busca, filtra y gestiona contactos.",
+  "Busque, filtre e gerencie contatos.": {
+    es: "Busca, filtra y gestiona contactos.",
   },
   "Importar CSV": { es: "Importar CSV" },
   // ── Juntar contatos duplicados ──────────────────────────────────────────
@@ -5403,6 +5412,49 @@ export const DICIONARIO: Traducoes = {
     es: "Ej.: Solicitud formal del titular por email el DD/MM/AAAA",
   },
   "caracteres mínimos": { es: "caracteres mínimos" },
+  // ─── Ficha do contato: site/instagram/facebook/observações (migration 0237) ───
+  "Site": { es: "Sitio web" },
+  "Observações": { es: "Observaciones" },
+  // ─── Desbloquear contato (opt-out reversível) — ver app/app/contacts/[id]/_client.tsx ───
+  "Contato desbloqueado.": { es: "Contacto desbloqueado." },
+  "Desbloquear": { es: "Desbloquear" },
+  "Desbloquear contato?": { es: "¿Desbloquear contacto?" },
+  "Este contato pediu para não receber mais mensagens (palavra de cancelamento detectada": {
+    es: "Este contacto pidió no recibir más mensajes (palabra de cancelación detectada",
+  },
+  "). Desbloquear volta a habilitar mensagem automática e campanha pra ele — confirme só se tiver certeza de que foi engano ou de que a pessoa pediu pra voltar.": {
+    es: "). Desbloquear vuelve a habilitar el mensaje automático y la campaña para él — confirma solo si tienes certeza de que fue un error o de que la persona pidió volver.",
+  },
+  "Desbloqueando…": { es: "Desbloqueando…" },
+  // ─── Abrir/criar negócio a partir da ficha do contato — ver AbrirLeadDialog.tsx ───
+  "Não foi possível carregar os negócios.": { es: "No fue posible cargar los negocios." },
+  "Negócios de": { es: "Negocios de" },
+  "Escolha um negócio pra abrir, ou crie um novo.": {
+    es: "Elige un negocio para abrir, o crea uno nuevo.",
+  },
+  "Este contato ainda não tem negócio no funil.": {
+    es: "Este contacto todavía no tiene negocio en el embudo.",
+  },
+  "Sem título": { es: "Sin título" },
+  "Criar negócio": { es: "Crear negocio" },
+  "Em qual funil?": { es: "¿En qué embudo?" },
+  "O negócio novo entra na primeira etapa do funil escolhido.": {
+    es: "El negocio nuevo entra en la primera etapa del embudo elegido.",
+  },
+  "Não foi possível carregar os funis.": { es: "No fue posible cargar los embudos." },
+  "Negócio criado": { es: "Negocio creado" },
+  "Abrir negócio no funil": { es: "Abrir negocio en el embudo" },
+  "Abrir negócio de": { es: "Abrir negocio de" },
+  // ─── EditContactDialog: telefone/CPF/site/observações — ver o arquivo ───
+  "Telefone inválido. Confira o DDD e o número.": {
+    es: "Teléfono inválido. Revisa el código de área y el número.",
+  },
+  "Informações básicas": { es: "Información básica" },
+  "Já tem CPF cadastrado — deixe em branco pra manter, ou digite um novo pra substituir.": {
+    es: "Ya tiene CPF registrado — deja en blanco para mantener, o escribe uno nuevo para reemplazar.",
+  },
+  "Presença online": { es: "Presencia en línea" },
+  "Nome é obrigatório.": { es: "El nombre es obligatorio." },
   "Para confirmar, digite": { es: "Para confirmar, escribe" },
   "abaixo.": { es: "abajo." },
   "Confirmação": { es: "Confirmación" },
@@ -5865,6 +5917,35 @@ export const DICIONARIO: Traducoes = {
   "Gerenciar funis": { es: "Gestionar embudos" },
   "Novo Lead": { es: "Nuevo Lead" },
   "Não consegui carregar este funil:": { es: "No pude cargar este embudo:" },
+  // ─── Dossiê do negócio: virou modal com abas (Visão geral/Tarefas/
+  // Agendamentos/Conversas/Produtos/Anexos) — ver LeadDossier.tsx ───
+  "Agendamentos": { es: "Citas" },
+  "Anexos": { es: "Adjuntos" },
+  "Abrir no Inbox": { es: "Abrir en la Bandeja" },
+  "Vincular contato": { es: "Vincular contacto" },
+  "Nenhum contato encontrado.": { es: "Ningún contacto encontrado." },
+  "Digite para buscar.": { es: "Escribe para buscar." },
+  "Não consegui carregar os agendamentos.": { es: "No pude cargar las citas." },
+  "Este negócio não tem contato vinculado — sem contato não há agendamento para mostrar.": {
+    es: "Este negocio no tiene contacto vinculado — sin contacto no hay cita para mostrar.",
+  },
+  "Ainda não há conversa de WhatsApp com este contato.": {
+    es: "Todavía no hay conversación de WhatsApp con este contacto.",
+  },
+  "Em breve: adicione os produtos deste negócio, com quantidade e preço.": {
+    es: "Próximamente: agrega los productos de este negocio, con cantidad y precio.",
+  },
+  "Em breve: envie arquivos e imagens ligados a este negócio.": {
+    es: "Próximamente: envía archivos e imágenes vinculados a este negocio.",
+  },
+  // Nota manual na linha do tempo do negócio — ver EscreverNota/LinhaDeNota em
+  // LeadDossier.tsx e LeadTimeline.tsx.
+  Nota: { es: "Nota" },
+  "Escrever nota…": { es: "Escribir nota…" },
+  "Enter para enviar, Shift+Enter para nova linha": {
+    es: "Enter para enviar, Shift+Enter para nueva línea",
+  },
+  "Escreva algo antes de enviar.": { es: "Escribe algo antes de enviar." },
   "sem responsável.": { es: "sin responsable." },
   "atribuído.": { es: "asignado." },
   "atribuídos.": { es: "asignados." },
@@ -5874,6 +5955,18 @@ export const DICIONARIO: Traducoes = {
   "Atribuir a…": { es: "Asignar a…" },
   "Responsável…": { es: "Responsable…" },
   "Eu": { es: "Yo" },
+  // Campos do card, ao lado de "Apenas atrasados" — ver CardFieldsPicker.tsx.
+  "Campos do card": { es: "Campos de la tarjeta" },
+  "Mostrar no card": { es: "Mostrar en la tarjeta" },
+  "Tempo na etapa": { es: "Tiempo en la etapa" },
+  "Sinal da IA": { es: "Señal de la IA" },
+  "Última mensagem": { es: "Último mensaje" },
+  "Telefone do contato": { es: "Teléfono del contacto" },
+  "Campos do card atualizados.": { es: "Campos de la tarjeta actualizados." },
+  "Erro ao salvar.": { es: "Error al guardar." },
+  "Só quem administra o funil pode alterar isto.": {
+    es: "Solo quien administra el embudo puede cambiar esto.",
+  },
   "Remover responsável": { es: "Quitar responsable" },
   "nova tag": { es: "nueva etiqueta" },
   "Esta ação remove os leads selecionados. Não pode ser desfeita.": {

@@ -5,12 +5,15 @@ import { useT } from "@/hooks/i18n/useT";
 import { cn } from "@/lib/utils";
 import type { Lead } from "@/lib/types/leads";
 import { resolveCardState, stageAgeLabel, type CardInput } from "@/lib/kanban/card-state";
+import { CAMPOS_DO_CARD, type CampoDoCard } from "@/lib/kanban/card-fields";
+import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
+import { phoneForDisplay } from "@/lib/channels/phone-variants";
 import { KanbanCardActions } from "./KanbanCardActions";
 import { NextActionSlot } from "./NextActionSlot";
 import { ReactivationSlot } from "./ReactivationSlot";
 import { ConversaSlot } from "./ConversaSlot";
 import { ScoreSlot } from "./ScoreSlot";
-import { OwnerBadge } from "./OwnerBadge";
+import { OwnerPicker } from "./OwnerPicker";
 
 /** Os dois gestos de seleção que o card sabe relatar. */
 export type GestoDeSelecao = "alterna" | "intervalo";
@@ -43,6 +46,12 @@ interface KanbanCardProps {
   onSelect?: (leadId: string, gesto: GestoDeSelecao) => void;
   /** Abrir o dossiê. Separado de `onSelect`: são gestos e intenções diferentes. */
   onOpen?: (leadId: string) => void;
+  /**
+   * Quais faixas mostrar — `crm_pipelines.settings.card_fields`, resolvido
+   * pelo board (`camposVisiveisDoCard`). Ausente = tudo visível, o padrão de
+   * sempre; ver `lib/kanban/card-fields.ts`.
+   */
+  camposVisiveis?: Set<CampoDoCard>;
 }
 
 function formatBRL(cents: number | null, currency: string | null): string | null {
@@ -80,11 +89,20 @@ export function KanbanCard({
   pulseCount = 0,
   onSelect,
   onOpen,
+  camposVisiveis = new Set(CAMPOS_DO_CARD),
 }: KanbanCardProps) {
   const t = useT();
   const value = formatBRL(card.valueCents, card.currency);
   const state = resolveCardState(card, t);
   const age = stageAgeLabel(card.hoursInStage, t);
+  const mostrarValor = camposVisiveis.has("value");
+  const mostrarTag = camposVisiveis.has("tag");
+  const mostrarResponsavel = camposVisiveis.has("owner");
+  const mostrarTempoNaEtapa = camposVisiveis.has("stage_age");
+  const mostrarSinalDaIA = camposVisiveis.has("ai_signal");
+  const mostrarConversa = camposVisiveis.has("conversation");
+  const mostrarNomeDoContato = camposVisiveis.has("contact_name");
+  const mostrarTelefoneDoContato = camposVisiveis.has("contact_phone");
 
   // Clique ABRE o dossiê; ctrl/cmd+clique SELECIONA; shift+clique estende até a
   // âncora. "Clicar abre" é a convenção mais forte, e seleção múltipla é recurso
@@ -173,9 +191,16 @@ export function KanbanCard({
             )}
           />
 
-          {/* ① identidade — altura FIXA de 2 linhas, com ou sem texto longo. */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex min-w-0 flex-1 items-start gap-1.5">
+          {/* ① identidade — altura FIXA de 2 linhas, com ou sem texto longo.
+              As ações ficam `absolute` (ver `KanbanCardActions`), não mais
+              lado a lado com o título: cinco ícones (conversa, editar, ganho,
+              perdido, remover) numa faixa `flex` reservavam quase metade da
+              largura do card O TEMPO TODO — mesmo invisíveis (opacidade zero
+              ainda ocupa espaço), o que já bastava para quebrar "Nova Compra"
+              em duas linhas. Flutuando por cima no hover, o título usa a
+              largura inteira quando ninguém está olhando para as ações. */}
+          <div className="relative">
+            <div className="flex min-w-0 items-start gap-1.5 pr-1">
               {/* A largura é SEMPRE reservada (`h-4 w-4` num wrapper que não
                   some), só a tinta é condicional: o card tem orçamento fixo de
                   altura e largura, e uma caixa que aparece no hover EMPURRANDO
@@ -204,7 +229,7 @@ export function KanbanCard({
                     : "opacity-0 group-hover:opacity-100",
                 )}
               />
-              {card.canonicalTag && (
+              {mostrarTag && card.canonicalTag && (
                 <span
                   className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
                   title={card.canonicalTag}
@@ -238,76 +263,101 @@ export function KanbanCard({
                 </button>
               </h3>
             </div>
-            <KanbanCardActions lead={lead} pipelineId={pipelineId} />
+            <KanbanCardActions lead={lead} pipelineId={pipelineId} onOpen={onOpen} />
           </div>
 
-          {/* ② valor — altura reservada mesmo sem valor, senão o card encolhe. */}
-          <p
-            className={cn(
-              "mt-1 h-5 text-xs font-medium leading-5 tabular-nums",
-              value ? "text-text" : "text-text-muted",
-            )}
-          >
-            {value ?? "—"}
-          </p>
+          {/* ② valor — altura reservada mesmo sem valor, senão o card encolhe.
+              Faixa some por inteiro quando desligada em "Campos do card" —
+              como todo card do FUNIL compartilha a mesma configuração, a
+              altura segue constante no quadro inteiro, só muda de valor. */}
+          {mostrarValor && (
+            <p
+              className={cn(
+                "mt-1 h-5 text-xs font-medium leading-5 tabular-nums",
+                value ? "text-text" : "text-text-muted",
+              )}
+            >
+              {value ?? "—"}
+            </p>
+          )}
+
+          {/* Dados do cliente — nome e/ou telefone do CONTATO do negócio.
+              `rotuloDoContato` já devolve "Sem nome" para lead sem contato (a
+              MESMA regra da ficha e da listagem, não uma quarta variação). */}
+          {(mostrarNomeDoContato || mostrarTelefoneDoContato) && (
+            <div className="mt-1 flex h-5 items-center gap-2 text-xs text-text-muted">
+              {mostrarNomeDoContato && (
+                <span className="truncate">{rotuloDoContato(card.contact, t)}</span>
+              )}
+              {mostrarTelefoneDoContato && (
+                <span className="shrink-0 tabular-nums">
+                  {card.contact?.phone_number ? phoneForDisplay(card.contact.phone_number) : "—"}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* ③ a linha do agente — um slot, três estados, nunca três blocos. */}
-          <div className="mt-1.5 flex h-6 items-center gap-2 text-xs">
-            {state.slot.type === "awaiting" && (
-              // A proposta do agente é a ÚNICA linha do card com ação: é o
-              // ponto onde a decisão do humano entra. Sem os botões aqui, o
-              // texto seria só mais um aviso — e a wave existe porque avisar
-              // sem poder decidir é o que já acontecia (o dado ficava no banco).
-              <NextActionSlot
-                label={state.slot.label}
-                leadId={card.id}
-                approvedSeq={lead.next_action?.seq ?? -1}
-                pipelineId={pipelineId}
-              />
-            )}
-            {state.slot.type === "reactivation" && (
-              // O negócio parou E aqui está o que fazer. Mesma faixa, mesma
-              // altura: o card não cresce quando o sistema tem algo a propor.
-              <ReactivationSlot
-                leadId={card.id}
-                proposalId={state.slot.proposalId}
-                expiresAt={state.slot.expiresAt}
-                pipelineId={pipelineId}
-              />
-            )}
-            {state.slot.type === "cooling" && (
-              // -fg é a variante de TEXTO do token (o -warning puro dá 3.7:1 em
-              // 12px); a cor cheia fica na borda de estado, que é gráfica.
-              <span className="truncate text-warning-fg">{state.slot.label}</span>
-            )}
-            {state.slot.type === "meter" && (
-              <ScoreSlot
-                probability={state.slot.probability}
-                band={state.slot.band}
-                reason={state.slot.reason}
-                factors={state.slot.factors}
-              />
-            )}
-          </div>
+          {mostrarSinalDaIA && (
+            <div className="mt-1.5 flex h-6 items-center gap-2 text-xs">
+              {state.slot.type === "awaiting" && (
+                // A proposta do agente é a ÚNICA linha do card com ação: é o
+                // ponto onde a decisão do humano entra. Sem os botões aqui, o
+                // texto seria só mais um aviso — e a wave existe porque avisar
+                // sem poder decidir é o que já acontecia (o dado ficava no banco).
+                <NextActionSlot
+                  label={state.slot.label}
+                  leadId={card.id}
+                  approvedSeq={lead.next_action?.seq ?? -1}
+                  pipelineId={pipelineId}
+                />
+              )}
+              {state.slot.type === "reactivation" && (
+                // O negócio parou E aqui está o que fazer. Mesma faixa, mesma
+                // altura: o card não cresce quando o sistema tem algo a propor.
+                <ReactivationSlot
+                  leadId={card.id}
+                  proposalId={state.slot.proposalId}
+                  expiresAt={state.slot.expiresAt}
+                  pipelineId={pipelineId}
+                />
+              )}
+              {state.slot.type === "cooling" && (
+                // -fg é a variante de TEXTO do token (o -warning puro dá 3.7:1 em
+                // 12px); a cor cheia fica na borda de estado, que é gráfica.
+                <span className="truncate text-warning-fg">{state.slot.label}</span>
+              )}
+              {state.slot.type === "meter" && (
+                <ScoreSlot
+                  probability={state.slot.probability}
+                  band={state.slot.band}
+                  reason={state.slot.reason}
+                  factors={state.slot.factors}
+                />
+              )}
+            </div>
+          )}
 
           {/* A última mensagem, com atalho para o inbox. Fica ANTES do rodapé
               de dono/tempo porque é conteúdo do negócio, não metadado do card —
               e some por inteiro quando não há conversa. */}
-          <ConversaSlot conversa={lead.conversa} />
+          {mostrarConversa && <ConversaSlot conversa={lead.conversa} />}
 
           {/* ④ dono · ⑤ tempo no estágio */}
-          <div className="mt-1 flex h-6 items-center justify-between gap-2">
-            <OwnerBadge
-              ownerKind={card.owner.kind}
-              ownerName={card.owner.name}
-              agentVersion={card.owner.agentVersion}
-            />
-            <span className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-text-muted">
-              {state.showStageAge && age
-                ? `${age} ${t("em")} ${card.stageName}`
-                : `${t("em")} ${card.stageName}`}
-            </span>
-          </div>
+          {(mostrarResponsavel || mostrarTempoNaEtapa) && (
+            <div className="mt-1 flex h-6 items-center justify-between gap-2">
+              {mostrarResponsavel && (
+                <OwnerPicker lead={lead} pipelineId={pipelineId} owner={card.owner} />
+              )}
+              {mostrarTempoNaEtapa && (
+                <span className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-text-muted">
+                  {state.showStageAge && age
+                    ? `${age} ${t("em")} ${card.stageName}`
+                    : `${t("em")} ${card.stageName}`}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
     </Draggable>

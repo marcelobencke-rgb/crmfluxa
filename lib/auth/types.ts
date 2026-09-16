@@ -173,4 +173,21 @@ export interface ActiveOrg {
    * `window.__PUBLIC_ENV__`, de onde `branding()` a lê.
    */
   marca?: { readonly nome?: string; readonly logoUrl?: string | null };
+  /**
+   * O funil padrão da org — só para o link "Funis" da barra lateral apontar
+   * direto pro quadro (`/app/pipelines/{id}`) em vez de passar por
+   * `/app/kanban` e sofrer o redirect lá.
+   *
+   * Preenchido em `AppLayout`, não em `resolveActiveOrg`: mesmo padrão de
+   * `visibility_mode`/`marca` — layout já faz uma consulta extra com
+   * `activeOrg` em mãos, e aqui é mais uma. `null` (org sem nenhum funil
+   * ainda) faz o link cair de volta em `/app/kanban`, que sabe lidar com esse
+   * caso (mostra o "criar meu primeiro funil").
+   *
+   * NÃO é fonte de autorização nem de verdade — só atalho de navegação. Se
+   * ficar desatualizado por um instante (funil padrão trocou agora mesmo,
+   * cache do layout ainda não refletiu), o pior caso é cair no funil errado,
+   * que o próprio quadro deixa claro pelo nome no cabeçalho.
+   */
+  defaultPipelineId?: string | null;
 }

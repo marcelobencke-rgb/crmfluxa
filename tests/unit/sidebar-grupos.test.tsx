@@ -24,8 +24,9 @@ vi.mock("@/hooks/auth/AuthProvider", () => ({
   useAuth: () => authRef,
   usePermission: () => false,
 }));
+const usePathnameMock = vi.fn<() => string>(() => "/app/inbox");
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/app/inbox",
+  usePathname: () => usePathnameMock(),
 }));
 vi.mock("@/components/connections/ConnectionHealthDot", () => ({
   ConnectionHealthDot: () => null,
@@ -44,7 +45,10 @@ function comoPapel(role: ActiveOrg["role"]) {
   authRef.activeOrg = { orgId: "org-1", name: "Org", role };
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  usePathnameMock.mockReturnValue("/app/inbox");
+});
 
 describe("Sidebar agrupado", () => {
   it("renderiza os títulos de grupo na ordem de uso", () => {
@@ -79,6 +83,40 @@ describe("Sidebar agrupado", () => {
     comoPapel("admin");
     render(<Sidebar collapsed={false} />);
     expect(screen.getByRole("link", { name: "Funis" })).toHaveAttribute("href", "/app/kanban");
+  });
+
+  it("com o funil padrão em mãos, Funis pula o redirect de /app/kanban", () => {
+    // Sem isto, todo clique em "Funis" pagava DOIS pulos: `/app/kanban`
+    // renderiza, resolve o padrão e só então redireciona pro quadro — medido
+    // como demora extra pelo usuário. Com `defaultPipelineId` (resolvido em
+    // `AppLayout`, não aqui), o link já sai apontando pro destino final.
+    comoPapel("admin");
+    authRef.activeOrg = { ...authRef.activeOrg!, defaultPipelineId: "pipe-1" };
+    render(<Sidebar collapsed={false} />);
+    expect(screen.getByRole("link", { name: "Funis" })).toHaveAttribute(
+      "href",
+      "/app/pipelines/pipe-1",
+    );
+  });
+
+  it("sem funil padrão (org nova, zero funis), Funis continua caindo em /app/kanban", () => {
+    // `defaultPipelineId` vem `null`/ausente quando a org não tem nenhum funil
+    // ainda — o atalho não pode inventar um destino. `/app/kanban` sabe lidar
+    // com esse caso (mostra "criar meu primeiro funil").
+    comoPapel("admin");
+    render(<Sidebar collapsed={false} />);
+    expect(screen.getByRole("link", { name: "Funis" })).toHaveAttribute("href", "/app/kanban");
+  });
+
+  it("Funis continua marcado quando o quadro já abriu", () => {
+    // O atalho troca a URL de `/app/kanban` para `/app/pipelines/…` — sem
+    // tratar isso à parte, o destaque do menu apagaria no exato momento em
+    // que o pulo funcionasse (a rota deixa de bater com `/app/kanban`).
+    comoPapel("admin");
+    authRef.activeOrg = { ...authRef.activeOrg!, defaultPipelineId: "pipe-1" };
+    usePathnameMock.mockReturnValue("/app/pipelines/pipe-1");
+    render(<Sidebar collapsed={false} />);
+    expect(screen.getByRole("link", { name: "Funis" })).toHaveAttribute("aria-current", "page");
   });
 
   it("desenterra Audit Log — e Nuvemshop ficou de fora, por escolha", () => {

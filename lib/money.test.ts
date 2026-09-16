@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
 
-import { parseReaisToCents, formatCentsBRL, formatCents } from "./money";
+import {
+  parseReaisToCents,
+  formatCentsBRL,
+  formatCents,
+  maskMoneyBRL,
+  moneyBRLMaskedToCents,
+  centsToMoneyBRLMasked,
+} from "./money";
 
 describe("parseReaisToCents", () => {
   it("lê ponto como decimal quando o grupo final não é de milhar", () => {
@@ -36,6 +43,59 @@ describe("parseReaisToCents", () => {
     expect(parseReaisToCents("abc")).toBeNull();
     expect(parseReaisToCents("R$ 10")).toBeNull();
     expect(parseReaisToCents("-5")).toBeNull();
+  });
+});
+
+describe("maskMoneyBRL", () => {
+  it("acumula dígitos como centavos, da direita pra esquerda", () => {
+    expect(maskMoneyBRL("1")).toBe("0,01");
+    expect(maskMoneyBRL("12")).toBe("0,12");
+    expect(maskMoneyBRL("123")).toBe("1,23");
+    expect(maskMoneyBRL("1234")).toBe("12,34");
+    expect(maskMoneyBRL("123456")).toBe("1.234,56");
+    expect(maskMoneyBRL("1234567")).toBe("12.345,67");
+  });
+
+  it("descarta tudo que não é dígito — não interpreta separador colado", () => {
+    // Ao contrário de parseReaisToCents: aqui não existe leitura ambígua
+    // porque só dígito entra na máscara. Colar "249.90" ou "249,90" dá o
+    // mesmo resultado — os separadores somem e sobram os dígitos "24990",
+    // que a máscara lê como 249 reais e 90 centavos (coincide com a
+    // intenção porque as duas formas têm exatamente 2 casas decimais).
+    expect(maskMoneyBRL("249.90")).toBe("249,90");
+    expect(maskMoneyBRL("R$ 12,00")).toBe("12,00");
+    // Mas um INTEIRO colado sem decimais não vira "1.234,00" — os últimos
+    // dois dígitos sempre viram centavos. É o comportamento normal de
+    // campo de valor em máscara (mesmo padrão de POS/caixa eletrônico), e
+    // o motivo de recomendar digitar em vez de colar número redondo.
+    expect(maskMoneyBRL("1234")).toBe("12,34");
+  });
+
+  it("campo vazio continua vazio", () => {
+    expect(maskMoneyBRL("")).toBe("");
+    expect(maskMoneyBRL("abc")).toBe("");
+  });
+});
+
+describe("moneyBRLMaskedToCents", () => {
+  it("lê de volta exatamente o que a máscara escreveu", () => {
+    expect(moneyBRLMaskedToCents("0,01")).toBe(1);
+    expect(moneyBRLMaskedToCents("1.234,56")).toBe(123456);
+    expect(moneyBRLMaskedToCents("12.345,67")).toBe(1234567);
+    expect(moneyBRLMaskedToCents("")).toBe(0);
+  });
+});
+
+describe("centsToMoneyBRLMasked", () => {
+  it("pré-popula no MESMO formato que a máscara produz ao digitar", () => {
+    expect(centsToMoneyBRLMasked(123456)).toBe("1.234,56");
+    expect(centsToMoneyBRLMasked(1)).toBe("0,01");
+    expect(centsToMoneyBRLMasked(0)).toBe("0,00");
+  });
+
+  it("nulo/indefinido vira campo vazio, não '0,00'", () => {
+    expect(centsToMoneyBRLMasked(null)).toBe("");
+    expect(centsToMoneyBRLMasked(undefined)).toBe("");
   });
 });
 

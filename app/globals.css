@@ -25,70 +25,105 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* ─────────────────────────────────────────────────────────────────────────
-   DeskcommCRM — Design System tokens (Sage palette · density Aerada)
-   Source of truth: /app/design/lib/tokens.ts (PALETTES.sage)
+   DeskcommCRM — Design System tokens (Fluxa palette · density Aerada)
+   Source of truth: /app/design/lib/tokens.ts (PALETTES.fluxa)
    Light + dark drawn separately (NOT inverted).
+
+   Substituiu a Sage em 2026-09-12, a pedido do Marcelo (paleta de marca:
+   Azul Profundo #0B2140 / Verde Sálvia #6F9F8E / Mint #B8DED0 / Creme #F7F5EF
+   / Cinza #D9E0DF / Grafite #202B2B).
+
+   Accent líder = Azul Profundo (decisão final, 2026-09-13 — antes disso o
+   líder foi Verde Sálvia por uma volta; ver histórico do arquivo se precisar
+   do porquê). Verde Sálvia calibrado (`#278067`, ver `lib/branding/rampa.ts`,
+   `rampaDeSemente`) virou `--color-success` — "crescimento" combina melhor
+   com sucesso do que com botão genérico. `--color-info` é um violeta novo
+   (`#6d4ba0`): com o azul virando accent, reaproveitar azul pra `info`
+   colidiria com o próprio accent.
+
+   Nenhum dos dois hexes de marca entra LITERAL no `accent-600`, e os dois
+   pelo MESMO motivo, medido em `lib/branding/contraste.ts` (`medirPares`):
+   - Verde Sálvia (`#6F9F8E`) literal no stop 600 (`K=6`, o stop que
+     `--color-accent` aponta — fixo por toda a engine de rampa, não trocável
+     por tema): 2,74:1 contra `--color-bg`, abaixo do piso 3:1 do WCAG 1.4.11.
+   - Azul Profundo (`#0B2140`) literal: passa de sobra no contraste (é bem
+     mais escuro que precisa), mas comprime os stops 700-950 quase no mesmo
+     pixel — está perto demais do fundo da curva de luminosidade pra sobrar
+     espaço de hover, e croma de azul escuro satura cedo no sRGB (testado:
+     ×1,5 do croma nativo já bate no teto, sem ficar mais vívido).
+   Os dois casos pedem a MESMA correção: sair do hex literal do swatch e
+   escolher, no mesmo matiz, o ponto de L/C que sobra espaço pro resto da
+   rampa. Pro azul, `#003e8a` (matiz 257,5° mantido, L subiu de 0,25 pra 0,38,
+   croma no teto do gamut nessa faixa): 9,37:1 contra o bg, hover (700) some
+   visivelmente do botão (10,87:1) — sem a compressão do hex literal. O swatch
+   original (`#0B2140`) sobrevive como referência de marca (logo, selo) e
+   aparece quase inalterado nos stops mais escuros da rampa (800/900).
+
+   Mover o accent pra outro stop (testei 700) NÃO é opção: a engine de
+   whitelabel lê de `--color-accent` qual stop é "o accent" e ancora QUALQUER
+   marca de cliente futura nesse mesmo stop — mudar isso aqui desalinha a
+   derivação de toda futura instalação com marca própria, não só a nossa.
    ───────────────────────────────────────────────────────────────────────── */
 
 :root {
   /* Surfaces (light) */
-  --color-bg: #faf9f6;
+  --color-bg: #f7f5ef;
   --color-surface: #ffffff;
-  --color-surface-elevated: #f5f3ee;
-  --color-overlay: rgba(28, 26, 22, 0.42);
+  --color-surface-elevated: #edeee9;
+  --color-overlay: rgba(32, 43, 43, 0.42);
 
   /* Text (light) */
-  --color-text: #1c1a16;
-  --color-text-muted: #5d594f;
-  --color-text-subtle: #7d786c;
+  --color-text: #202b2b;
+  --color-text-muted: #404d4d;
+  --color-text-subtle: #626f6f;
 
   /* Borders (light) */
-  --color-border: #e7e3da;
-  --color-border-strong: #d2cdbf;
+  --color-border: #d9e0df;
+  --color-border-strong: #a2aaa9;
 
-  /* Accent — Sage (11 stops) */
-  --color-accent-50:  #f3f6f1;
-  --color-accent-100: #e4ebe0;
-  --color-accent-200: #c8d6c1;
-  --color-accent-300: #a4ba9a;
-  --color-accent-400: #82a077;
-  --color-accent-500: #67885d;
-  --color-accent-600: #506d48;
-  --color-accent-700: #41573b;
-  --color-accent-800: #374731;
-  --color-accent-900: #2f3c2b;
-  --color-accent-950: #171f15;
+  /* Accent — Sálvia (11 stops, rampaDeSemente('#6F9F8E')) */
+  --color-accent-50:  #eff6ff;
+  --color-accent-100: #d7e6fd;
+  --color-accent-200: #adcaf4;
+  --color-accent-300: #77a3e3;
+  --color-accent-400: #447ed2;
+  --color-accent-500: #1d5eb6;
+  --color-accent-600: #003e8a;
+  --color-accent-700: #0b366f;
+  --color-accent-800: #102f5c;
+  --color-accent-900: #132b4e;
+  --color-accent-950: #0e1c32;
   --color-accent: var(--color-accent-600);
   --color-accent-fg: #ffffff;
   --color-accent-soft: var(--color-accent-100);
   --color-accent-hover: var(--color-accent-700);
 
-  /* Neutrals — greige (11 stops, light) */
-  --color-neutral-50:  #faf9f6;
-  --color-neutral-100: #f3f1ec;
-  --color-neutral-200: #e7e3da;
-  --color-neutral-300: #d2cdbf;
-  --color-neutral-400: #a9a395;
-  --color-neutral-500: #7d786c;
-  --color-neutral-600: #5d594f;
-  --color-neutral-700: #46433b;
-  --color-neutral-800: #2e2c26;
-  --color-neutral-900: #1c1a16;
-  --color-neutral-950: #0e0d0a;
+  /* Neutrals — grafite-azulado (11 stops, light) */
+  --color-neutral-50:  #f4f5f5;
+  --color-neutral-100: #e0e3e3;
+  --color-neutral-200: #bbc2c1;
+  --color-neutral-300: #8c9696;
+  --color-neutral-400: #626f6f;
+  --color-neutral-500: #404d4d;
+  --color-neutral-600: #202b2b;
+  --color-neutral-700: #1f2727;
+  --color-neutral-800: #1e2424;
+  --color-neutral-900: #1d2222;
+  --color-neutral-950: #1a1d1d;
 
   /* States (light) */
-  --color-success: #5a8a5f;
-  --color-success-bg: rgba(90, 138, 95, 0.12);
-  --color-success-fg: #41673f;
+  --color-success: #278067;
+  --color-success-bg: rgba(39, 128, 103, 0.12);
+  --color-success-fg: #003729;
   --color-warning: #b07a2b;
   --color-warning-bg: rgba(176, 122, 43, 0.12);
   --color-warning-fg: #875a1a;
   --color-error: #a94a3c;
   --color-error-bg: rgba(169, 74, 60, 0.12);
   --color-error-fg: #8a3a2e;
-  --color-info: #4a7a93;
-  --color-info-bg: rgba(74, 122, 147, 0.12);
-  --color-info-fg: #355d72;
+  --color-info: #6d4ba0;
+  --color-info-bg: rgba(109, 75, 160, 0.12);
+  --color-info-fg: #350b5f;
 
   /* Spacing (4-base) */
   --space-0: 0px;
@@ -106,20 +141,22 @@
   --space-24: 96px;
   --space-32: 128px;
 
-  /* Radius */
+  /* Radius — HeroUI-like (2026-09-13): antes 4/8/12/16, arredondamento
+     pouco perceptível num relance. Botão, input e badge (rounded-sm) saem
+     de 4px pra 10px; card/modal (rounded-lg) de 12px pra 18px. */
   --radius-none: 0px;
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
   --radius-full: 9999px;
 
-  /* Shadows — desaturated, neutral-based */
-  --shadow-xs: 0 1px 2px 0 rgba(20, 18, 14, 0.04);
-  --shadow-sm: 0 1px 2px 0 rgba(20, 18, 14, 0.05), 0 1px 1px 0 rgba(20, 18, 14, 0.03);
-  --shadow-md: 0 4px 12px -2px rgba(20, 18, 14, 0.06), 0 2px 4px -1px rgba(20, 18, 14, 0.04);
-  --shadow-lg: 0 12px 32px -6px rgba(20, 18, 14, 0.10), 0 4px 12px -2px rgba(20, 18, 14, 0.06);
-  --shadow-xl: 0 24px 48px -12px rgba(20, 18, 14, 0.16), 0 8px 16px -4px rgba(20, 18, 14, 0.08);
+  /* Shadows — desaturated, neutral-based (rgb do Grafite, #202b2b) */
+  --shadow-xs: 0 1px 2px 0 rgba(32, 43, 43, 0.04);
+  --shadow-sm: 0 1px 2px 0 rgba(32, 43, 43, 0.05), 0 1px 1px 0 rgba(32, 43, 43, 0.03);
+  --shadow-md: 0 4px 12px -2px rgba(32, 43, 43, 0.06), 0 2px 4px -1px rgba(32, 43, 43, 0.04);
+  --shadow-lg: 0 12px 32px -6px rgba(32, 43, 43, 0.10), 0 4px 12px -2px rgba(32, 43, 43, 0.06);
+  --shadow-xl: 0 24px 48px -12px rgba(32, 43, 43, 0.16), 0 8px 16px -4px rgba(32, 43, 43, 0.08);
 
   /* Density — Aerada */
   --density-row: 56px;
@@ -250,47 +287,47 @@
    (lib/branding/css.ts), que só ganha consumidor com a tela de marca.
    ───────────────────────────────────────────────────────────────────────── */
 [data-theme="light"] {
-  --color-bg: #faf9f6;
+  --color-bg: #f7f5ef;
   --color-surface: #ffffff;
-  --color-surface-elevated: #f5f3ee;
-  --color-overlay: rgba(28, 26, 22, 0.42);
-  --color-text: #1c1a16;
-  --color-text-muted: #5d594f;
-  --color-text-subtle: #7d786c;
-  --color-border: #e7e3da;
-  --color-border-strong: #d2cdbf;
+  --color-surface-elevated: #edeee9;
+  --color-overlay: rgba(32, 43, 43, 0.42);
+  --color-text: #202b2b;
+  --color-text-muted: #404d4d;
+  --color-text-subtle: #626f6f;
+  --color-border: #d9e0df;
+  --color-border-strong: #a2aaa9;
   --color-accent: var(--color-accent-600);
   --color-accent-fg: #ffffff;
   --color-accent-soft: var(--color-accent-100);
   --color-accent-hover: var(--color-accent-700);
-  --color-neutral-50: #faf9f6;
-  --color-neutral-100: #f3f1ec;
-  --color-neutral-200: #e7e3da;
-  --color-neutral-300: #d2cdbf;
-  --color-neutral-400: #a9a395;
-  --color-neutral-500: #7d786c;
-  --color-neutral-600: #5d594f;
-  --color-neutral-700: #46433b;
-  --color-neutral-800: #2e2c26;
-  --color-neutral-900: #1c1a16;
-  --color-neutral-950: #0e0d0a;
-  --color-success: #5a8a5f;
-  --color-success-bg: rgba(90, 138, 95, 0.12);
-  --color-success-fg: #41673f;
+  --color-neutral-50: #f4f5f5;
+  --color-neutral-100: #e0e3e3;
+  --color-neutral-200: #bbc2c1;
+  --color-neutral-300: #8c9696;
+  --color-neutral-400: #626f6f;
+  --color-neutral-500: #404d4d;
+  --color-neutral-600: #202b2b;
+  --color-neutral-700: #1f2727;
+  --color-neutral-800: #1e2424;
+  --color-neutral-900: #1d2222;
+  --color-neutral-950: #1a1d1d;
+  --color-success: #278067;
+  --color-success-bg: rgba(39, 128, 103, 0.12);
+  --color-success-fg: #003729;
   --color-warning: #b07a2b;
   --color-warning-bg: rgba(176, 122, 43, 0.12);
   --color-warning-fg: #875a1a;
   --color-error: #a94a3c;
   --color-error-bg: rgba(169, 74, 60, 0.12);
   --color-error-fg: #8a3a2e;
-  --color-info: #4a7a93;
-  --color-info-bg: rgba(74, 122, 147, 0.12);
-  --color-info-fg: #355d72;
-  --shadow-xs: 0 1px 2px 0 rgba(20, 18, 14, 0.04);
-  --shadow-sm: 0 1px 2px 0 rgba(20, 18, 14, 0.05), 0 1px 1px 0 rgba(20, 18, 14, 0.03);
-  --shadow-md: 0 4px 12px -2px rgba(20, 18, 14, 0.06), 0 2px 4px -1px rgba(20, 18, 14, 0.04);
-  --shadow-lg: 0 12px 32px -6px rgba(20, 18, 14, 0.10), 0 4px 12px -2px rgba(20, 18, 14, 0.06);
-  --shadow-xl: 0 24px 48px -12px rgba(20, 18, 14, 0.16), 0 8px 16px -4px rgba(20, 18, 14, 0.08);
+  --color-info: #6d4ba0;
+  --color-info-bg: rgba(109, 75, 160, 0.12);
+  --color-info-fg: #350b5f;
+  --shadow-xs: 0 1px 2px 0 rgba(32, 43, 43, 0.04);
+  --shadow-sm: 0 1px 2px 0 rgba(32, 43, 43, 0.05), 0 1px 1px 0 rgba(32, 43, 43, 0.03);
+  --shadow-md: 0 4px 12px -2px rgba(32, 43, 43, 0.06), 0 2px 4px -1px rgba(32, 43, 43, 0.04);
+  --shadow-lg: 0 12px 32px -6px rgba(32, 43, 43, 0.10), 0 4px 12px -2px rgba(32, 43, 43, 0.06);
+  --shadow-xl: 0 24px 48px -12px rgba(32, 43, 43, 0.16), 0 8px 16px -4px rgba(32, 43, 43, 0.08);
   --background: var(--color-bg);
   --foreground: var(--color-text);
   --card: var(--color-surface);
@@ -328,63 +365,63 @@
 
 [data-theme="dark"] {
   /* Surfaces (dark — drawn) */
-  --color-bg: #161510;
-  --color-surface: #1d1c17;
-  --color-surface-elevated: #272620;
+  --color-bg: #0d1111;
+  --color-surface: #121818;
+  --color-surface-elevated: #1d2121;
   --color-overlay: rgba(0, 0, 0, 0.55);
 
   /* Text (dark) */
-  --color-text: #f5f4ef;
-  --color-text-muted: #8e8b7f;
-  --color-text-subtle: #605e54;
+  --color-text: #eef2f2;
+  --color-text-muted: #757e7e;
+  --color-text-subtle: #4f5757;
 
   /* Borders (dark) */
-  --color-border: #33312a;
-  --color-border-strong: #444239;
+  --color-border: #272c2c;
+  --color-border-strong: #353a3a;
 
   /* Accent stays same hex stops; default shifts up for dark contrast */
-  --color-accent-50:  #f3f6f1;
-  --color-accent-100: #e4ebe0;
-  --color-accent-200: #c8d6c1;
-  --color-accent-300: #a4ba9a;
-  --color-accent-400: #82a077;
-  --color-accent-500: #67885d;
-  --color-accent-600: #506d48;
-  --color-accent-700: #41573b;
-  --color-accent-800: #374731;
-  --color-accent-900: #2f3c2b;
-  --color-accent-950: #171f15;
+  --color-accent-50:  #eff6ff;
+  --color-accent-100: #d7e6fd;
+  --color-accent-200: #adcaf4;
+  --color-accent-300: #77a3e3;
+  --color-accent-400: #447ed2;
+  --color-accent-500: #1d5eb6;
+  --color-accent-600: #003e8a;
+  --color-accent-700: #0b366f;
+  --color-accent-800: #102f5c;
+  --color-accent-900: #132b4e;
+  --color-accent-950: #0e1c32;
   --color-accent: var(--color-accent-400);
-  --color-accent-fg: #161510;
-  --color-accent-soft: rgba(130, 160, 119, 0.16);
+  --color-accent-fg: #0d1111;
+  --color-accent-soft: rgba(68, 126, 210, 0.16);
   --color-accent-hover: var(--color-accent-300);
 
-  /* Neutrals — greige (11 stops, dark) */
-  --color-neutral-50:  #f5f4ef;
-  --color-neutral-100: #e6e4dc;
-  --color-neutral-200: #bbb8ac;
-  --color-neutral-300: #8e8b7f;
-  --color-neutral-400: #605e54;
-  --color-neutral-500: #444239;
-  --color-neutral-600: #33312a;
-  --color-neutral-700: #272620;
-  --color-neutral-800: #1d1c17;
-  --color-neutral-900: #161510;
-  --color-neutral-950: #0c0b08;
+  /* Neutrals — grafite-azulado (11 stops, dark) */
+  --color-neutral-50:  #eef2f2;
+  --color-neutral-100: #d2dada;
+  --color-neutral-200: #a0aaaa;
+  --color-neutral-300: #757e7e;
+  --color-neutral-400: #4f5757;
+  --color-neutral-500: #353a3a;
+  --color-neutral-600: #272c2c;
+  --color-neutral-700: #1d2121;
+  --color-neutral-800: #121818;
+  --color-neutral-900: #0d1111;
+  --color-neutral-950: #070808;
 
   /* States (dark) */
-  --color-success: #82a077;
-  --color-success-bg: rgba(130, 160, 119, 0.18);
-  --color-success-fg: #a4ba9a;
+  --color-success: #5ab095;
+  --color-success-bg: rgba(90, 176, 149, 0.18);
+  --color-success-fg: #6cc1a6;
   --color-warning: #d09455;
   --color-warning-bg: rgba(208, 148, 85, 0.18);
   --color-warning-fg: #e0ad77;
   --color-error: #c87263;
   --color-error-bg: rgba(200, 114, 99, 0.18);
   --color-error-fg: #d99182;
-  --color-info: #7da9bf;
-  --color-info-bg: rgba(125, 169, 191, 0.18);
-  --color-info-fg: #9bbfd2;
+  --color-info: #ab8ae5;
+  --color-info-bg: rgba(171, 138, 229, 0.18);
+  --color-info-fg: #ceb5ff;
 
   /* Shadows — heavier in dark */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.30);
@@ -721,7 +758,7 @@
     color: var(--color-accent-50);
   }
 
-  /* Focus ring: Sage 500/400, 2px with offset */
+  /* Focus ring: Fluxa 500/400, 2px with offset */
   :focus-visible {
     outline: 2px solid var(--color-accent-500);
     outline-offset: 2px;

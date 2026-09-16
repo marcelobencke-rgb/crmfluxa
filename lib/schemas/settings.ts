@@ -13,6 +13,7 @@ import { IDIOMAS } from "@/lib/i18n/idiomas";
 import { MOEDAS_SERVIDAS } from "@/lib/money";
 
 import { conversationTagSchema } from "./messaging";
+import { CAMPOS_DO_CARD } from "@/lib/kanban/card-fields";
 
 /**
  * Os idiomas que a interface REALMENTE serve.
@@ -168,8 +169,29 @@ export const pipelineConfigPatchSchema = z.object({
     .optional(),
   fields: z.array(customFieldSchema).max(50).optional(),
   lost_reasons: z.array(z.string().min(1).max(80)).max(50).optional(),
+  /**
+   * Quais faixas do card ficam visíveis no quadro — `[]` é "nenhuma", NÃO
+   * "não configurado" (essa diferença mora em `camposVisiveisDoCard`,
+   * lib/kanban/card-fields.ts). `.optional()` aqui é só "não faz parte deste
+   * PATCH", igual aos vizinhos.
+   */
+  card_fields: z.array(z.enum(CAMPOS_DO_CARD)).max(CAMPOS_DO_CARD.length).optional(),
 });
 export type PipelineConfigPatch = z.infer<typeof pipelineConfigPatchSchema>;
+
+/**
+ * Os campos personalizados do CONTATO — `organizations.settings.contact_fields`.
+ *
+ * ⚠️ NÃO É MAIS O FUNIL PADRÃO. Até aqui a ficha do contato pegava carona nos
+ * campos de `crm_pipelines.settings.fields[]` do funil marcado `is_default` —
+ * um contato não pertence a um funil só, e o valor mudava sozinho se alguém
+ * trocasse qual funil é o padrão, sem ninguém decidir isso de propósito. Vira
+ * config da ORGANIZAÇÃO, com sua própria tela (`/app/settings/tenant/contact-fields`).
+ */
+export const contactFieldsConfigPatchSchema = z.object({
+  fields: z.array(customFieldSchema).max(50),
+});
+export type ContactFieldsConfigPatch = z.infer<typeof contactFieldsConfigPatchSchema>;
 
 /**
  * A marca da INSTALAÇÃO (`platform_branding`) — o que a server action aceita.

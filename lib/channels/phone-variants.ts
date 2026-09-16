@@ -91,3 +91,43 @@ export function samePhone(a: string, b: string): boolean {
   const va = new Set(phoneLookupVariants(a));
   return phoneLookupVariants(b).some((v) => va.has(v));
 }
+
+/**
+ * Máscara de exibição do celular/fixo BR — puramente visual, para o campo de
+ * cadastro manual (`NewContactDialog`). Guarda em tela só os dígitos locais
+ * (sem o 55); a forma canônica pro banco/WhatsApp continua sendo E.164 com o
+ * nono dígito (`canonicalPhoneBR`), calculada só na hora de enviar.
+ *
+ * Detecta celular vs fixo pelo próprio comprimento enquanto o usuário digita:
+ * o nono dígito local (típico de celular) empurra o traço uma casa pra frente
+ * — "(51) 3333-4444" vira "(51) 99999-8888" assim que o 9º dígito entra.
+ */
+export function maskPhoneBR(raw: string): string {
+  let d = digitsOf(raw);
+  // Colou com DDI (+55...): só faz sentido remover se sobrar mais que o
+  // máximo local (DDD + 9 dígitos) — um DDD 55 legítimo (Santa Maria/RS) não
+  // passa dessa marca sozinho.
+  if (d.startsWith("55") && d.length > 11) d = d.slice(2);
+  d = d.slice(0, 11);
+  if (d.length === 0) return "";
+  const ddd = d.slice(0, 2);
+  if (d.length <= 2) return `(${ddd}`;
+  const rest = d.slice(2);
+  if (rest.length <= 4) return `(${ddd}) ${rest}`;
+  const splitAt = rest.length >= 9 ? 5 : 4;
+  return `(${ddd}) ${rest.slice(0, splitAt)}-${rest.slice(splitAt)}`;
+}
+
+/**
+ * Máscara BR (ou dígitos locais crus) → E.164 pronto pra gravar/enviar.
+ *
+ * A regra "sem DDI assume Brasil" É a mesma de `normalizePhoneBR`
+ * (`lib/webhooks/inbound.ts`) — só não reusa a função porque ela arrasta
+ * `node:crypto` e quebraria o bundle do cliente. Reduzida ao caso que a
+ * máscara garante (só dígitos locais, sem DDI), termina no mesmo
+ * `canonicalPhoneBR` para o nono dígito não divergir entre os dois caminhos.
+ */
+export function phoneBRLocalToE164(masked: string): string {
+  const d = digitsOf(masked).slice(0, 11);
+  return d ? canonicalPhoneBR(`+55${d}`) : "";
+}

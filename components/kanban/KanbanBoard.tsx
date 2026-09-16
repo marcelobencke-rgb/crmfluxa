@@ -15,6 +15,7 @@ import type { Pipeline, Stage } from "@/lib/kanban/types";
 import { StageColumn } from "./StageColumn";
 import { LeadDossier } from "./LeadDossier";
 import { camposDoFunil } from "@/lib/leads/campos-do-funil";
+import { camposVisiveisDoCard, type CampoDoCard } from "@/lib/kanban/card-fields";
 
 interface KanbanBoardProps {
   pipelineId: string;
@@ -35,6 +36,15 @@ interface KanbanBoardProps {
   onSelectionChange?: (ids: string[]) => void;
   /** Lead a abrir já na montagem (deep link `?lead=` — ver o dossiê abaixo). */
   leadInicial?: string | null;
+  /**
+   * Quais faixas do card mostrar. Passada de fora (a página do funil, que
+   * também alimenta o `CardFieldsPicker`) para o clique numa caixinha
+   * refletir no quadro NA HORA, sem esperar salvar — se o board recalculasse
+   * isto sozinho a partir de `pipeline.settings`, o quadro só mudaria depois
+   * de gravar e reler do banco. Ausente = resolve do jeito de sempre (a
+   * configuração já salva do funil).
+   */
+  camposVisiveis?: Set<CampoDoCard>;
 }
 
 function groupLeadsByStage(stages: Stage[], leads: Lead[]): Map<string, Lead[]> {
@@ -78,6 +88,7 @@ export function KanbanBoard({
   pulses: pulsesProp,
   onSelectionChange,
   leadInicial,
+  camposVisiveis: camposVisiveisProp,
 }: KanbanBoardProps) {
   const t = useT();
   const useExternal = stagesProp !== undefined && leadsProp !== undefined;
@@ -116,6 +127,15 @@ export function KanbanBoard({
     const raw = (pipelineProp ?? queryResult.data?.pipeline)?.settings?.canonical_tags;
     return Array.isArray(raw) ? raw.filter((t): t is string => typeof t === "string") : [];
   }, [pipelineProp, queryResult.data?.pipeline]);
+  // `settings.card_fields` — compartilhado pelo FUNIL (não por pessoa). Se a
+  // página já resolveu isto (ela precisa, para alimentar o `CardFieldsPicker`
+  // e refletir o clique na hora), usa o que veio de fora; senão resolve do
+  // jeito de sempre, a partir da configuração já salva.
+  const camposVisiveisResolvido = useMemo(() => {
+    const settings = (pipelineProp ?? queryResult.data?.pipeline)?.settings ?? null;
+    return camposVisiveisDoCard(settings);
+  }, [pipelineProp, queryResult.data?.pipeline]);
+  const camposVisiveis = camposVisiveisProp ?? camposVisiveisResolvido;
 
   // O dossiê é do BOARD e não da página: ele precisa do lead inteiro e do nome
   // do estágio, que só existem aqui depois do agrupamento.
@@ -257,6 +277,7 @@ export function KanbanBoard({
             reactivations={reactivations}
             pulses={pulsesProp ?? queryResult.pulses}
             canonicalTags={canonicalTags}
+            camposVisiveis={camposVisiveis}
             selectedLeadIds={selectedLeadIds}
             onSelectMany={handleSelectMany}
             onOpen={setDossieId}
@@ -273,6 +294,8 @@ export function KanbanBoard({
           stageName={
             data.stages.find((s) => s.id === leadDoDossie.stage_id)?.name ?? "—"
           }
+          stages={data.stages}
+          leads={data.leads}
           ownerNames={ownerNames}
         />
       )}

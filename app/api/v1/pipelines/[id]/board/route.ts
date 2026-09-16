@@ -288,6 +288,44 @@ async function withConversas(
   };
 }
 
+/**
+ * Anexa nome e telefone do CONTATO — o card mostra sem abrir o dossiê, e o
+ * ícone de conversa (KanbanCardActions) usa o telefone para "iniciar" quando
+ * ainda não há `conversa`.
+ *
+ * MESMO PADRÃO de `withConversas`: LEFT, nunca INNER — lead sem contato é
+ * estado normal (criado à mão, webhook sem casar), e sumir do quadro por
+ * causa disso esconderia justamente os leads que ninguém amarrou a um
+ * contato ainda.
+ */
+async function withContacts(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  organizationId: string,
+  leads: Lead[],
+): Promise<{ leads: Lead[]; error: string | null }> {
+  const contactIds = [...new Set(leads.map((l) => l.contact_id).filter((c): c is string => !!c))];
+  if (contactIds.length === 0) return { leads, error: null };
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .select("id, name, display_name, phone_number")
+    .eq("organization_id", organizationId)
+    .in("id", contactIds);
+  if (error) return { leads, error: error.message };
+
+  const porId = new Map(
+    ((data ?? []) as NonNullable<Lead["contact"]>[]).map((c) => [c.id, c]),
+  );
+
+  return {
+    leads: leads.map((lead) => {
+      const contact = lead.contact_id ? porId.get(lead.contact_id) : undefined;
+      return contact ? { ...lead, contact } : lead;
+    }),
+    error: null,
+  };
+}
+
 async function withNextActions(
   supabase: Awaited<ReturnType<typeof createClient>>,
   organizationId: string,
@@ -429,10 +467,19 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
     return fail("internal_error", leadsComConversa.error, 500, { requestId });
   }
 
+  const leadsComContato = await withContacts(
+    supabase,
+    (pipeline as Pipeline).organization_id,
+    leadsComConversa.leads,
+  );
+  if (leadsComContato.error) {
+    return fail("internal_error", leadsComContato.error, 500, { requestId });
+  }
+
   const board: BoardData = {
     pipeline: pipeline as Pipeline,
     stages: (stages ?? []) as Stage[],
-    leads: leadsComConversa.leads,
+    leads: leadsComContato.leads,
   };
 
   return ok(board, { requestId });

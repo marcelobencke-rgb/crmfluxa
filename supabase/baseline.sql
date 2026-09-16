@@ -23893,6 +23893,51 @@ create trigger trg_org_voice_calls_set_updated_at
 
 notify pgrst, 'reload schema';
 
+-- ---- site, instagram, facebook e observações no contato (migration 0237) ----
+--
+-- Coluna nova, não `custom_fields`: os quatro fazem sentido pra QUALQUER
+-- contato de qualquer nicho, independente de pipeline — `custom_fields` é
+-- onde o operador declara o que É específico do nicho dele, e um contato
+-- manual sem pipeline nem chega a ver aquela seção.
+--
+-- `notes` carrega o mesmo risco que `custom_fields` (migration 0211) já
+-- documentou: texto livre num registro de pessoa física recebe PII. Mesma
+-- resposta — o gatilho no ESTADO (`is_anonymized` false→true) que já limpa
+-- `custom_fields`, cobrindo cascade E rota direta com uma mudança só, ganha
+-- as quatro colunas novas no mesmo corpo.
+
+alter table public.contacts
+  add column if not exists website text,
+  add column if not exists instagram text,
+  add column if not exists facebook text,
+  add column if not exists notes text;
+
+comment on column public.contacts.website is
+  'Site do contato/empresa. Texto livre, sem validação de URL.';
+comment on column public.contacts.instagram is
+  'Perfil do Instagram (handle ou URL). Texto livre.';
+comment on column public.contacts.facebook is
+  'Perfil/página do Facebook (handle ou URL). Texto livre.';
+comment on column public.contacts.notes is
+  'Observações livres do atendente sobre o contato. PII possível — limpo pela anonimização (mesmo gatilho de custom_fields, migration 0211).';
+
+create or replace function public.fn_contato_anonimizado_limpa_campos_personalizados()
+  returns trigger
+  language plpgsql
+as $$
+begin
+  new.custom_fields := '{}'::jsonb;
+  -- 0237: mesmo risco de PII que custom_fields (0211) — texto livre que o
+  -- atendente digita sobre uma pessoa real.
+  new.website := null;
+  new.instagram := null;
+  new.facebook := null;
+  new.notes := null;
+  return new;
+end$$;
+
+notify pgrst, 'reload schema';
+
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
 -- ⚠️ ESTE BLOCO É, DE PROPÓSITO, O ÚLTIMO DO ARQUIVO. Apêndice novo entra ANTES

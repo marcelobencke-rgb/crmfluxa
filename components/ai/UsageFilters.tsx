@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Label } from "@/components/ui/label";
 import { useT } from "@/hooks/i18n/useT";
 
@@ -117,24 +117,14 @@ export function UsageFilters({ agents, initial }: Props) {
         <Label htmlFor="usage-from" className="text-xs text-muted-foreground">
           {t("De")}
         </Label>
-        <Input
-          id="usage-from"
-          type="date"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-        />
+        <DatePickerField id="usage-from" value={from} onChange={setFrom} />
       </div>
 
       <div className="space-y-1">
         <Label htmlFor="usage-to" className="text-xs text-muted-foreground">
           {t("Até")}
         </Label>
-        <Input
-          id="usage-to"
-          type="date"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-        />
+        <DatePickerField id="usage-to" value={to} onChange={setTo} />
       </div>
     </div>
   );

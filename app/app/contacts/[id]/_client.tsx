@@ -4,17 +4,28 @@ import { useLocaleDeData } from "@/hooks/i18n/useLocaleDeData";
 
 import { useT } from "@/hooks/i18n/useT";
 import { useState } from "react";
+import Link from "next/link";
 import { format } from "date-fns";
-import { ShieldCheck, PencilSimple } from "@/lib/ui/icons";
+import { toast } from "sonner";
+import { ShieldCheck, PencilSimple, CaretLeft, LockOpen } from "@/lib/ui/icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useContact } from "@/hooks/contacts/useContact";
+import { useUnblockContact } from "@/hooks/contacts/useUnblockContact";
 import { useAuth } from "@/hooks/auth/AuthProvider";
-import { useDefaultPipeline } from "@/hooks/pipelines/useDefaultPipeline";
-import { camposDoFunil } from "@/lib/leads/campos-do-funil";
+import { useContactFieldDefs } from "@/hooks/contacts/useContactFieldDefs";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { TimelineView } from "@/components/contacts/TimelineView";
 import { EditContactDialog } from "@/components/contacts/EditContactDialog";
@@ -34,11 +45,13 @@ export function ContactDetailClient({ contactId }: Props) {
   const t = useT();
   const q = useContact(contactId);
   const { user, activeOrg } = useAuth();
-  // As DEFINIÇÕES continuam no funil (`crm_pipelines.settings.fields[]`) — só o
-  // VALOR mora no contato. `camposDoFunil` é o mesmo leitor que o Kanban usa.
-  const pipelineQuery = useDefaultPipeline(Boolean(activeOrg));
+  // As DEFINIÇÕES moram em `organizations.settings.contact_fields` — próprias
+  // do contato, não do funil padrão. Ver `lib/contacts/campos-personalizados.ts`.
+  const fieldDefsQuery = useContactFieldDefs(Boolean(activeOrg));
   const [editOpen, setEditOpen] = useState(false);
   const [anonOpen, setAnonOpen] = useState(false);
+  const [unblockOpen, setUnblockOpen] = useState(false);
+  const unblock = useUnblockContact(contactId);
 
   if (q.isLoading) {
     return (
@@ -66,8 +79,25 @@ export function ContactDetailClient({ contactId }: Props) {
   // aparecia como "Sem nome" aqui e com o número no inbox.
   const displayName = rotuloDoContato(contact, t);
 
+  async function confirmarDesbloqueio() {
+    try {
+      await unblock.mutateAsync();
+      toast.success(t("Contato desbloqueado."));
+      setUnblockOpen(false);
+    } catch {
+      // hook já mostra o toast de erro
+    }
+  }
+
   return (
     <div className="space-y-4 p-6">
+      <Button variant="ghost" size="sm" asChild className="-ml-2 gap-1 text-muted-foreground">
+        <Link href="/app/contacts">
+          <CaretLeft size={14} aria-hidden />
+          {t("Contatos")}
+        </Link>
+      </Button>
+
       {contact.is_anonymized && (
         <div
           role="alert"
@@ -107,6 +137,12 @@ export function ContactDetailClient({ contactId }: Props) {
         {!contact.is_anonymized && user.support?.access_mode !== "support_readonly" && (
           <div className="flex shrink-0 items-center gap-2">
             <DialButton contactId={contactId} hasPhone={!!contact.phone_number} />
+            {contact.is_blocked && (
+              <Button variant="outline" onClick={() => setUnblockOpen(true)} className="shrink-0">
+                <LockOpen size={16} weight="bold" aria-hidden />
+                <span>{t("Desbloquear")}</span>
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setEditOpen(true)} className="shrink-0">
               <PencilSimple size={16} weight="bold" aria-hidden />
               <span>{t("Editar")}</span>
@@ -158,6 +194,18 @@ export function ContactDetailClient({ contactId }: Props) {
                 </dd>
               </div>
               <div>
+                <dt className="text-xs uppercase text-muted-foreground">{t("Site")}</dt>
+                <dd className="mt-1 break-words">{contact.website ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase text-muted-foreground">Instagram</dt>
+                <dd className="mt-1 break-words">{contact.instagram ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase text-muted-foreground">Facebook</dt>
+                <dd className="mt-1 break-words">{contact.facebook ?? "—"}</dd>
+              </div>
+              <div>
                 <dt className="text-xs uppercase text-muted-foreground">{t("Origem")}</dt>
                 <dd className="mt-1">{contact.source}</dd>
               </div>
@@ -188,6 +236,10 @@ export function ContactDetailClient({ contactId }: Props) {
                         </Badge>
                       ))}
                 </dd>
+              </div>
+              <div className="md:col-span-2">
+                <dt className="text-xs uppercase text-muted-foreground">{t("Observações")}</dt>
+                <dd className="mt-1 whitespace-pre-wrap break-words">{contact.notes ?? "—"}</dd>
               </div>
             </dl>
           </Card>
@@ -229,9 +281,33 @@ export function ContactDetailClient({ contactId }: Props) {
         contact={contact}
         open={editOpen}
         onOpenChange={setEditOpen}
-        customFieldDefs={camposDoFunil(pipelineQuery.data?.pipeline.settings ?? null)}
+        customFieldDefs={fieldDefsQuery.data ?? []}
       />
       <AnonymizeDialog contactId={contactId} open={anonOpen} onOpenChange={setAnonOpen} />
+
+      <AlertDialog open={unblockOpen} onOpenChange={(open) => { if (!open) setUnblockOpen(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("Desbloquear contato?")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                "Este contato pediu para não receber mais mensagens (palavra de cancelamento detectada",
+              )}
+              {contact.blocked_at &&
+                ` ${t("em")} ${format(new Date(contact.blocked_at), "dd/MM/yyyy HH:mm", { locale: localeDaData })}`}
+              {t(
+                "). Desbloquear volta a habilitar mensagem automática e campanha pra ele — confirme só se tiver certeza de que foi engano ou de que a pessoa pediu pra voltar.",
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unblock.isPending}>{t("Cancelar")}</AlertDialogCancel>
+            <Button onClick={() => void confirmarDesbloqueio()} disabled={unblock.isPending}>
+              {unblock.isPending ? t("Desbloqueando…") : t("Desbloquear")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

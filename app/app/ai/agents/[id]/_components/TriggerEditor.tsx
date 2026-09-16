@@ -4,6 +4,7 @@ import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { TimePickerField } from "@/components/ui/time-picker-field";
 import {
   Select,
   SelectContent,
@@ -196,21 +197,19 @@ export function TriggerEditor({ value, onChange, disabled }: Props) {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="bh_start">{t("Início")}</Label>
-                <Input
+                <TimePickerField
                   id="bh_start"
-                  type="time"
                   value={bh.start}
-                  onChange={(e) => patchBh({ start: e.target.value })}
+                  onChange={(v) => patchBh({ start: v })}
                   disabled={disabled}
                 />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="bh_end">{t("Fim")}</Label>
-                <Input
+                <TimePickerField
                   id="bh_end"
-                  type="time"
                   value={bh.end}
-                  onChange={(e) => patchBh({ end: e.target.value })}
+                  onChange={(v) => patchBh({ end: v })}
                   disabled={disabled}
                 />
               </div>

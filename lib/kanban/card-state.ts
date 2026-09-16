@@ -59,6 +59,13 @@ export interface CardInput {
   canonicalTag?: string | null;
   /** Todas as tags — fora do card, acessíveis no hover. */
   tags: string[];
+  /**
+   * O contato do negócio (nome, telefone) — passthrough de `lead.contact`, no
+   * mesmo formato que `rotuloDoContato`/`phoneForDisplay` já esperam, para o
+   * card não ter de remontar o objeto. `undefined`/`null` = sem contato
+   * vinculado (estado normal — lead criado à mão ou por webhook sem casar).
+   */
+  contact?: { id: string; name: string | null; display_name: string | null; phone_number: string | null } | null;
 }
 
 /**
@@ -82,6 +89,7 @@ export function buildCardInput(
     | "owner_agent"
     | "next_action"
     | "score"
+    | "contact"
   >,
   opts: {
     stageName: string;
@@ -128,6 +136,7 @@ export function buildCardInput(
     nextAction: lead.next_action ? { label: lead.next_action.label } : null,
     canonicalTag: (opts.canonicalTags ?? []).find((t) => lead.tags.includes(t)) ?? null,
     tags: lead.tags,
+    contact: lead.contact ?? null,
   };
 }
 

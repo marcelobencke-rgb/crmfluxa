@@ -16,17 +16,23 @@ import { useAssignableMembers } from "@/hooks/inbox/useAssignableMembers";
 import { useAssignableAgents } from "@/hooks/kanban/useAssignableAgents";
 import type { Lead, OwnerKind } from "@/lib/types/leads";
 import { OwnerBadge } from "./OwnerBadge";
+import { CardFieldsPicker } from "./CardFieldsPicker";
 import {
   agentOwnerFilter,
   parseAgentOwnerFilter,
   type LeadFilters,
 } from "@/lib/kanban/filters";
+import type { CampoDoCard } from "@/lib/kanban/card-fields";
 import { cn } from "@/lib/utils";
 
 interface FilterBarProps {
   filters: LeadFilters;
   onChange: (next: LeadFilters) => void;
   leads: Lead[];
+  pipelineId: string;
+  /** O que está em vigor no board agora — ver `CardFieldsPicker`. */
+  camposVisiveis: Set<CampoDoCard>;
+  onPreviewCampos: (next: Set<CampoDoCard>) => void;
 }
 
 const STATUS_OPTIONS: Array<{ value: NonNullable<LeadFilters["status"]>; label: string }> = [
@@ -36,7 +42,14 @@ const STATUS_OPTIONS: Array<{ value: NonNullable<LeadFilters["status"]>; label: 
   { value: "lost", label: "Perdidos" },
 ];
 
-export function FilterBar({ filters, onChange, leads }: FilterBarProps) {
+export function FilterBar({
+  filters,
+  onChange,
+  leads,
+  pipelineId,
+  camposVisiveis,
+  onPreviewCampos,
+}: FilterBarProps) {
   const t = useT();
   const user = useUser();
   const { data: members } = useAssignableMembers(true);
@@ -218,6 +231,12 @@ export function FilterBar({ filters, onChange, leads }: FilterBarProps) {
         />
         {t("Apenas atrasados")}
       </label>
+
+      <CardFieldsPicker
+        pipelineId={pipelineId}
+        camposVisiveis={camposVisiveis}
+        onPreview={onPreviewCampos}
+      />
 
       {(filters.search ||
         filters.owner ||

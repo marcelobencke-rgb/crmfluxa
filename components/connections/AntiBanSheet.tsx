@@ -10,6 +10,7 @@ import { FUSOS_OFERECIDOS } from "@/lib/tempo/fusos";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -141,14 +142,13 @@ export function AntiBanSheet({ item, canWrite, onClose }: Props) {
         <div className="flex flex-col gap-5 px-4 py-2" data-testid="anti-ban-form">
           <fieldset className="flex flex-col gap-2" data-testid="aquecimento">
             <Label htmlFor="numero-em-uso-desde">{t("Este número é usado desde")}</Label>
-            <Input
+            <DatePickerField
               id="numero-em-uso-desde"
-              type="date"
               // O dia LOCAL, que é o que este campo fala. Com o dia UTC, às 21h
               // em São Paulo o limite já oferecia amanhã.
               max={diaDeHojeLocal()}
               value={form.numero_em_uso_desde}
-              onChange={(e) => set({ numero_em_uso_desde: e.target.value })}
+              onChange={(v) => set({ numero_em_uso_desde: v })}
               disabled={!canWrite || form.pular_aquecimento}
               className="w-48"
             />

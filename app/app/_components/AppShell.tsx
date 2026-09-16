@@ -16,7 +16,7 @@ export function AppShell({ sidebarCollapsed, children }: AppShellProps) {
   useCrmAlerts();
   useNotifyOpenFromServiceWorker();
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex h-screen w-full bg-background">
       <div className="hidden md:block">
         <Sidebar collapsed={sidebarCollapsed} />
       </div>
@@ -39,9 +39,16 @@ export function AppShell({ sidebarCollapsed, children }: AppShellProps) {
         SEGUNDA medida da mesma coisa — a que discordava e deixava a barra por
         cima da lista.
       */}
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className="flex h-screen min-w-0 flex-1 flex-col">
         <TopBar />
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        {/* `min-h-0` desfaz o `min-height: auto` que todo item flex nasce com —
+            sem ele, `flex-1` nunca encolhe `<main>` abaixo da altura do próprio
+            conteúdo, `overflow-auto` fica sem efeito, e é a PÁGINA (documento)
+            que passa a rolar em vez de só esta caixa. Foi isso que abria uma
+            lista longa (Select do `_stages.tsx` com posicionamento "popper")
+            e "empurrava" TopBar/Sidebar para fora — os dois são `sticky`
+            dentro do documento inteiro, não desta caixa. */}
+        <main className="min-h-0 flex-1 overflow-auto p-6">{children}</main>
       </div>
     </div>
   );

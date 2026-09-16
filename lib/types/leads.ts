@@ -80,6 +80,22 @@ export interface Lead {
     last_message_at: string | null;
     unread: number;
   } | null;
+  /**
+   * Derivado (não é coluna): nome e telefone do CONTATO deste negócio — o
+   * card mostra sem precisar abrir o dossiê, e o ícone de conversa usa o
+   * telefone para saber se dá para "iniciar" quando ainda não há `conversa`.
+   *
+   * `undefined` = lead sem `contact_id` (criado à mão ou por webhook sem
+   * contato casado) — estado normal, não "ainda não carregou": a rota do
+   * board resolve os dois campos (`conversa`, `contact`) juntos, então um sem
+   * o outro nunca fica pendente.
+   */
+  contact?: {
+    id: string;
+    name: string | null;
+    display_name: string | null;
+    phone_number: string | null;
+  } | null;
   score?: {
     probability: number;
     reason: string;

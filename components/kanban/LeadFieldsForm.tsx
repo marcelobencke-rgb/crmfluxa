@@ -2,19 +2,20 @@
 
 import { useT } from "@/hooks/i18n/useT";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { FieldShell, SectionHeading } from "@/components/ui/field-shell";
 import { useEditLead } from "@/hooks/kanban/useUpdateLead";
 import type { Lead } from "@/lib/types/leads";
 import { updateLeadSchema, type UpdateLeadInput } from "@/lib/schemas/leads";
-import { parseReaisToCents } from "@/lib/money";
+import { maskMoneyBRL, moneyBRLMaskedToCents, centsToMoneyBRLMasked } from "@/lib/money";
 import { CustomFieldsEditor, type CustomFieldDef } from "@/components/contacts/CustomFieldsEditor";
-import { EcoDoValor } from "./EcoDoValor";
+import { CalendarBlank, FileText, Money, Note, Tag } from "@/lib/ui/icons";
 
 interface FormShape {
   title: string;
@@ -28,25 +29,25 @@ interface Props {
   lead: Lead;
   pipelineId: string;
   fieldDefs?: CustomFieldDef[];
-  /** Quando o salvamento dá certo. O dossiê NÃO fecha aqui — ver abaixo. */
+  /** Quando o salvamento dá certo. Quem chama decide o que fazer — o dossiê fecha o diálogo aqui. */
   onSaved?: () => void;
   /** O dossiê não tem "cancelar"; o diálogo tem. */
   onCancel?: () => void;
-}
-
-function centsToReais(cents: number | null | undefined): string {
-  if (cents === null || cents === undefined) return "";
-  return (cents / 100).toFixed(2).replace(".", ",");
 }
 
 /**
  * Os campos do lead — extraídos do `EditLeadDialog` para o dossiê usar os
  * MESMOS, em vez de uma cópia que diverge no mês.
  *
- * `onSaved` existe para o dossiê NÃO FECHAR ao salvar: quem edita precisa ver a
- * atividade que acabou de gerar entrar na timeline. Fechar esconderia o
- * registro justamente de quem o produziu — a funcionalidade que prova "sua ação
- * fica registrada" provaria isso para todo mundo menos para o autor.
+ * `FieldShell`/`SectionHeading`/`DatePickerField` são os mesmos de
+ * `NewLeadDialog.tsx` e `EditContactDialog.tsx` — mesmos ícones, mesmo
+ * calendário próprio no lugar do `<input type="date">` nativo (o do
+ * navegador saía fora do estilo do produto, visto num print).
+ *
+ * `onSaved` é quem decide o que acontece depois de salvar — o dossiê usa para
+ * fechar o diálogo (pedido explícito; a versão anterior deixava aberto de
+ * propósito, para mostrar a atividade entrando na timeline, mas incomodava
+ * mais do que ajudava na prática).
  */
 export function LeadFieldsForm({ lead, pipelineId, fieldDefs = [], onSaved, onCancel }: Props) {
   const t = useT();
@@ -57,17 +58,18 @@ export function LeadFieldsForm({ lead, pipelineId, fieldDefs = [], onSaved, onCa
     defaultValues: {
       title: lead.title,
       description: lead.description ?? "",
-      valueReais: centsToReais(lead.value_cents),
+      valueReais: centsToMoneyBRLMasked(lead.value_cents),
       tagsRaw: (lead.tags ?? []).join(", "),
       expected_close_date: lead.expected_close_date ?? "",
     },
   });
+  const expectedCloseDate = useWatch({ control: form.control, name: "expected_close_date" });
 
   useEffect(() => {
     form.reset({
       title: lead.title,
       description: lead.description ?? "",
-      valueReais: centsToReais(lead.value_cents),
+      valueReais: centsToMoneyBRLMasked(lead.value_cents),
       tagsRaw: (lead.tags ?? []).join(", "),
       expected_close_date: lead.expected_close_date ?? "",
     });
@@ -81,15 +83,9 @@ export function LeadFieldsForm({ lead, pipelineId, fieldDefs = [], onSaved, onCa
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const reais = values.valueReais.trim();
-    let valueCents: number | null = null;
-    if (reais.length > 0) {
-      valueCents = parseReaisToCents(reais);
-      if (valueCents === null) {
-        form.setError("valueReais", { message: t("Valor inválido") });
-        return;
-      }
-    }
+    // A máscara garante que só dígito chega aqui — não há "valor inválido"
+    // possível de digitar.
+    const valueCents = values.valueReais.trim() ? moneyBRLMaskedToCents(values.valueReais) : null;
 
     const patch: Record<string, unknown> = {
       title: values.title.trim(),
@@ -119,64 +115,58 @@ export function LeadFieldsForm({ lead, pipelineId, fieldDefs = [], onSaved, onCa
     }
   }
 
-
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="title">{t("Título")}</Label>
-          <Input
-            id="title"
-            {...form.register("title", { required: true, minLength: 2 })}
-          />
-        </div>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+      <div className="space-y-4">
+        <SectionHeading>{t("Dados do negócio")}</SectionHeading>
+        <FieldShell id="title" label={t("Título")} icon={FileText} required>
+          <Input id="title" className="pl-9" {...form.register("title", { required: true, minLength: 2 })} />
+        </FieldShell>
 
-        <div className="space-y-2">
-          <Label htmlFor="description">{t("Descrição")}</Label>
-          <Textarea id="description" rows={3} {...form.register("description")} />
-        </div>
+        <FieldShell id="description" label={t("Descrição")} icon={Note} multiline>
+          <Textarea id="description" rows={3} className="pl-9" {...form.register("description")} />
+        </FieldShell>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <Label htmlFor="valueReais">{t("Valor (R$)")}</Label>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FieldShell id="valueReais" label={t("Valor (R$)")} icon={Money}>
             <Input
               id="valueReais"
-              inputMode="decimal"
+              inputMode="numeric"
               placeholder="0,00"
+              className="pl-9"
               {...form.register("valueReais")}
+              onChange={(e) => {
+                e.target.value = maskMoneyBRL(e.target.value);
+                form.setValue("valueReais", e.target.value);
+              }}
             />
-            <EcoDoValor control={form.control} />
-            {form.formState.errors.valueReais && (
-              <p className="text-xs text-error-fg">
-                {t(form.formState.errors.valueReais.message ?? "")}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="expected_close_date">{t("Fechamento previsto")}</Label>
-            <Input
+          </FieldShell>
+          <FieldShell id="expected_close_date" label={t("Fechamento previsto")} icon={CalendarBlank}>
+            <DatePickerField
               id="expected_close_date"
-              type="date"
-              {...form.register("expected_close_date")}
+              className="pl-9"
+              value={expectedCloseDate}
+              onChange={(v) => form.setValue("expected_close_date", v)}
             />
-          </div>
+          </FieldShell>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="tagsRaw">{t("Tags (separadas por vírgula)")}</Label>
-          <Input id="tagsRaw" placeholder="vip, recompra" {...form.register("tagsRaw")} />
-        </div>
+        <FieldShell id="tagsRaw" label={t("Tags (separadas por vírgula)")} icon={Tag}>
+          <Input id="tagsRaw" placeholder="vip, recompra" className="pl-9" {...form.register("tagsRaw")} />
+        </FieldShell>
+      </div>
 
-        {fieldDefs.length > 0 && (
-          <div className="space-y-2 border-t border-border pt-4">
-            <p className="text-sm font-medium">{t("Campos do funil")}</p>
-            <CustomFieldsEditor
-              fields={fieldDefs}
-              value={customFields}
-              onChange={setCustomFields}
-              mode="lead"
-            />
-          </div>
-        )}
+      {fieldDefs.length > 0 && (
+        <div className="space-y-4 border-t border-border pt-4">
+          <SectionHeading>{t("Campos do funil")}</SectionHeading>
+          <CustomFieldsEditor
+            fields={fieldDefs}
+            value={customFields}
+            onChange={setCustomFields}
+            mode="lead"
+          />
+        </div>
+      )}
 
       <div className="flex justify-end gap-2">
         {onCancel && (

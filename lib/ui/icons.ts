@@ -142,4 +142,16 @@ export {
   GoogleLogo,
   MapPin,
   ArrowsOutSimple,
+  // ficha de contato (campos de Site/Instagram/Facebook no cadastro manual)
+  EnvelopeSimple,
+  InstagramLogo,
+  FacebookLogo,
+  // ação "abrir conversa" na listagem de contatos
+  WhatsappLogo,
+  // campo de valor no cadastro de lead
+  Money,
+  // desbloquear contato (reverte o opt-out automático)
+  LockOpen,
+  // vincular contato ao negócio, no cabeçalho do dossiê
+  LinkSimple,
 } from "@phosphor-icons/react/dist/ssr";

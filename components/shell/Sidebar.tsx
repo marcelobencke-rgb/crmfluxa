@@ -237,12 +237,29 @@ export function SidebarContent({
                   className="space-y-1"
                 >
                   {items.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                    // "Funis" pula o redirect de `/app/kanban`: com o funil
+                    // padrão em mãos (`activeOrg.defaultPipelineId`, resolvido
+                    // no layout — ver o comentário dele em `lib/auth/types.ts`),
+                    // o link já sai apontando pro quadro. Sem ele (org sem
+                    // nenhum funil ainda), cai em `/app/kanban`, que sabe lidar
+                    // com esse caso.
+                    const ehFunis = item.href === "/app/kanban";
+                    const href =
+                      ehFunis && activeOrg?.defaultPipelineId
+                        ? `/app/pipelines/${activeOrg.defaultPipelineId}`
+                        : item.href;
+                    // "Funis" continua marcado quando o quadro já abriu — sem
+                    // isto, destacar por `href` literal apagaria o destaque no
+                    // instante em que o pulo acima começou a funcionar (a URL
+                    // vira `/app/pipelines/…`, que não bate mais com `/app/kanban`).
+                    const isActive = ehFunis
+                      ? pathname === "/app/kanban" || pathname.startsWith("/app/pipelines/")
+                      : pathname === item.href || pathname.startsWith(item.href + "/");
                     const Icon = item.icon;
                     return (
                       <li key={item.href}>
                         <Link
-                          href={item.href}
+                          href={href}
                           title={collapsed ? t(item.label) : undefined}
                           aria-current={isActive ? "page" : undefined}
                           onClick={onNavigate}
