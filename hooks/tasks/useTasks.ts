@@ -16,6 +16,18 @@ import type { EdicaoDaTarefa, NovaTarefa, Tarefa } from "@/lib/tarefas/tipos";
 const BASE = "/api/v1/tasks";
 const CHAVE = ["crm_tasks"] as const;
 
+/**
+ * Referência ESTÁVEL para "sem dado ainda".
+ *
+ * `query.data?.tasks ?? []` pareceria equivalente, mas o `?? []` aloca um
+ * array NOVO em todo render enquanto a query carrega — e quem compara
+ * `tarefas` por referência (o otimismo do arraste no Kanban, em
+ * `TarefasClient`) lê isso como "mudou" a cada render, nunca convergindo:
+ * setState-durante-o-render em cima de uma referência que nunca se repete é
+ * "Too many re-renders" garantido. Medido em produção.
+ */
+const SEM_TAREFAS: Tarefa[] = [];
+
 export interface FiltrosDeTarefa {
   status?: string;
   priority?: string;
@@ -93,7 +105,7 @@ export function useTasks(filtros: FiltrosDeTarefa = {}) {
   });
 
   return {
-    tarefas: query.data?.tasks ?? [],
+    tarefas: query.data?.tasks ?? SEM_TAREFAS,
     carregando: query.isLoading,
     falhou: query.isError,
     recarregar: invalidar,

@@ -108,6 +108,26 @@ export const updateLeadSchema = z.object({
 });
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
 
+/**
+ * leadListQuerySchema → GET /api/v1/leads
+ *
+ * Nasceu para o campo "lead" do formulário de tarefa (`FormularioDeTarefa`)
+ * ter o que buscar — antes só existia `listLeadsHandler`, sem GET REST
+ * ("MCP-only", ver `_handler.ts`). `search` é o único campo novo que o
+ * handler não tinha: os demais (`pipeline_id`, `stage_id`, `status`,
+ * `owner_user_id`, `cursor`, `limit`) já existiam em `ListLeadsQuery`.
+ */
+export const leadListQuerySchema = z.object({
+  pipeline_id: z.string().uuid().optional(),
+  stage_id: z.string().uuid().optional(),
+  status: z.enum(["open", "won", "lost"]).optional(),
+  owner_user_id: z.string().uuid().optional(),
+  search: z.string().optional(),
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+export type LeadListQuery = z.infer<typeof leadListQuerySchema>;
+
 export const bulkLeadActionSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("move"),

@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { FieldShell, SectionHeading } from "@/components/ui/field-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TimePickerField } from "@/components/ui/time-picker-field";
@@ -29,6 +30,9 @@ import type {
   SituacaoDaTarefa,
   Tarefa,
 } from "@/lib/tarefas/tipos";
+import { CalendarBlank, FileText, Flag, Gauge, LinkSimple, ListChecks, Note } from "@/lib/ui/icons";
+
+import { SeletorDeLead } from "./SeletorDeLead";
 
 interface Props {
   aberto: boolean;
@@ -37,6 +41,8 @@ interface Props {
   tarefa?: Tarefa | null;
   /** `YYYY-MM-DD` vindo do clique numa célula do calendário. */
   prazoSugerido?: string;
+  /** Vinda do "+" de uma coluna do Kanban — a tarefa nasce naquela coluna. */
+  situacaoSugerida?: SituacaoDaTarefa;
   aoSalvar: (entrada: NovaTarefa) => Promise<unknown>;
   leadId?: string | null;
   contactId?: string | null;
@@ -64,6 +70,7 @@ export function FormularioDeTarefa({
   aoMudarAbertura,
   tarefa,
   prazoSugerido,
+  situacaoSugerida,
   aoSalvar,
   leadId,
   contactId,
@@ -83,7 +90,15 @@ export function FormularioDeTarefa({
   const [dia, setDia] = useState(tarefa?.due_date ? prazo.dia : (prazoSugerido ?? ""));
   const [hora, setHora] = useState(tarefa?.due_date ? prazo.hora : "09:00");
   const [prioridade, setPrioridade] = useState<PrioridadeDaTarefa>(tarefa?.priority ?? "medium");
-  const [situacao, setSituacao] = useState<SituacaoDaTarefa>(tarefa?.status ?? "pending");
+  const [situacao, setSituacao] = useState<SituacaoDaTarefa>(
+    tarefa?.status ?? situacaoSugerida ?? "pending",
+  );
+  // A mesma regra do resto do formulário: nasce da prop uma vez (tarefa
+  // existente, ou o `leadId` de quem abriu a partir do dossiê de um negócio),
+  // e dali em diante é a PESSOA quem decide — pelo `SeletorDeLead` abaixo.
+  const [leadIdEscolhido, setLeadIdEscolhido] = useState<string | null>(
+    tarefa?.lead_id ?? leadId ?? null,
+  );
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -107,7 +122,7 @@ export function FormularioDeTarefa({
         due_date: prazo,
         priority: prioridade,
         status: situacao,
-        lead_id: tarefa?.lead_id ?? leadId ?? null,
+        lead_id: leadIdEscolhido,
         contact_id: tarefa?.contact_id ?? contactId ?? null,
       });
       aoMudarAbertura(false);
@@ -123,52 +138,60 @@ export function FormularioDeTarefa({
     <Dialog open={aberto} onOpenChange={aoMudarAbertura}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{editando ? t("Editar tarefa") : t("Nova tarefa")}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <ListChecks size={18} className="text-text-subtle" aria-hidden />
+            {editando ? t("Editar tarefa") : t("Nova tarefa")}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={enviar} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="tarefa-titulo">{t("O que precisa ser feito")}</Label>
+          <SectionHeading>{t("O que e quando")}</SectionHeading>
+
+          <FieldShell id="tarefa-titulo" label={t("O que precisa ser feito")} icon={FileText} required>
             <Input
               id="tarefa-titulo"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               placeholder={t("Ex.: ligar de volta para fechar a proposta")}
+              className="pl-9"
               autoFocus
             />
-          </div>
+          </FieldShell>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="tarefa-descricao">{t("Detalhes")}</Label>
+          <FieldShell id="tarefa-descricao" label={t("Detalhes")} icon={Note} multiline>
             <Textarea
               id="tarefa-descricao"
               rows={2}
-              className="resize-none"
+              className="resize-none pl-9"
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               placeholder={t("O que você vai querer lembrar quando chegar a hora")}
             />
-          </div>
+          </FieldShell>
 
           <div className="grid grid-cols-2 gap-3">
+            <FieldShell id="tarefa-dia" label={t("Prazo")} icon={CalendarBlank}>
+              <DatePickerField id="tarefa-dia" value={dia} onChange={setDia} className="pl-9" />
+            </FieldShell>
             <div className="space-y-1.5">
-              <Label htmlFor="tarefa-dia">{t("Prazo")}</Label>
-              <DatePickerField id="tarefa-dia" value={dia} onChange={setDia} />
-            </div>
-            <div className="space-y-1.5">
+              {/* Sem `FieldShell`/ícone extra aqui de propósito: o
+                  `TimePickerField` já desenha o próprio relógio dentro do
+                  botão — empilhar outro por cima duplicaria o ícone em vez de
+                  humanizar o campo. */}
               <Label htmlFor="tarefa-hora">{t("Horário")}</Label>
               <TimePickerField id="tarefa-hora" value={hora} disabled={!dia} onChange={setHora} />
             </div>
           </div>
 
+          <SectionHeading>{t("Prioridade e organização")}</SectionHeading>
+
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="tarefa-prioridade">{t("Prioridade")}</Label>
+            <FieldShell id="tarefa-prioridade" label={t("Prioridade")} icon={Flag}>
               <Select
                 value={prioridade}
                 onValueChange={(v) => setPrioridade(v as PrioridadeDaTarefa)}
               >
-                <SelectTrigger id="tarefa-prioridade">
+                <SelectTrigger id="tarefa-prioridade" className="pl-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -178,12 +201,11 @@ export function FormularioDeTarefa({
                   <SelectItem value="urgent">{t("Urgente")}</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </FieldShell>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="tarefa-situacao">{t("Situação")}</Label>
+            <FieldShell id="tarefa-situacao" label={t("Situação")} icon={Gauge}>
               <Select value={situacao} onValueChange={(v) => setSituacao(v as SituacaoDaTarefa)}>
-                <SelectTrigger id="tarefa-situacao">
+                <SelectTrigger id="tarefa-situacao" className="pl-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -193,11 +215,20 @@ export function FormularioDeTarefa({
                   <SelectItem value="cancelled">{t("Cancelada")}</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </FieldShell>
           </div>
 
+          <FieldShell
+            id="tarefa-lead"
+            label={t("Negócio vinculado")}
+            icon={LinkSimple}
+            hint={t("A tarefa aparece na linha do tempo deste negócio.")}
+          >
+            <SeletorDeLead id="tarefa-lead" leadId={leadIdEscolhido} onChange={setLeadIdEscolhido} className="pl-9" />
+          </FieldShell>
+
           {erro ? (
-            <p role="alert" className="rounded-md bg-destructive/10 p-2 text-xs font-medium text-destructive">
+            <p role="alert" className="rounded-md bg-error-bg p-2 text-xs font-medium text-error-fg">
               {erro}
             </p>
           ) : null}

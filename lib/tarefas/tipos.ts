@@ -152,3 +152,47 @@ export function diaLocalDoPrazo(iso: string): string {
   const dia = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${mes}-${dia}`;
 }
+
+/**
+ * Os números que abrem a tela — quanto tem, quanto anda, quanto atrasou —
+ * antes de abrir qualquer coluna ou linha.
+ *
+ * `total` conta TUDO, inclusive concluída e cancelada: é a mesma soma das
+ * quatro colunas do Kanban, de propósito — duas réguas que discordam do
+ * mesmo conjunto ensinam a pessoa a não confiar em nenhuma das duas.
+ *
+ * `urgentes` já exclui o que foi encerrado (`estaAtrasada`/`faixaDePrazo`
+ * fazem o mesmo para as suas contagens): uma tarefa urgente que já foi feita
+ * ou cancelada não pede mais nenhuma ação de ninguém, e contá-la só infla o
+ * número sem apontar pra nada que se possa fazer.
+ */
+export interface IndicadoresDeTarefa {
+  total: number;
+  emAndamento: number;
+  concluidas: number;
+  atrasadas: number;
+  vencemHoje: number;
+  urgentes: number;
+}
+
+export function calculaIndicadores(
+  tarefas: readonly Pick<Tarefa, "status" | "due_date" | "priority">[],
+  agora: Date = new Date(),
+): IndicadoresDeTarefa {
+  const indicadores: IndicadoresDeTarefa = {
+    total: tarefas.length,
+    emAndamento: 0,
+    concluidas: 0,
+    atrasadas: 0,
+    vencemHoje: 0,
+    urgentes: 0,
+  };
+  for (const tarefa of tarefas) {
+    if (tarefa.status === "in_progress") indicadores.emAndamento++;
+    if (tarefa.status === "done") indicadores.concluidas++;
+    if (estaAtrasada(tarefa, agora)) indicadores.atrasadas++;
+    if (faixaDePrazo(tarefa, agora) === "hoje") indicadores.vencemHoje++;
+    if (tarefa.priority === "urgent" && !estaEncerrada(tarefa)) indicadores.urgentes++;
+  }
+  return indicadores;
+}

@@ -15,6 +15,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import {
   agrupaPorPrazo,
+  calculaIndicadores,
   diaLocalDoPrazo,
   estaAtrasada,
   faixaDePrazo,
@@ -124,5 +125,44 @@ describe("o dia do calendário é o dia de QUEM OLHA", () => {
 
   it("prazo de manhã também casa com o próprio dia", () => {
     expect(diaLocalDoPrazo(local(2026, 3, 5, 9))).toBe("2026-03-05");
+  });
+});
+
+describe("indicadores da tela de tarefas", () => {
+  it("conjunto vazio é tudo zero", () => {
+    expect(calculaIndicadores([], AGORA)).toEqual({
+      total: 0,
+      emAndamento: 0,
+      concluidas: 0,
+      atrasadas: 0,
+      vencemHoje: 0,
+      urgentes: 0,
+    });
+  });
+
+  it("total soma TUDO — inclusive concluída e cancelada, como as colunas do Kanban", () => {
+    const tarefas = [
+      // a: pendente, atrasada.
+      tarefa({ id: "a", status: "pending", due_date: local(2026, 9, 1) }),
+      // b: em andamento, vence hoje.
+      tarefa({ id: "b", status: "in_progress", due_date: local(2026, 9, 2, 15) }),
+      // c: concluída, prazo vencido — encerrada não atrasa.
+      tarefa({ id: "c", status: "done", due_date: local(2026, 9, 1) }),
+      // d: pendente, urgente, sem prazo.
+      tarefa({ id: "d", status: "pending", priority: "urgent", due_date: null }),
+      // e: concluída, urgente, vencia hoje — encerrada não conta em nenhuma das duas.
+      tarefa({ id: "e", status: "done", priority: "urgent", due_date: local(2026, 9, 2, 9) }),
+      // f: cancelada, urgente, prazo vencido — encerrada não conta em nenhuma das duas.
+      tarefa({ id: "f", status: "cancelled", priority: "urgent", due_date: local(2026, 9, 1) }),
+    ];
+
+    expect(calculaIndicadores(tarefas, AGORA)).toEqual({
+      total: 6,
+      emAndamento: 1,
+      concluidas: 2,
+      atrasadas: 1,
+      vencemHoje: 1,
+      urgentes: 1,
+    });
   });
 });

@@ -75,6 +75,7 @@ supabase/.branches/
 .claude/skills/*
 !.claude/skills/sistema-vivo/
 !.claude/skills/deskcomm-*/
+!.claude/skills/formularios-humanizados/
 
 # Local docker volumes (WAHA)
 .waha-data/
