@@ -283,7 +283,16 @@ export function AgendaClient({
       data-testid="tela-agenda"
       data-fonte={agendamentosIniciais.length > 0 ? "api" : "api-sem-dado"}
       data-fuso={fusoDeApresentacao ?? "organizacao"}
-      className="flex h-full flex-col gap-4 p-6"
+      // `min-h-0` — o mesmo motivo documentado em `AppShell.tsx`: sem ele
+      // este flex item nasce com `min-height: auto` e nunca encolhe abaixo
+      // do próprio conteúdo, então o `min-h-0 flex-1` de `AgendaInterativa`
+      // (e o `overflow-auto` interno de `GradeDaAgenda`) nunca recebe altura
+      // restrita para ativar — quem rola de verdade é o `<main>` do shell,
+      // e a grade cresce junto com o resto da página em vez de ter scroll
+      // próprio. Suspeito de contribuir para `locator.click` instável nos
+      // blocos da grade (`agenda-grade-interativa.spec.ts`): elemento coberto
+      // por outra parte da página em vez de scrollado para dentro da caixa.
+      className="flex h-full min-h-0 flex-col gap-4 p-6"
     >
       {/*
         Em Suspense porque `useSearchParams` obriga: sem a fronteira, o Next
