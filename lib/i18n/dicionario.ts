@@ -7632,6 +7632,32 @@ export const DICIONARIO: Traducoes = {
   "Escreva um título para a tarefa.": { es: "Escribe un título para la tarea." },
   "Não foi possível salvar a tarefa.": { es: "No se pudo guardar la tarea." },
 
+  // ─── Tarefas — indicadores e Kanban (visão padrão da tela) ───
+  "Quadro": { es: "Tablero" },
+  "Total": { es: "Total" },
+  "Concluídas": { es: "Completadas" },
+  "Vencem hoje": { es: "Vencen hoy" },
+  "Urgentes": { es: "Urgentes" },
+  "Indicadores das tarefas": { es: "Indicadores de las tareas" },
+  "Nenhuma tarefa": { es: "Ninguna tarea" },
+  "Não foi possível mover a tarefa.": { es: "No se pudo mover la tarea." },
+
+  // ─── Tarefas — formulário humanizado (FieldShell) + seletor de lead ───
+  "O que e quando": { es: "Qué y cuándo" },
+  "Prioridade e organização": { es: "Prioridad y organización" },
+  "Negócio vinculado": { es: "Negocio vinculado" },
+  "A tarefa aparece na linha do tempo deste negócio.": {
+    es: "La tarea aparece en la línea de tiempo de este negocio.",
+  },
+  "Nenhum — busque pelo título do negócio": {
+    es: "Ninguno — busca por el título del negocio",
+  },
+  "Remover vínculo com o negócio": { es: "Quitar el vínculo con el negocio" },
+  "Buscar pelo título do negócio…": { es: "Buscar por el título del negocio…" },
+  "Digite para buscar um negócio.": { es: "Escribe para buscar un negocio." },
+  "Buscando…": { es: "Buscando…" },
+  "Nenhum negócio encontrado.": { es: "Ningún negocio encontrado." },
+
   // ─── app/api/v1/tasks/**/route.ts (mensagens que chegam cruas ao formulário — sem showApiError) ───
   "Tarefa não encontrada.": { es: "Tarea no encontrada." },
   "O negócio ou contato vinculado não existe.": {

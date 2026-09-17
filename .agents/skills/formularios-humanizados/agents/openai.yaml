@@ -1,0 +1,6 @@
+interface:
+  display_name: "Formulários humanizados"
+  short_description: "Ícone por campo (FieldShell) em todo Dialog/modal de formulário deste repositório — nunca Label sozinho"
+  default_prompt: "Use a skill formularios-humanizados ao criar ou editar um Dialog com campos."
+policy:
+  allow_implicit_invocation: true

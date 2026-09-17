@@ -98,7 +98,8 @@ function actorAuditPayload(actor: Actor): {
 }
 
 // ---------------------------------------------------------------------------
-// list (MCP-only por enquanto; sem GET REST nesta wave)
+// list — MCP chama direto (client admin); GET /api/v1/leads chama pela sessão
+// (ver route.ts, que nasceu para o campo "lead" do formulário de tarefa)
 // ---------------------------------------------------------------------------
 
 export interface ListLeadsQuery {
@@ -106,6 +107,8 @@ export interface ListLeadsQuery {
   stage_id?: string;
   status?: "open" | "won" | "lost";
   owner_user_id?: string;
+  /** `title ilike %busca%` — picker de lead, não filtro exato. */
+  search?: string;
   limit?: number;
   cursor?: string | null;
 }
@@ -159,6 +162,14 @@ export async function listLeadsHandler(
   if (q.stage_id) query = query.eq("stage_id", q.stage_id);
   if (q.status) query = query.eq("status", q.status);
   if (q.owner_user_id) query = query.eq("owner_user_id", q.owner_user_id);
+  if (q.search) {
+    // `%`/`_` são curingas do LIKE — sem escapar, buscar por "50%" ou "a_b"
+    // casaria qualquer coisa. Mesmo escape de contacts/_handler.ts; aqui não
+    // precisa do escape de `,`/`()` porque é um `.ilike()` direto, não um
+    // `.or()` — a vírgula do DSL não entra em jogo.
+    const s = q.search.trim().replace(/[%_]/g, (m) => `\\${m}`);
+    query = query.ilike("title", `%${s}%`);
+  }
 
   if (q.cursor) {
     const c = decLeadCursor(q.cursor);

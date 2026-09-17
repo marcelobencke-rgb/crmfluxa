@@ -157,7 +157,11 @@ test("interface por membro atualiza ao vivo, preserva formulário e convite apli
     await expect(nav(guest).getByRole("link", { name: "Inbox", exact: true })).toHaveCount(0);
     await expect(nav(guest).getByRole("link", { name: "Tarefas", exact: true })).toBeVisible();
     await expect(guest.getByRole("heading", { name: "Tarefas", exact: true })).toBeVisible();
-    await expect(guest.getByText("Nenhuma tarefa por aqui", { exact: true })).toBeVisible();
+    // O Kanban é a visão padrão da tela (não mais a Lista): cada coluna vazia
+    // mostra "Nenhuma tarefa" — `.first()` porque as quatro colunas (pending,
+    // in_progress, done, cancelled) mostram a mesma frase ao mesmo tempo numa
+    // organização sem tarefa nenhuma.
+    await expect(guest.getByText("Nenhuma tarefa", { exact: true }).first()).toBeVisible();
     await expect(guest.locator("[aria-busy=true]")).toHaveCount(0);
     await guest.screenshot({ path: `${evidence}/interface-convite-aceito.png` });
     const persisted = await db

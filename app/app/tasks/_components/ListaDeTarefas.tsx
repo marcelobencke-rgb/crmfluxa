@@ -16,6 +16,8 @@ import {
 import { Check, PencilSimple, Trash } from "@/lib/ui/icons";
 import { cn } from "@/lib/utils";
 
+import { COR_DA_PRIORIDADE, rotuloDaPrioridade as construirRotuloDaPrioridade } from "./prioridade";
+
 interface Props {
   tarefas: Tarefa[];
   podeEditar: boolean;
@@ -23,14 +25,6 @@ interface Props {
   aoEditar: (tarefa: Tarefa) => void;
   aoApagar: (tarefa: Tarefa) => Promise<unknown>;
 }
-
-/** A cor é do TEMA, nunca um hex: ela tem de sobreviver ao claro e ao escuro. */
-const COR_DA_PRIORIDADE: Record<PrioridadeDaTarefa, string> = {
-  low: "bg-muted text-muted-foreground",
-  medium: "bg-primary/10 text-primary",
-  high: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  urgent: "bg-destructive/15 text-destructive",
-};
 
 function Linha({
   tarefa,
@@ -53,12 +47,7 @@ function Linha({
   const encerrada = estaEncerrada(tarefa);
   const atrasada = estaAtrasada(tarefa);
 
-  const rotuloDaPrioridade: Record<PrioridadeDaTarefa, string> = {
-    low: t("Baixa"),
-    medium: t("Média"),
-    high: t("Alta"),
-    urgent: t("Urgente"),
-  };
+  const rotuloDaPrioridade: Record<PrioridadeDaTarefa, string> = construirRotuloDaPrioridade(t);
 
   async function comBloqueio(acao: () => Promise<unknown>) {
     setOcupada(true);
