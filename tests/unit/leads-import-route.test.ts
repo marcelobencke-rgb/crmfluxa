@@ -1,5 +1,21 @@
+// @vitest-environment node
 /**
  * A IMPORTAÇÃO DE LEADS NÃO ACEITA NADA NO ESCURO.
+ *
+ * ⚠️ `@vitest-environment node`, e não o `jsdom` padrão da suíte — e isto
+ * NÃO É estilo. Sob jsdom, `NextRequest.formData()` lançava
+ * `AssertionError [ERR_ASSERTION]` de dentro do parser multipart do undici
+ * (`webidl.is.File`/`webidl.is.USVString` recusando o valor) em praticamente
+ * toda chamada — o multipart montado à mão (ver `pedido()`) está correto,
+ * mas o undici cria os campos usando o `File`/`Blob` GLOBAL disponível no
+ * momento, que sob jsdom é a implementação DELE, não a nativa do Node; a
+ * checagem interna do undici só reconhece a própria classe. A rota engolia
+ * o erro no `catch` de `req.formData()` e devolvia 422 genérico — que por
+ * coincidência tinha o MESMO código HTTP que vários casos esperados aqui,
+ * então a suíte parecia medir a rota enquanto media o `catch`. Medido:
+ * 11 dos 14 casos falhavam, e os 3 que passavam só o faziam porque também
+ * esperavam 422 (sem checar a mensagem) — o `catch` os acertava por acaso.
+ * `node` evita o conflito de globals inteiro: este arquivo não usa DOM.
  *
  * Guarda o que a extração do PR #418 mudou de contrato:
  *
