@@ -979,7 +979,20 @@ export function GradeDaAgenda({
         // A rolagem mora AQUI dentro, e não na página: `html, body` têm
         // `overflow-x: hidden` no globals.css, então uma grade que estourasse a
         // largura simplesmente sumiria pela direita, sem barra para trazê-la de volta.
-        <div ref={gradeRef} className="flex min-h-0 flex-1 overflow-auto">
+        //
+        // `overflow-anchor: none` — sem isto, o scroll deste container ficava
+        // OSCILANDO sozinho entre 2-3 posições (272px/284px/296px, medido num
+        // trace do Playwright) sempre que algo acima do viewport mudava de
+        // tamanho: é a feature de "scroll anchoring" do Chrome tentando manter
+        // a posição visual e entrando em loop contra qualquer instabilidade de
+        // layout acima dela. Sintoma: `locator.click` num bloco esperando os
+        // 150s inteiros, alternando entre `<main>`, o seletor de tipo e
+        // `<html>` como "elemento que intercepta o ponteiro" a cada tentativa
+        // — o alvo nunca fica parado o suficiente para o clique físico
+        // acontecer (`agenda-grade-interativa.spec.ts`, issue #40). Desligar
+        // o auto-ajuste aqui não muda scroll voluntário nenhum; só impede o
+        // navegador de "corrigir" a posição sozinho.
+        <div ref={gradeRef} className="flex min-h-0 flex-1 overflow-auto [overflow-anchor:none]">
           <ColunaDeHoras />
           <div className="flex min-w-0 flex-1">
             {dias.map((d) => (
