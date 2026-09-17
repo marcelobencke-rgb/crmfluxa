@@ -246,7 +246,20 @@ export function KanbanCard({
                   acessibilidade; deixar só onKeyDown daria uma ação que existe
                   e NÃO É DESCOBERTA por leitor de tela. O título como button
                   atende mouse, teclado e leitor sem desfazer a decisão antiga. */}
-              <h3 className="line-clamp-2 h-10 text-sm font-medium leading-5 text-text">
+              {/* `group-hover:pr-*`/`group-focus-within:pr-*`: a barra de ações
+                  (`KanbanCardActions`) é `absolute right-0 top-0`, sem espaço
+                  reservado, e só vira clicável nos MESMOS dois gatilhos
+                  (hover/focus-within do card) — os comentários dela documentam
+                  a decisão de flutuar por cima para não quebrar título curto
+                  em duas linhas o tempo todo. Sem este recuo, um título que
+                  chega perto da borda direita fica com a PONTA coberta pela
+                  barra justo quando ela está clicável: `subtree intercepts
+                  pointer events` ao tentar clicar no nome — medido com
+                  `followup-dossie.spec.ts`, nome de contato longo o bastante
+                  para colidir com os 5 ícones (WhatsApp, editar, ganho,
+                  perdido, remover ≈ 134px). Recuar só nesses dois estados
+                  mantém a largura plena quando ninguém está olhando. */}
+              <h3 className="line-clamp-2 h-10 text-sm font-medium leading-5 text-text transition-[padding] group-hover:pr-36 group-focus-within:pr-36">
                 <button
                   type="button"
                   onClick={(e) => {

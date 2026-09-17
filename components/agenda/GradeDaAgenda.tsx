@@ -26,6 +26,7 @@ import {
   type HorarioPublicado,
   type MotivoDaGradeTravada,
 } from "@/lib/agenda/grade-interativa";
+import { SITUACOES_QUE_LIBERAM } from "@/lib/agenda/ocupados";
 import { cn } from "@/lib/utils";
 import { useT } from "@/hooks/i18n/useT";
 
@@ -324,7 +325,14 @@ function BlocoDeAgendamento({
   const duracao = Math.max(differenceInMinutes(termina, comeca), 15);
   const trilha = pessoa?.trilha ?? 1;
   const doGoogle = agendamento.origem === "google_sync";
-  const cancelado = agendamento.situacao === "cancelled";
+  // `cancelled` E `no_show` (`SITUACOES_QUE_LIBERAM`) devolvem o horário — a
+  // rota volta a oferecê-lo, o bloco embaixo nasce clicável de novo. O nome
+  // ficou "cancelado" (era só `=== "cancelled"`) porque a correção original
+  // só cobriu esse caso; `no_show` libera pela MESMA regra e tinha o MESMO
+  // defeito sem que a spec tivesse pego ainda: card de falta continuava com
+  // pointer-events ativo por cima do bloco livre, e `locator.click` no bloco
+  // esperava os mesmos 150s pelo mesmo motivo (ver o comentário abaixo).
+  const naoInterceptaMaisOHorario = SITUACOES_QUE_LIBERAM.includes(agendamento.situacao);
 
   return (
     <button
@@ -339,7 +347,7 @@ function BlocoDeAgendamento({
       // clique disponível prometeria uma ação que não existe — o defeito do
       // "controle decorativo" que esta base já pagou uma vez.
       disabled={doGoogle}
-      data-arrastavel={arraste !== undefined && !doGoogle && !cancelado}
+      data-arrastavel={arraste !== undefined && !doGoogle && !naoInterceptaMaisOHorario}
       data-arrastando={arraste?.ativo === true}
       // ⚠️ O CLIQUE QUE FECHA UM ARRASTE NÃO ABRE O COMPROMISSO.
       //
@@ -349,10 +357,14 @@ function BlocoDeAgendamento({
       // tela ao mesmo tempo, e a de baixo é a que o usuário pediu.
       onClick={doGoogle ? undefined : () => { if (!arraste?.moveu()) onAbrir?.(agendamento.id); }}
       onPointerDown={
-        arraste && !doGoogle && !cancelado ? (e) => arraste.aoApontar(e, agendamento) : undefined
+        arraste && !doGoogle && !naoInterceptaMaisOHorario
+          ? (e) => arraste.aoApontar(e, agendamento)
+          : undefined
       }
       onKeyDown={
-        arraste && !doGoogle && !cancelado ? (e) => arraste.aoTeclar(e, agendamento) : undefined
+        arraste && !doGoogle && !naoInterceptaMaisOHorario
+          ? (e) => arraste.aoTeclar(e, agendamento)
+          : undefined
       }
       // "com" nesta tela significa QUEM SERÁ ATENDIDO — é o vocabulário do
       // próprio subtítulo ("O que está marcado, com quem, e quem atende"). O
@@ -373,24 +385,26 @@ function BlocoDeAgendamento({
         doGoogle ? "cursor-default" : "cursor-pointer hover:border-border-strong",
         // `grab` só quando remarcar é possível: o cursor é a única pista de que
         // o card se move, e prometê-la num card que não se move (ocupação do
-        // Google, compromisso cancelado) é o controle decorativo de novo.
-        arraste && !doGoogle && !cancelado && "cursor-grab active:cursor-grabbing touch-none",
-        // ⚠️ CANCELADO NÃO INTERCEPTA O PONTEIRO — e isto é conserto de produto,
-        // achado pela spec em tela.
+        // Google, compromisso cancelado/falta) é o controle decorativo de novo.
+        arraste && !doGoogle && !naoInterceptaMaisOHorario && "cursor-grab active:cursor-grabbing touch-none",
+        // ⚠️ QUEM LIBEROU O HORÁRIO NÃO INTERCEPTA O PONTEIRO — conserto de
+        // produto, achado pela spec em tela.
         //
         // O card é `absolute` e fica por cima da camada de blocos vazios.
-        // Cancelar DEVOLVE o horário (`cancelled` está em `SITUACOES_QUE_LIBERAM`,
-        // e a rota volta a oferecê-lo), então o bloco embaixo nasce clicável — e
-        // o clique morria no card cancelado. Medido: `locator.click` esperando
-        // 150s porque `<button data-situacao="cancelled">` recebia o evento
-        // "from" o bloco livre. Numa clínica com uma semana de cancelamentos, o
+        // `cancelled`/`no_show` DEVOLVEM o horário (`SITUACOES_QUE_LIBERAM`, em
+        // lib/agenda/ocupados.ts), e a rota volta a oferecê-lo — então o bloco
+        // embaixo nasce clicável, e o clique morria no card por cima. Medido:
+        // `locator.click` esperando 150s porque `<button data-situacao="...">`
+        // recebia o evento "from" o bloco livre. A correção original só cobriu
+        // `cancelled`; `no_show` libera pela mesma regra e tinha o mesmo
+        // defeito. Numa clínica com uma semana de cancelamentos/faltas, o
         // horário reaberto vira inalcançável pela grade.
         //
         // O card continua VISÍVEL — ele é a memória do que houve ali, e some-lo
         // faria o horário parecer que nunca teve nada. O que ele perde é o
-        // clique, que já existe na aba "Cancelados" do histórico logo acima. A
-        // ação viva naquele espaço é marcar; o cancelado é registro.
-        cancelado && "pointer-events-none opacity-55",
+        // clique, que já existe na aba "Cancelados"/"Faltas" do histórico logo
+        // acima. A ação viva naquele espaço é marcar; o card ali é registro.
+        naoInterceptaMaisOHorario && "pointer-events-none opacity-55",
         // Enquanto a proposta está aberta o card original esmaece e o fantasma
         // mostra onde ele cairia. Sumir com o original faria perder a
         // referência de onde ele estava — que é o que se desfaz ao cancelar.
