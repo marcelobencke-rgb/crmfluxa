@@ -20,6 +20,7 @@ interface SidebarContentProps {
   collapsed: boolean;
   showCollapseControl?: boolean;
   onNavigate?: () => void;
+  onToggleCollapse?: () => void;
 }
 
 /**
@@ -34,12 +35,12 @@ export function SidebarContent({
   collapsed,
   showCollapseControl = true,
   onNavigate,
+  onToggleCollapse,
 }: SidebarContentProps) {
   // A barra lateral aparece em TODA tela — traduzi-la aqui é o que faz a
   // escolha de idioma virar algo visível no primeiro clique.
   const t = useT();
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
   const { user, activeOrg } = useAuth();
   const todos = sidebarGroups(
     user.is_platform_admin && !user.support,
@@ -331,8 +332,7 @@ export function SidebarContent({
         {showCollapseControl && (
           <button
             type="button"
-            onClick={() => startTransition(() => toggleSidebar(collapsed))}
-            disabled={isPending}
+            onClick={onToggleCollapse}
             className={cn(
               "flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground",
               collapsed && "justify-center px-2",
@@ -352,7 +352,26 @@ export function SidebarContent({
   );
 }
 
-export function Sidebar({ collapsed }: { collapsed: boolean }) {
+export function Sidebar({ collapsed: collapsedNoServidor }: { collapsed: boolean }) {
+  // Estado local: o clique precisa mudar a tela NA HORA. `collapsedNoServidor`
+  // só serve de semente (o valor do cookie lido em `app/app/layout.tsx`, para
+  // não "piscar" no primeiro paint de um load cheio) — depois do mount, quem
+  // manda é este estado, nunca mais o servidor.
+  const [collapsed, setCollapsed] = useState(collapsedNoServidor);
+  const [, startTransition] = useTransition();
+
+  function alternar() {
+    setCollapsed((atual) => {
+      const proximo = !atual;
+      // Fire-and-forget: só grava o cookie pro próximo load. Nenhuma
+      // revalidação — ver o comentário em `toggleSidebar.ts`.
+      startTransition(() => {
+        void toggleSidebar(atual);
+      });
+      return proximo;
+    });
+  }
+
   return (
     <aside
       className={cn(
@@ -379,7 +398,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
         collapsed ? "w-16" : "w-60",
       )}
     >
-      <SidebarContent collapsed={collapsed} />
+      <SidebarContent collapsed={collapsed} onToggleCollapse={alternar} />
     </aside>
   );
 }

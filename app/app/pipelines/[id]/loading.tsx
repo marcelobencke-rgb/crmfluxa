@@ -1,5 +1,5 @@
 import { BoardSkeleton } from "@/components/kanban/BoardSkeleton";
 
-export default function KanbanLoading() {
+export default function PipelineLoading() {
   return <BoardSkeleton />;
 }
